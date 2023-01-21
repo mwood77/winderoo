@@ -1,6 +1,3 @@
-
-<!-- ![OSWW Gif](./docs/images/winder-running.gif) -->
-
 <h1 align="center">
   <br>
     <img src="./docs/images/winder-running.gif" alt="Open Source Watch Winder (OSWW)" width="300">
@@ -29,10 +26,12 @@
 * Control over wifi with a simple web user interface
 * Approximate battery life of 1 month
     - Based on a single powered unit. Adding passive winders will affect battery life.
-* minimal electronics / programming experience required
+* Minimal electronics / programming experience required
 
 ## Prerequisites & Build Instructions
-1. [**See the Prerequisites first**](./docs/prereqs.md)
+> [**See the Prerequisites first**](./docs/prereqs.md)
+
 1. [Bill of Materials](./docs/bom-requirements.md)
 1. [Software Installation](./docs/install-software.md)
+1. [Model Files](./model)
 1. [Build Guide](./docs/build-guide.md)
