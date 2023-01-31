@@ -24,16 +24,16 @@
         <mat-card class="mat-elevation-z1">
             <div class="individual-setting ">
                 Direction
-                <div class="individual-status-text">{{ direction }}</div>
+                <div class="individual-status-text">{{ getReadableDirectionOfRotation(this.upload.direction) }}</div>
                 <div class="rotation-toggles">
-                    <mat-button-toggle-group [(ngModel)]="direction" aria-label="Winding Direction">
-                        <mat-button-toggle value="Clockwise" aria-label="Text align left">
+                    <mat-button-toggle-group [(ngModel)]="this.upload.direction" aria-label="Winding Direction">
+                        <mat-button-toggle value="CW" aria-label="Text align left">
                             <mat-icon>rotate_right</mat-icon>
                         </mat-button-toggle>
-                        <mat-button-toggle value="Both" aria-label="Text align center">
+                        <mat-button-toggle value="BOTH" aria-label="Text align center">
                             <mat-icon>sync</mat-icon>
                         </mat-button-toggle>
-                        <mat-button-toggle value="Counter-Clockwise" aria-label="Text align right">
+                        <mat-button-toggle value="CCW" aria-label="Text align right">
                             <mat-icon>rotate_left</mat-icon>
                         </mat-button-toggle>
                         </mat-button-toggle-group>
@@ -44,9 +44,9 @@
                 <div class="">
                 Rotations Per Day
                 </div>
-                <div class="individual-status-text">{{ this.rpd }}</div>
-                <mat-slider value="450" min="0" max="960" step="20" discrete (input)="setRotationsPerDay($event)">
-                    <input matSliderThumb [(ngModel)]="rpd">
+                <div class="individual-status-text">{{ this.upload.rpd }}</div>
+                <mat-slider value="{{ this.upload.rpd }}" min="0" max="960" step="20" discrete (input)="setRotationsPerDay($event)">
+                    <input matSliderThumb [(ngModel)]="this.upload.rpd">
                 </mat-slider>
             </div>
 

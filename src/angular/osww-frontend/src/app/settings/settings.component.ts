@@ -1,4 +1,5 @@
 import { Component, OnInit } from '@angular/core';
+import { ApiService, Update } from '../api.service';
 
 @Component({
   selector: 'app-settings',
@@ -13,25 +14,27 @@ export class SettingsComponent implements OnInit {
    * -- Not Configured
    * -- Paused
    */
-  direction = '';
-  rpd = 0
-
+  
   upload = {
     activityState: '',
     statusMessage: '',
     disabled: false,
+    direction: '',
+    rpd: 0
   }
 
   watchWindingParametersURL = 'https://watch-winder.store/watch-winding-table/';
 
-  constructor() { }
+  constructor(private apiService: ApiService) { }
 
   ngOnInit(): void {
-    this.upload.activityState = 'Paused';
-    this.direction = 'Clockwise';
-    this.rpd = 460;
-
     this.upload.statusMessage = 'Save Settings'
+
+    this.apiService.getStatus().subscribe((data) => {
+      this.upload.activityState = data.status;
+      this.upload.rpd = data.rotationsPerDay;
+      this.upload.direction = data.direction;
+    })
   }
 
   getColour(status: string): string {
@@ -43,24 +46,24 @@ export class SettingsComponent implements OnInit {
       case 'Paused':
         return 'yellow';
       default:
-        return 'yellow';
+        return 'no-status';
     }
   }
 
   setRotationsPerDay(rpd: any) {
-    this.rpd = rpd.value
+    this.upload.rpd = rpd.value
   }
 
-  setDirectionOfRotation(direction: string): string {
+  getReadableDirectionOfRotation(direction: string): string {
     switch (direction) {
-      case 'clockwise':
-        return 'cw';
-      case 'counter-clockwise':
-        return 'ccw';
-      case 'clockwise & counter-clockwise':
-        return 'both';
+      case 'CW':
+        return 'Clockwise';
+      case 'CCW':
+        return 'Counter-clockwise';
+      case 'BOTH':
+        return 'Clockwise & Counter-Clockwise';
       default:
-        return 'cw';
+        return 'Clockwise';
     }
   }
 
@@ -68,23 +71,35 @@ export class SettingsComponent implements OnInit {
     window.open(URL, '_blank');
   }
 
-  uploadSettings() {
+  uploadSettings(actionToDo?: string) {
     this.upload.statusMessage = 'Upload in progress';
     this.upload.disabled = true;
-    setTimeout(() => {
+
+    const body: Update = {
+      action: actionToDo ? actionToDo : 'START',
+      rotationDirection: this.upload.direction,
+      tpd: this.upload.rpd,
+    }
+
+    this.apiService.updateState(body).subscribe((response) => {
+      if (response.status == 204) {
+        this.apiService.getStatus().subscribe((data) => {
+          this.upload.activityState = data.status;
+          this.upload.rpd = data.rotationsPerDay;
+          this.upload.direction = data.direction;
+        })
+      }
       this.upload.disabled = false;
-      this.upload.statusMessage = 'Save Settings'
-    }, 2000)
+      this.upload.statusMessage = 'Save Settings';
+    });
   }
 
   beginProgramming() {
-    this.uploadSettings();
-    this.upload.activityState = 'Winding';
+    this.uploadSettings('START');
   }
 
   stopProgramming() {
-    this.uploadSettings();
-    this.upload.activityState = 'Stopped';
+    this.uploadSettings('STOP');
   }
 
 }

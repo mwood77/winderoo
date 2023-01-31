@@ -14,45 +14,11 @@ WiFiClient client;
 WiFiManager wm;
 AsyncWebServer server(80);
 
-void listDir(fs::FS &fs, const char * dirname, uint8_t levels){
-    Serial.printf("Listing directory: %s\r\n", dirname);
+bool reset = false;
 
-    File root = fs.open(dirname);
-    if(!root){
-        Serial.println("- failed to open directory");
-        return;
-    }
-    if(!root.isDirectory()){
-        Serial.println(" - not a directory");
-        return;
-    }
-
-    File file = root.openNextFile();
-    while(file){
-        if(file.isDirectory()){
-            Serial.print("  DIR : ");
-
-            Serial.print(file.name());
-            time_t t= file.getLastWrite();
-            struct tm * tmstruct = localtime(&t);
-            Serial.printf("  LAST WRITE: %d-%02d-%02d %02d:%02d:%02d\n",(tmstruct->tm_year)+1900,( tmstruct->tm_mon)+1, tmstruct->tm_mday,tmstruct->tm_hour , tmstruct->tm_min, tmstruct->tm_sec);
-
-            if(levels){
-                listDir(fs, file.name(), levels -1);
-            }
-        } else {
-            Serial.print("  FILE: ");
-            Serial.print(file.name());
-            Serial.print("  SIZE: ");
-
-            Serial.print(file.size());
-            time_t t= file.getLastWrite();
-            struct tm * tmstruct = localtime(&t);
-            Serial.printf("  LAST WRITE: %d-%02d-%02d %02d:%02d:%02d\n",(tmstruct->tm_year)+1900,( tmstruct->tm_mon)+1, tmstruct->tm_mday,tmstruct->tm_hour , tmstruct->tm_min, tmstruct->tm_sec);
-        }
-        file = root.openNextFile();
-    }
-}
+String status = "";
+String rotationsPerDay = "460";
+String direction = "CW";
 
 String getFullMemoryUsage() {
   String usage = "Total heap: ";
@@ -93,126 +59,157 @@ String getTime() {
 }
 
 void notFound(AsyncWebServerRequest *request) {
+  // Handle HTTP_OPTIONS requests
+  if (request->method() == 64) {
+      AsyncWebServerResponse *response = request->beginResponse(200, "text/plain", "Ok");
+      request->send(response);
+  } else {
     request->send(404, "text/plain", "Winderoo\n\n404 - Resource Not found");
+  }
 }
 
-// /**
-//  * Sets up all REST endpoints and their responses.
-//  * Angular artifacts are treated specially here to allow pre-compression.
-//  */
-void startWebserver() {
-  /*
-  Server reqeusts for Angular artifacts
-  Hardcoded requests for all requested angular files.
-  */
+void handleBody(AsyncWebServerRequest *request, uint8_t *data, size_t len, size_t index, size_t total){
+  if(!index){
+    Serial.printf("BodyStart: %u B\n", total);
+  }
+  for(size_t i=0; i<len; i++){
+    Serial.write(data[i]);
+  }
+  if(index + len == total){
+    Serial.printf("BodyEnd: %u B\n", total);
+  }
+}
 
-  // TODO: files don't appear to exist on mount
-  // server.serveStatic("/", LittleFS, "/www/").setDefaultFile("index.html");    
+void startWebserver() { 
 
-  server.serveStatic("/css/", LittleFS, "/css/").setCacheControl("max-age=31536000");
-  server.serveStatic("/js/", LittleFS, "/js/").setCacheControl("max-age=31536000");
-  server.serveStatic("/favicon.ico", LittleFS, "/favicon.ico").setCacheControl("max-age=31536000");
-  server.serveStatic("/icon.jpeg", LittleFS, "/icon.jpeg").setCacheControl("max-age=31536000");
-
-  server.serveStatic("/", LittleFS, "/")
-      .setDefaultFile("index.html");
- 
-  // server.on("/", HTTP_GET, [](AsyncWebServerRequest *request) {
-  //   request->send(LittleFS, "/www/index.html", "text/html");
-  // });
-  
-  // server.on("/", HTTP_GET, [](AsyncWebServerRequest *request) {
-  //   request->send(LittleFS, "/www/index.html", "text/html");
-  // });
-
-  // //@todo - serves "Not Found"
-  // webServer.on("/index.html", HTTP_GET, [](AsyncWebServerRequest *request) {
-  //   request->send(SPIFFS, "/www/index.html", "text/html");
-  // });
-  // webServer.on("/favicon.ico", HTTP_GET, [](AsyncWebServerRequest *request) {
-  //   request->send(SPIFFS, "/www/favicon.ico", "text/html");
-  // });
-  // webServer.on("/styles.css", HTTP_GET, [](AsyncWebServerRequest *request) {
-  //   AsyncWebServerResponse *response = request->beginResponse(SPIFFS, "/www/styles.css.gz", "text/css");
-  //   response->addHeader("Content-Encoding", "gzip");
-  //   request->send(response);
-  // });
-  // webServer.on("/runtime.js", HTTP_GET, [](AsyncWebServerRequest *request) {
-  //   AsyncWebServerResponse *response = request->beginResponse(SPIFFS, "/www/runtime.js.gz", "application/javascript");
-  //   response->addHeader("Content-Encoding", "gzip");
-  //   request->send(response);
-  // });
-  // webServer.on("/polyfills.js", HTTP_GET, [](AsyncWebServerRequest *request) {
-  //   AsyncWebServerResponse *response = request->beginResponse(SPIFFS, "/www/polyfills.js.gz", "application/javascript");
-  //   response->addHeader("Content-Encoding", "gzip");
-  //   request->send(response);
-  // });
-  // webServer.on("/main.js", HTTP_GET, [](AsyncWebServerRequest *request) {
-  //   AsyncWebServerResponse *response = request->beginResponse(SPIFFS, "/www/main.js.gz", "application/javascript");
-  //   response->addHeader("Content-Encoding", "gzip");
-  //   request->send(response);
-  // });
-
-  /*
-  API: System
-  */
-  server.on("/time", HTTP_GET, [](AsyncWebServerRequest *request) {
+  server.on("/api/time", HTTP_GET, [](AsyncWebServerRequest *request) {
     request->send(200, "text/plain", getTime());
+  });
+
+  server.on("/api/status", HTTP_GET, [](AsyncWebServerRequest *request) {
+    AsyncResponseStream *response = request->beginResponseStream("application/json");
+      DynamicJsonDocument json(1024);
+      json["status"] = status;
+      json["rotationsPerDay"] = rotationsPerDay;
+      json["direction"] = direction;
+      serializeJson(json, *response);
+      request->send(response);
+  });
+
+  server.on("/api/update", HTTP_POST, [](AsyncWebServerRequest *request) {
+      int params = request->params();
+      for ( int i = 0; i < params; i++ ) {
+        AsyncWebParameter* p = request->getParam(i);
+        Serial.printf("GET[%s]: %s\n", p->name().c_str(), p->value().c_str());
+          if( strcmp(p->name().c_str(), "action") == 0) {
+            if ( strcmp(p->value().c_str(), "START") == 0 ) {
+              status = "Winding";
+            } else {
+              status = "Stopped";
+            }
+          } 
+          if( strcmp(p->name().c_str(), "rotationDirection") == 0 ) {
+            direction = p->value().c_str();
+          }
+          if( strcmp(p->name().c_str(), "tpd") == 0 ) {
+            rotationsPerDay = p->value().c_str();
+          }
+        request->send(204);
+  }});
+
+  server.on("/api/reset", HTTP_GET, [](AsyncWebServerRequest *request) {
+    AsyncResponseStream *response = request->beginResponseStream("application/json");
+    DynamicJsonDocument json(1024);
+    json["status"] = "Resetting";
+    serializeJson(json, *response);
+    request->send(response);
+    
+    reset = true;
   });
 
   server.on("/api/system/heap", HTTP_GET, [](AsyncWebServerRequest *request) {
     request->send(200, "text/plain", getFullMemoryUsage());
   });
 
-
-
-  // server.serveStatic("/fs", LittleFS, "/");
+  server.serveStatic("/css/", LittleFS, "/css/").setCacheControl("max-age=31536000");
+  server.serveStatic("/js/", LittleFS, "/js/").setCacheControl("max-age=31536000");
+  server.serveStatic("/favicon.ico", LittleFS, "/favicon.ico").setCacheControl("max-age=31536000");
+  server.serveStatic("/icon.jpeg", LittleFS, "/icon.jpeg").setCacheControl("max-age=31536000");
+  server.serveStatic("/", LittleFS, "/").setDefaultFile("index.html");
   
   server.onNotFound(notFound);
+
+  DefaultHeaders::Instance().addHeader("Access-Control-Allow-Origin", "*");
+  DefaultHeaders::Instance().addHeader("Access-Control-Allow-Methods", "GET,POST,OPTIONS");
+  DefaultHeaders::Instance().addHeader("Access-Control-Allow-Headers", "Content-Type, Access-Control-Allow-Headers, Authorization, X-Requested-With");
 
   server.begin();
 }
 
 
-// // Initialize File System with LittleFS
+// Initialize File System
 void initFS() {
-
   if (!LittleFS.begin(true)) {
     Serial.println("An error has occurred while mounting LittleFS");
   }
 
   Serial.println("LittleFS mounted successfully");
-  listDir(LittleFS, "/", 0);
 }
 
 
  
 void setup() {
-    WiFi.mode(WIFI_STA); // explicitly set mode, esp defaults to STA+AP    
-    // put your setup code here, to run once:
+    WiFi.mode(WIFI_STA);
     Serial.begin(115200);
-    initFS();
-    
-    //reset settings - wipe credentials for testing
-    // wm.resetSettings();
 
+    pinMode (LED_BUILTIN, OUTPUT);
+    status = "Stopped";
+    
+    wm.setDarkMode(true);
     wm.setConfigPortalBlocking(false);
+    wm.setDebugOutput(true);
+    wm.setHostname("Winderoo");
+    
     //automatically connect using saved credentials if they exist
     //If connection fails it starts an access point with the specified name
     if(wm.autoConnect("Winderoo Setup")) {
+        initFS();
         Serial.println("connected to saved network");
         if (!MDNS.begin("winderoo")) {
           Serial.println("Failed to start mDNS");
         }
+        Serial.println("mDNS started");
 
         startWebserver();
     }
     else {
         Serial.println("WiFi Config Portal running");
+          digitalWrite(LED_BUILTIN, HIGH);
     }
 }
  
 void loop() {
-    wm.process();
-    // put your main code here, to run repeatedly:
+  if (reset) {
+    for ( int i = 0; i < 40; i++ ) {
+      digitalWrite(LED_BUILTIN, HIGH);
+      delay(100);
+      digitalWrite(LED_BUILTIN, LOW);
+      delay(100);
+    }
+
+    Serial.println("Stopping webserver");
+    server.end();
+    delay(600);
+    Serial.println("Stopping File System");
+    LittleFS.end();
+    delay(200);
+    Serial.println("Resetting Wifi Manager settings");
+    wm.resetSettings();
+    delay(200);
+    Serial.println("Restart device...");
+    ESP.restart();
+    delay(2000);
+  }
+
+  wm.process();
 }
