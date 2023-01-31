@@ -3,6 +3,7 @@
 #include <LittleFS.h>
 #include <ArduinoJson.h>
 #include <HTTPClient.h>
+#include <ESPmDNS.h>
 
 #include "FS.h"
 #include "ESPAsyncWebServer.h"
@@ -70,7 +71,7 @@ String getTime() {
   http.begin(client, "http://worldtimeapi.org/api/ip");
   int httpCode = http.GET();
 
-  String usage = "Watcheroo is live!";
+  String usage = "Winderoo is live!";
 
   if (httpCode > 0) {
       DynamicJsonDocument doc(2048);
@@ -92,7 +93,7 @@ String getTime() {
 }
 
 void notFound(AsyncWebServerRequest *request) {
-    request->send(404, "text/plain", "Watcheroo\n\n404 - Resource Not found");
+    request->send(404, "text/plain", "Winderoo\n\n404 - Resource Not found");
 }
 
 // /**
@@ -198,8 +199,12 @@ void setup() {
     wm.setConfigPortalBlocking(false);
     //automatically connect using saved credentials if they exist
     //If connection fails it starts an access point with the specified name
-    if(wm.autoConnect("Watcheroo Setup")) {
+    if(wm.autoConnect("Winderoo Setup")) {
         Serial.println("connected to saved network");
+        if (!MDNS.begin("winderoo")) {
+          Serial.println("Failed to start mDNS");
+        }
+
         startWebserver();
     }
     else {
