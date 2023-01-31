@@ -1,0 +1,70 @@
+<div class="row justify-content-md-center">
+    <div class="col col-lg-6 col-md-9">
+      
+        <mat-card class="mat-elevation-z1" [ngClass]="getColour(this.upload.activityState)">
+            <div>
+                Status
+                <div class="status-text col-8 d-flex justify-content-end">
+                    {{ upload.activityState }}
+                </div>
+            </div>
+        </mat-card>
+
+        <mat-card class="mat-elevation-z1">
+            <div class="control-buttons">
+                <button mat-raised-button color="accent" class="play-button" (click)="beginProgramming()" [disabled]="upload.disabled">
+                    <mat-icon>play_arrow</mat-icon>
+                </button>
+                <button mat-raised-button color="warn" class="stop-button" (click)="stopProgramming()" [disabled]="upload.disabled">
+                    <mat-icon>stop</mat-icon>
+                </button>
+            </div>
+        </mat-card>
+        
+        <mat-card class="mat-elevation-z1">
+            <div class="individual-setting ">
+                Direction
+                <div class="individual-status-text">{{ direction }}</div>
+                <div class="rotation-toggles">
+                    <mat-button-toggle-group [(ngModel)]="direction" aria-label="Winding Direction">
+                        <mat-button-toggle value="Clockwise" aria-label="Text align left">
+                            <mat-icon>rotate_right</mat-icon>
+                        </mat-button-toggle>
+                        <mat-button-toggle value="Both" aria-label="Text align center">
+                            <mat-icon>sync</mat-icon>
+                        </mat-button-toggle>
+                        <mat-button-toggle value="Counter-Clockwise" aria-label="Text align right">
+                            <mat-icon>rotate_left</mat-icon>
+                        </mat-button-toggle>
+                        </mat-button-toggle-group>
+                </div>
+            </div>
+
+            <div class="individual-setting">
+                <div class="">
+                Rotations Per Day
+                </div>
+                <div class="individual-status-text">{{ this.rpd }}</div>
+                <mat-slider value="450" min="0" max="960" step="20" discrete (input)="setRotationsPerDay($event)">
+                    <input matSliderThumb [(ngModel)]="rpd">
+                </mat-slider>
+            </div>
+
+            <div class="individual-setting">
+                <div class="individual-status-text">
+                    <a target="_blank" mat-stroked-button (click)="openSite(watchWindingParametersURL)">
+                        Find your watch's winding parameters
+                    </a>
+                </div>
+            </div>
+        </mat-card>
+
+        <mat-card class="mat-elevation-z1">
+                <button mat-raised-button color="primary" class="upload-button" (click)="uploadSettings()" [disabled]="upload.disabled">
+                    <div class="save-button-text">{{ upload.statusMessage }}</div>
+                </button>
+        </mat-card>
+
+    </div>
+  </div>
+  

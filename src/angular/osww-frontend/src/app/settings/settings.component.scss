@@ -1,0 +1,79 @@
+mat-card {
+    margin: 1rem;
+}
+
+.description-headline {
+    margin-bottom: 0;
+}
+
+.green {
+    color: white;
+    background: #52B788;
+}
+
+.yellow {
+    color: white;
+    background: #F0A202;
+}
+
+.red {
+    color: white;
+    background: #BB0A21;
+}
+
+.status-text {
+    margin-top: 0.3rem;
+    font-size: 2em;
+}
+
+.individual-status-text {
+    font-size: 2em;
+    margin-top: 1rem;
+    margin-bottom: 1rem;
+}
+
+.individual-status-text {
+    display: flex;
+    justify-content: center;
+}
+
+.control-buttons {
+    display: flex;
+    justify-content: space-around;
+    
+    button {
+        width: 45%;
+    }
+}
+
+.mat-slider {
+    width: 100%;
+}
+
+.individual-setting {
+    margin-top: 1rem;
+    margin-bottom: 0.6rem;
+}
+
+.rotation-toggles {
+    mat-button-toggle-group {
+        width: 100%;
+    }
+
+    mat-button-toggle {
+        flex: 1 1 100%;
+        box-sizing: border-box;
+        align-items: center;
+        flex-direction: row;
+        display: flex;
+    }
+}
+.upload-button {
+    width: 100%;
+    
+    .save-button-text {
+        font-size: 1.5em;
+        margin-top: 0.6rem;
+        margin-bottom: 0.6rem;
+    }
+}

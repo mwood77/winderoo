@@ -1,9 +1,11 @@
 <h1 align="center">
   <br>
-    <img src="./docs/images/winder-running.gif" alt="Open Source Watch Winder (OSWW)" width="300">
+    <img src="./docs/images/winder-running.gif" alt="Winderoo - The Open Source Watch Winder" width="300">
   <br>
-    <b>Open Source Watch Winder (OSWW)</b>
+    <b>Winderoo</b>
   <br>
+    <i>The Open Source Watch Winder</i>
+  <h3></h3>
 </h1>
 
 <h3 align="center">An inexpensive, modular watch winder, controlled over WiFi, battery (or wall) powered, silent clutch drive, and open source!</h3>
