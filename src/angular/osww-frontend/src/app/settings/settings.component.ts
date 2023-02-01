@@ -8,12 +8,8 @@ import { ApiService, Update } from '../api.service';
 })
 export class SettingsComponent implements OnInit {
 
-  /**
-   * Winder status:
-   * -- Winding
-   * -- Not Configured
-   * -- Paused
-   */
+  wifiSignalIcon = ''
+  batteryStrength = '';
   
   upload = {
     activityState: '',
@@ -34,7 +30,16 @@ export class SettingsComponent implements OnInit {
       this.upload.activityState = data.status;
       this.upload.rpd = data.rotationsPerDay;
       this.upload.direction = data.direction;
+      this.wifiSignalIcon = this.getWifiSignalStrengthIcon(data.db *= -1);
+      this.batteryStrength = this.getBatteryStrengthIcon(data.batteryLevel);  // @todo - add battery data
+
+      console.log(this.wifiSignalIcon)
     })
+  }
+
+
+  setRotationsPerDay(rpd: any) {
+    this.upload.rpd = rpd.value
   }
 
   getColour(status: string): string {
@@ -50,18 +55,47 @@ export class SettingsComponent implements OnInit {
     }
   }
 
-  setRotationsPerDay(rpd: any) {
-    this.upload.rpd = rpd.value
+  getWifiSignalStrengthIcon(db: number) {
+    if (db <= 30) {
+      return 'wifi';
+    }
+    if (db >= 31 && db <= 60) {
+      return 'wifi_2_bar';
+    }
+    if(db >= 61 && db <= 90) {
+      return 'wifi_2_bar';
+    }
+    if( db >= 91 && db <= 120) {
+      return 'wifi_1_bar';
+    }
+    return 'wifi_off';
   }
+
+  getBatteryStrengthIcon(db: any) {
+    if (db <= 30) {
+      return 'battery_4_bar';
+    }
+    if (db >= 31 && db <= 60) {
+      return 'battery_4_bar';
+      }
+    if(db >= 61 && db <= 90) {
+      return 'battery_2_bar';
+    }
+    if( db >= 91 && db <= 120) {
+      return 'battery_0_bar';
+    }
+    return 'battery_unknown';
+  }
+
 
   getReadableDirectionOfRotation(direction: string): string {
     switch (direction) {
       case 'CW':
         return 'Clockwise';
       case 'CCW':
-        return 'Counter-clockwise';
+        return 'Counter-Clockwise';
       case 'BOTH':
-        return 'Clockwise & Counter-Clockwise';
+        return 'Both';
       default:
         return 'Clockwise';
     }

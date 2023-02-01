@@ -9,6 +9,8 @@ export interface Update {
 }
 
 export interface Status {
+  batteryLevel: any;
+  db: number;
   status: string;
   rotationsPerDay: number;
   direction: string;

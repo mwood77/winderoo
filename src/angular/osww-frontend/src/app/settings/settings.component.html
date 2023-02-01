@@ -2,12 +2,17 @@
     <div class="col col-lg-6 col-md-9">
       
         <mat-card class="mat-elevation-z1" [ngClass]="getColour(this.upload.activityState)">
-            <div>
-                Status
-                <div class="status-text col-8 d-flex justify-content-end">
-                    {{ upload.activityState }}
+                <div>
+                    <span>Status</span>
+                    <div class="status-text col-8 d-flex justify-content-end">
+                        {{ upload.activityState }}
+                    </div>
                 </div>
-            </div>
+                <span class="status-card-spacer"></span>
+                <mat-icon style="margin-right: 0.5rem">{{ this.wifiSignalIcon }}</mat-icon>
+                <mat-icon>{{ this.batteryStrength }}</mat-icon>
+
+
         </mat-card>
 
         <mat-card class="mat-elevation-z1">

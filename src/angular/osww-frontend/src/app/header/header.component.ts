@@ -9,9 +9,9 @@ import { ApiService } from '../api.service';
 })
 export class HeaderComponent implements OnInit {
 
-  resetting = false;
 
-  constructor(private apiService: ApiService, private dialog: MatDialog) { }
+
+  constructor(private dialog: MatDialog) { }
 
   ngOnInit(): void {}
 
@@ -22,17 +22,23 @@ export class HeaderComponent implements OnInit {
   }
 
   reset() {
-    this.resetting = true;
     this.openDialog();
-    this.apiService.resetDevice().subscribe();
   }
-
+  
 }
 
 @Component({
   selector: 'app-header-dialog',
   templateUrl: './header-dialog.component.html',
+  styleUrls: ['./header-dialog.component.scss']
 })
 export class DialogAnimationsExampleDialog {
-  constructor(public dialogRef: MatDialogRef<DialogAnimationsExampleDialog>) {}
+
+  constructor(public dialogRef: MatDialogRef<DialogAnimationsExampleDialog>, 
+    private apiService: ApiService) {}
+  
+  confirmReset() {
+    this.apiService.resetDevice().subscribe();
+  }
+
 }

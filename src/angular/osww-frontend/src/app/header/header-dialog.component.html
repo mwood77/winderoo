@@ -1,6 +1,11 @@
-<h1 mat-dialog-title>Winderoo is resetting</h1>
+<h1 mat-dialog-title>  
+  <button mat-stroked-button aria-label="Reset winder" class="pure-css-button" (click)="confirmReset()">
+    TAP HERE TO CONFIRM RESET
+  </button>
+</h1>
 <hr>
 <div mat-dialog-content>
+
   <h2>Resetting takes 20 seconds:</h2>
   <ul><li>
     Reset is complete when the second LED stops blinking, then turns solid.

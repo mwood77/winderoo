@@ -6,6 +6,10 @@ mat-card {
     margin: 1rem;
 }
 
+.status-card-spacer {
+    flex: 1 1 auto;
+  }
+
 .description-headline {
     margin-bottom: 0;
 }
@@ -13,21 +17,29 @@ mat-card {
 .green {
     color: white;
     background: #52B788;
+    display: flex;
+    align-items: center;
 }
 
 .yellow {
     color: white;
     background: #F0A202;
+    display: flex;
+    align-items: center;
 }
 
 .red {
     color: white;
     background: #BB0A21;
+    display: flex;
+    align-items: center;
 }
 
 .no-status {
     color: white;
     background: #424242;
+    display: flex;
+    align-items: center;
 }
 
 .status-text {

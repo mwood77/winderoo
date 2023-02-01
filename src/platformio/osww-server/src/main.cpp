@@ -87,11 +87,16 @@ void startWebserver() {
   });
 
   server.on("/api/status", HTTP_GET, [](AsyncWebServerRequest *request) {
+
+    Serial.println(WiFi.RSSI());
+
     AsyncResponseStream *response = request->beginResponseStream("application/json");
       DynamicJsonDocument json(1024);
       json["status"] = status;
       json["rotationsPerDay"] = rotationsPerDay;
       json["direction"] = direction;
+      json["db"] = WiFi.RSSI();
+      json["batteryLevel"] = 0;   // @todo - get battery level
       serializeJson(json, *response);
       request->send(response);
   });
@@ -184,7 +189,12 @@ void setup() {
     }
     else {
         Serial.println("WiFi Config Portal running");
-          digitalWrite(LED_BUILTIN, HIGH);
+        digitalWrite(LED_BUILTIN, HIGH);
+        startWebserver();
+        if (!MDNS.begin("winderoo")) {
+          Serial.println("Failed to start mDNS");
+        }
+        Serial.println("mDNS started");
     }
 }
  
