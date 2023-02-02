@@ -15,10 +15,12 @@ WiFiManager wm;
 AsyncWebServer server(80);
 
 bool reset = false;
+String timeURL = "http://worldtimeapi.org/api/ip";
 
+String settingsFile = "/settings.txt";
 String status = "";
-String rotationsPerDay = "460";
-String direction = "CW";
+String rotationsPerDay = "";
+String direction = "";
 
 String getFullMemoryUsage() {
   String usage = "Total heap: ";
@@ -32,30 +34,50 @@ String getFullMemoryUsage() {
   return usage;
 }
 
+
+// For prioritizing winding time
 String getTime() {
+  http.begin(client, timeURL);
+  int httpCode = http.GET();
+
+  String time = "";
+
+  if (httpCode > 0) {
+    DynamicJsonDocument doc(2048);
+    deserializeJson(doc, http.getStream());
+    const char* datetime = doc["datetime"];
+    String time = String(time + datetime);         // "2023-01-30T17:16:39.560102+01:00"
+    return time;
+  }
+
+  http.end();
+  return time;
+}
+
+String getTextFormatedTime() {
   // Query dateTime based upon IP
-  http.begin(client, "http://worldtimeapi.org/api/ip");
+  http.begin(client, timeURL);
   int httpCode = http.GET();
 
   String usage = "Winderoo is live!";
 
   if (httpCode > 0) {
-      DynamicJsonDocument doc(2048);
-      deserializeJson(doc, http.getStream());
-      
-      const char* datetime = doc["datetime"];
-      const char* timezone = doc["timezone"];
+    DynamicJsonDocument doc(2048);
+    deserializeJson(doc, http.getStream());
+    
+    const char* datetime = doc["datetime"];
+    const char* timezone = doc["timezone"];
 
-      usage = String(usage + "\n\nThe time is:\n- ");
-      usage = String(usage + datetime);                 // "2023-01-30T17:16:39.560102+01:00"
-      usage = String(usage + "\n\nTimezone:\n- ");
-      usage = String(usage + timezone);                 // "Europe/Amsterdam"
-      
-      return usage;
-    }
-
-    http.end();
+    usage = String(usage + "\n\nThe time is:\n- ");
+    usage = String(usage + datetime);
+    usage = String(usage + "\n\nTimezone:\n- ");
+    usage = String(usage + timezone);
+    
     return usage;
+  }
+
+  http.end();
+  return usage;
 }
 
 void notFound(AsyncWebServerRequest *request) {
@@ -68,58 +90,105 @@ void notFound(AsyncWebServerRequest *request) {
   }
 }
 
-void handleBody(AsyncWebServerRequest *request, uint8_t *data, size_t len, size_t index, size_t total){
-  if(!index){
-    Serial.printf("BodyStart: %u B\n", total);
+String loadConfigVarsFromFile(String file_name) {
+  String result = "";
+  
+  File this_file = LittleFS.open(file_name, "r");
+
+  if (!this_file) {
+    Serial.println("==> Failed to open configuration file, returning empty result");
+    return result;
   }
-  for(size_t i=0; i<len; i++){
-    Serial.write(data[i]);
+  while (this_file.available()) {
+      result += (char)this_file.read();
   }
-  if(index + len == total){
-    Serial.printf("BodyEnd: %u B\n", total);
-  }
+  
+  this_file.close();
+  return result;
 }
+
+bool writeConfigVarsToFile(String file_name, String contents) {
+  File this_file = LittleFS.open(file_name, "w");
+  
+  if (!this_file) {
+    Serial.println("==> Failed to open configuration file");
+    return false;
+  }
+
+  int bytesWritten = this_file.print(contents);
+
+  if (bytesWritten == 0) {
+      Serial.println("==> Failed to write to configuration file");
+      return false;
+  }
+   
+  this_file.close();
+  return true;
+}
+
+void parseSettings(String settings) {
+  String savedStatus = settings.substring(0, 7);     // Winding || Stopped = 7char
+  String savedTPD = settings.substring(8, 11);       // min = 100 || max = 960
+  String savedDirection = settings.substring(12);    // CW || CCW || BOTH
+
+  status = savedStatus;
+  rotationsPerDay = savedTPD;
+  direction = savedDirection;
+}
+
 
 void startWebserver() { 
 
   server.on("/api/time", HTTP_GET, [](AsyncWebServerRequest *request) {
-    request->send(200, "text/plain", getTime());
+    request->send(200, "text/plain", getTextFormatedTime());
   });
 
   server.on("/api/status", HTTP_GET, [](AsyncWebServerRequest *request) {
-
-    Serial.println(WiFi.RSSI());
-
     AsyncResponseStream *response = request->beginResponseStream("application/json");
-      DynamicJsonDocument json(1024);
-      json["status"] = status;
-      json["rotationsPerDay"] = rotationsPerDay;
-      json["direction"] = direction;
-      json["db"] = WiFi.RSSI();
-      json["batteryLevel"] = 0;   // @todo - get battery level
-      serializeJson(json, *response);
-      request->send(response);
+    DynamicJsonDocument json(1024);
+    json["status"] = status;
+    json["rotationsPerDay"] = rotationsPerDay;
+    json["direction"] = direction;
+    json["db"] = WiFi.RSSI();
+    json["batteryLevel"] = 0;   // @todo - get battery level
+    serializeJson(json, *response);
+
+    request->send(response);
   });
 
   server.on("/api/update", HTTP_POST, [](AsyncWebServerRequest *request) {
-      int params = request->params();
-      for ( int i = 0; i < params; i++ ) {
-        AsyncWebParameter* p = request->getParam(i);
-        Serial.printf("GET[%s]: %s\n", p->name().c_str(), p->value().c_str());
-          if( strcmp(p->name().c_str(), "action") == 0) {
-            if ( strcmp(p->value().c_str(), "START") == 0 ) {
-              status = "Winding";
-            } else {
-              status = "Stopped";
-            }
-          } 
-          if( strcmp(p->name().c_str(), "rotationDirection") == 0 ) {
-            direction = p->value().c_str();
+    int params = request->params();
+    
+    for ( int i = 0; i < params; i++ ) {
+      AsyncWebParameter* p = request->getParam(i);
+      Serial.printf("RECEIVED[%s]: %s\n", p->name().c_str(), p->value().c_str());
+
+        if( strcmp(p->name().c_str(), "action") == 0) {
+          if ( strcmp(p->value().c_str(), "START") == 0 ) {
+            status = "Winding";
+          } else {
+            status = "Stopped";
           }
-          if( strcmp(p->name().c_str(), "tpd") == 0 ) {
-            rotationsPerDay = p->value().c_str();
-          }
-        request->send(204);
+        } 
+    
+        if( strcmp(p->name().c_str(), "rotationDirection") == 0 ) {
+          direction = p->value().c_str();
+        }
+    
+        if( strcmp(p->name().c_str(), "tpd") == 0 ) {
+          rotationsPerDay = p->value().c_str();
+        }
+
+      String configs = status + "," + rotationsPerDay + "," + direction;
+
+      bool writeSuccess = writeConfigVarsToFile(settingsFile, configs);
+
+      if ( !writeSuccess ) {
+        request->send(500);
+      }
+    
+
+      request->send(204);
   }});
 
   server.on("/api/reset", HTTP_GET, [](AsyncWebServerRequest *request) {
@@ -151,51 +220,46 @@ void startWebserver() {
   server.begin();
 }
 
-
 // Initialize File System
 void initFS() {
   if (!LittleFS.begin(true)) {
     Serial.println("An error has occurred while mounting LittleFS");
   }
-
   Serial.println("LittleFS mounted successfully");
 }
 
-
  
 void setup() {
-    WiFi.mode(WIFI_STA);
-    Serial.begin(115200);
+  WiFi.mode(WIFI_STA);
+  Serial.begin(115200);
+  pinMode (LED_BUILTIN, OUTPUT);
 
-    pinMode (LED_BUILTIN, OUTPUT);
-    status = "Stopped";
-    
-    wm.setDarkMode(true);
-    wm.setConfigPortalBlocking(false);
-    wm.setDebugOutput(true);
-    wm.setHostname("Winderoo");
-    
-    //automatically connect using saved credentials if they exist
-    //If connection fails it starts an access point with the specified name
-    if(wm.autoConnect("Winderoo Setup")) {
-        initFS();
-        Serial.println("connected to saved network");
-        if (!MDNS.begin("winderoo")) {
-          Serial.println("Failed to start mDNS");
-        }
-        Serial.println("mDNS started");
+  // WiFi Manager config    
+  wm.setDarkMode(true);
+  wm.setConfigPortalBlocking(false);
+  wm.setDebugOutput(true);
+  wm.setHostname("Winderoo");
+  
+  //automatically connect using saved credentials if they exist
+  //If connection fails it starts an access point with the specified name
+  if (wm.autoConnect("Winderoo Setup")) {
+    initFS();
+    Serial.println("connected to saved network");
 
-        startWebserver();
+    // retrieve & read saved settings
+    String savedSettings = loadConfigVarsFromFile(settingsFile);
+    parseSettings(savedSettings);
+    
+    if (!MDNS.begin("winderoo")) {
+      Serial.println("Failed to start mDNS");
     }
-    else {
-        Serial.println("WiFi Config Portal running");
-        digitalWrite(LED_BUILTIN, HIGH);
-        startWebserver();
-        if (!MDNS.begin("winderoo")) {
-          Serial.println("Failed to start mDNS");
-        }
-        Serial.println("mDNS started");
-    }
+    Serial.println("mDNS started");
+
+    startWebserver();
+  } else {
+    Serial.println("WiFi Config Portal running");
+    digitalWrite(LED_BUILTIN, HIGH);
+  };
 }
  
 void loop() {

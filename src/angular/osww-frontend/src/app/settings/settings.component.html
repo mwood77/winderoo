@@ -5,7 +5,7 @@
                 <div>
                     <span>Status</span>
                     <div class="status-text col-8 d-flex justify-content-end">
-                        {{ upload.activityState }}
+                        {{ this.upload.activityState }}
                     </div>
                 </div>
                 <span class="status-card-spacer"></span>
@@ -50,7 +50,7 @@
                 Rotations Per Day
                 </div>
                 <div class="individual-status-text">{{ this.upload.rpd }}</div>
-                <mat-slider value="{{ this.upload.rpd }}" min="0" max="960" step="20" discrete (input)="setRotationsPerDay($event)">
+                <mat-slider value="{{ this.upload.rpd }}" min="100" max="960" step="20" discrete (input)="setRotationsPerDay($event)">
                     <input matSliderThumb [(ngModel)]="this.upload.rpd">
                 </mat-slider>
             </div>

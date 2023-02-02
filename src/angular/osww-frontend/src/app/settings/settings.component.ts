@@ -32,8 +32,6 @@ export class SettingsComponent implements OnInit {
       this.upload.direction = data.direction;
       this.wifiSignalIcon = this.getWifiSignalStrengthIcon(data.db *= -1);
       this.batteryStrength = this.getBatteryStrengthIcon(data.batteryLevel);  // @todo - add battery data
-
-      console.log(this.wifiSignalIcon)
     })
   }
 
@@ -87,7 +85,6 @@ export class SettingsComponent implements OnInit {
     return 'battery_unknown';
   }
 
-
   getReadableDirectionOfRotation(direction: string): string {
     switch (direction) {
       case 'CW':
@@ -101,6 +98,17 @@ export class SettingsComponent implements OnInit {
     }
   }
 
+  getActivityStateForAPI(activityState: string): string {
+    switch (activityState) {
+      case 'Winding':
+        return 'START';
+      case 'Stopped':
+        return 'STOP';
+      default:
+        return 'STOP';
+    }
+  }
+
   openSite(URL: string) {
     window.open(URL, '_blank');
   }
@@ -110,7 +118,7 @@ export class SettingsComponent implements OnInit {
     this.upload.disabled = true;
 
     const body: Update = {
-      action: actionToDo ? actionToDo : 'START',
+      action: actionToDo ? actionToDo : this.getActivityStateForAPI(this.upload.activityState),
       rotationDirection: this.upload.direction,
       tpd: this.upload.rpd,
     }
