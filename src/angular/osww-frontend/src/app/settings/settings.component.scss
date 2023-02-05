@@ -30,7 +30,7 @@ mat-card {
 
 .red {
     color: white;
-    background: #BB0A21;
+    background: #f44336;
     display: flex;
     align-items: center;
 }
@@ -48,13 +48,16 @@ mat-card {
 }
 
 .individual-status-text {
+    display: flex;
+    justify-content: center;
     font-size: 2em;
     margin-top: 1rem;
     margin-bottom: 1rem;
 }
 
-.individual-status-text {
+.time-input {
     display: flex;
+    flex-wrap: wrap;
     justify-content: center;
 }
 

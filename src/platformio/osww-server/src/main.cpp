@@ -4,23 +4,37 @@
 #include <ArduinoJson.h>
 #include <HTTPClient.h>
 #include <ESPmDNS.h>
+#include <ESP32Time.h>
 
 #include "FS.h"
 #include "ESPAsyncWebServer.h"
 
 HTTPClient http;
 WiFiClient client;
+ESP32Time rtc;
 
 WiFiManager wm;
 AsyncWebServer server(80);
 
 bool reset = false;
+bool routineRunning = false;
+bool delayed = false;
 String timeURL = "http://worldtimeapi.org/api/ip";
+
+int durationInSecondsToCompleteOneRevolution = 8;
 
 String settingsFile = "/settings.txt";
 String status = "";
 String rotationsPerDay = "";
 String direction = "";
+String hour = "00";
+String minutes = "00";
+
+unsigned long rtc_offset;
+unsigned long rtc_epoch;
+unsigned long estimatedRoutineFinishEpoch;
+unsigned long previousEpoch;
+
 
 String getFullMemoryUsage() {
   String usage = "Total heap: ";
@@ -34,50 +48,57 @@ String getFullMemoryUsage() {
   return usage;
 }
 
+unsigned long calculateWindingTime() {
+  int tpd = atoi(rotationsPerDay.c_str());
 
-// For prioritizing winding time
-String getTime() {
-  http.begin(client, timeURL);
-  int httpCode = http.GET();
+  long routineWindingDuration = 0;
+  long totalSecondsSpentTurning = tpd * durationInSecondsToCompleteOneRevolution;
+  
+  // We want to rest every 3 minutes for 15 seconds
+  long totalNumberOfRestingPeriods = totalSecondsSpentTurning / 180;
+  long totalRestDuration = totalNumberOfRestingPeriods * 180;
 
-  String time = "";
+  long finalRoutineDuration = totalRestDuration + totalSecondsSpentTurning;
 
-  if (httpCode > 0) {
-    DynamicJsonDocument doc(2048);
-    deserializeJson(doc, http.getStream());
-    const char* datetime = doc["datetime"];
-    String time = String(time + datetime);         // "2023-01-30T17:16:39.560102+01:00"
-    return time;
-  }
+  Serial.print("[STATUS] - Total winding duration: ");
+  Serial.println(finalRoutineDuration);
 
-  http.end();
-  return time;
+  // compute 'finish time'
+  unsigned long epoch = rtc.getEpoch();
+  unsigned long estimatedFinishTime = epoch + finalRoutineDuration;
+
+  return estimatedFinishTime;
 }
 
-String getTextFormatedTime() {
-  // Query dateTime based upon IP
+void beginWindingRoutine() {
+  routineRunning = true;
+  status = "Winding";
+  previousEpoch = 181;
+  Serial.println("[STATUS] - Begin winding routine");
+
+  unsigned long finishTime = calculateWindingTime();
+  estimatedRoutineFinishEpoch = finishTime;
+
+  Serial.print("[STATUS] - Estimated finish time: ");
+  Serial.println(finishTime);
+}
+
+// For prioritizing winding time
+void getTime() {
   http.begin(client, timeURL);
   int httpCode = http.GET();
-
-  String usage = "Winderoo is live!";
 
   if (httpCode > 0) {
     DynamicJsonDocument doc(2048);
     deserializeJson(doc, http.getStream());
-    
-    const char* datetime = doc["datetime"];
-    const char* timezone = doc["timezone"];
+    const unsigned long epoch = doc["unixtime"];
+    const unsigned long offset = doc["raw_offset"];
 
-    usage = String(usage + "\n\nThe time is:\n- ");
-    usage = String(usage + datetime);
-    usage = String(usage + "\n\nTimezone:\n- ");
-    usage = String(usage + timezone);
-    
-    return usage;
+    rtc.offset = offset;
+    rtc.setTime(epoch);
   }
 
   http.end();
-  return usage;
 }
 
 void notFound(AsyncWebServerRequest *request) {
@@ -127,21 +148,21 @@ bool writeConfigVarsToFile(String file_name, String contents) {
 }
 
 void parseSettings(String settings) {
-  String savedStatus = settings.substring(0, 7);     // Winding || Stopped = 7char
-  String savedTPD = settings.substring(8, 11);       // min = 100 || max = 960
-  String savedDirection = settings.substring(12);    // CW || CCW || BOTH
+  String savedStatus = settings.substring(0, 7);    // Winding || Stopped = 7char
+  String savedTPD = settings.substring(8, 11);      // min = 100 || max = 960
+  String savedHour = settings.substring(12, 14);    // 00
+  String savedMinutes = settings.substring(15, 17); // 00
+  String savedDirection = settings.substring(18);   // CW || CCW || BOTH
 
   status = savedStatus;
   rotationsPerDay = savedTPD;
+  hour = savedHour;
+  minutes = savedMinutes;
   direction = savedDirection;
 }
 
 
 void startWebserver() { 
-
-  server.on("/api/time", HTTP_GET, [](AsyncWebServerRequest *request) {
-    request->send(200, "text/plain", getTextFormatedTime());
-  });
 
   server.on("/api/status", HTTP_GET, [](AsyncWebServerRequest *request) {
     AsyncResponseStream *response = request->beginResponseStream("application/json");
@@ -149,11 +170,16 @@ void startWebserver() {
     json["status"] = status;
     json["rotationsPerDay"] = rotationsPerDay;
     json["direction"] = direction;
+    json["hour"] = hour;
+    json["minutes"] = minutes;
     json["db"] = WiFi.RSSI();
     json["batteryLevel"] = 0;   // @todo - get battery level
     serializeJson(json, *response);
 
     request->send(response);
+
+    // Update RTC time ref
+    getTime();
   });
 
   server.on("/api/update", HTTP_POST, [](AsyncWebServerRequest *request) {
@@ -168,6 +194,7 @@ void startWebserver() {
             status = "Winding";
           } else {
             status = "Stopped";
+            routineRunning = false;
           }
         } 
     
@@ -179,17 +206,27 @@ void startWebserver() {
           rotationsPerDay = p->value().c_str();
         }
 
-      String configs = status + "," + rotationsPerDay + "," + direction;
+        if( strcmp(p->name().c_str(), "hour") == 0 ) {
+          hour = p->value().c_str();
+        }
 
-      bool writeSuccess = writeConfigVarsToFile(settingsFile, configs);
+        if( strcmp(p->name().c_str(), "minutes") == 0 ) {
+          minutes = p->value().c_str();
+        }
 
-      if ( !writeSuccess ) {
-        request->send(500);
-      }
-    
+      
+    }
+    String configs = status + "," + rotationsPerDay + "," + hour + "," + minutes + "," + direction;
 
-      request->send(204);
-  }});
+    bool writeSuccess = writeConfigVarsToFile(settingsFile, configs);
+
+    if ( !writeSuccess ) {
+      request->send(500);
+    }
+
+    request->send(204);
+    if (status == "Winding") beginWindingRoutine();
+  });
 
   server.on("/api/reset", HTTP_GET, [](AsyncWebServerRequest *request) {
     Serial.println("[STATUS] - Received reset command");
@@ -238,8 +275,8 @@ void saveWifiCallback() {
     delay(500);
   }
   ESP.restart();
+  delay(2000);
 }
-
  
 void setup() {
   WiFi.mode(WIFI_STA);
@@ -268,7 +305,12 @@ void setup() {
     }
     Serial.println("[STATUS] - mDNS started");
 
+    getTime();
     startWebserver();
+
+    if (strcmp(status.c_str(), "Winding") == 0) {
+      beginWindingRoutine();
+    }
   } else {
     Serial.println("[STATUS] - WiFi Config Portal running");
     digitalWrite(LED_BUILTIN, HIGH);
@@ -276,6 +318,7 @@ void setup() {
 }
  
 void loop() {
+
   if (reset) {
     for ( int i = 0; i < 40; i++ ) {
       digitalWrite(LED_BUILTIN, HIGH);
@@ -298,5 +341,40 @@ void loop() {
     delay(2000);
   }
 
+  if (rtc.getHour(true) == hour.toInt() && rtc.getMinute() == minutes.toInt() && !routineRunning) {
+    beginWindingRoutine();
+  }
+
+  if (routineRunning) {
+    unsigned long currentTime = rtc.getEpoch();
+    
+    if (rtc.getEpoch() < estimatedRoutineFinishEpoch) {
+
+      // turn motor in direction
+      Serial.println("[STATUS] - Motor rotating in direction: " + direction);
+      int r = rand() % 100;
+
+      Serial.print("[STATUS] - time difference: ");
+      Serial.println(currentTime- previousEpoch);
+
+      if (r <= 25) {
+        if ((strcmp(direction.c_str(), "BOTH") == 0) && (currentTime - previousEpoch) > 180) {
+          previousEpoch = currentTime;
+          Serial.println("[STATUS] - Motor rotating in (opposite) direction: " + direction);
+        } 
+        
+        if ((currentTime - previousEpoch) > 180 && !delayed) {
+          previousEpoch = currentTime;
+          // Pause operation
+          Serial.println("[STATUS] - Pause");
+          delayed = true;
+          delay(15000);
+          delayed = false;
+        }
+      }
+    }
+  }
+  
   wm.process();
+  delay(1000);
 }

@@ -1,27 +1,22 @@
-# OswwFrontend
+# OSWW-Frontend (Winderoo)
 
-This project was generated with [Angular CLI](https://github.com/angular/angular-cli) version 14.2.9.
+## Setup
+
+1. [Get NodeJS](https://nodejs.org/en/download/)
+1. [Get the Angular CLI](https://angular.io/guide/setup-local#install-the-angular-cli)
+1. Navigate to the following directory, `src/angular/osww-frontend/`, in your terminal / shell.
+1. Run `npm i`
+1. Proceed to **Development server**
 
 ## Development server
 
-Run `ng serve` for a dev server. Navigate to `http://localhost:4200/`. The application will automatically reload if you change any of the source files.
-
-## Code scaffolding
-
-Run `ng generate component component-name` to generate a new component. You can also use `ng generate directive|pipe|service|class|guard|interface|enum|module`.
+1. Run `npm run serve` from this location (`src/angular/osww-frontend/`) & navigate to `http://localhost:4200/` in your browser. You'll see the application.
+    - ⚠️ You'll need Winderoo's API running (on hardware, on your network) to interact with. 
+    - See [this README](../../../docs/install-software.md) for instructions on how to run the API on hardware.
+1. Happy hacking 
 
 ## Build
 
-Run `ng build` to build the project. The build artifacts will be stored in the `dist/` directory.
-
-## Running unit tests
-
-Run `ng test` to execute the unit tests via [Karma](https://karma-runner.github.io).
-
-## Running end-to-end tests
-
-Run `ng e2e` to execute the end-to-end tests via a platform of your choice. To use this command, you need to first add a package that implements end-to-end testing capabilities.
-
-## Further help
-
-To get more help on the Angular CLI use `ng help` or go check out the [Angular CLI Overview and Command Reference](https://angular.io/cli) page.
+1. Run `npm run build-arduino` to build the project. 
+1. The build artifacts will be generated in the `dist/` directory.
+1. The build artifacts will then be `gzip`'d and copied to `../../../data/` directory.

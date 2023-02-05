@@ -6,6 +6,8 @@ export interface Update {
   action: string
   rotationDirection: string,
   tpd: number,
+  hour: string;
+  minutes: string;
 }
 
 export interface Status {
@@ -14,6 +16,8 @@ export interface Status {
   status: string;
   rotationsPerDay: number;
   direction: string;
+  hour: string;
+  minutes: string;
 }
 
 @Injectable({
@@ -33,7 +37,9 @@ export class ApiService {
     const constructedURL = this.URL 
       + 'update?action=' + update.action + '&'
       + 'rotationDirection=' + update.rotationDirection +'&'
-      + 'tpd=' + update.tpd;
+      + 'tpd=' + update.tpd +'&'
+      + 'hour=' + update.hour +'&'
+      + 'minutes=' + update.minutes;
     return this.http.post(constructedURL, null, { observe: 'response' });
   }
 

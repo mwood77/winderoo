@@ -5,7 +5,7 @@
                 <div>
                     <span>Status</span>
                     <div class="status-text col-8 d-flex justify-content-end">
-                        {{ this.upload.activityState }}
+                        {{this.upload.activityState }}
                     </div>
                 </div>
                 <span class="status-card-spacer"></span>
@@ -60,6 +60,38 @@
                     <a target="_blank" mat-stroked-button (click)="openSite(watchWindingParametersURL)">
                         Find your watch's winding parameters
                     </a>
+                </div>
+            </div>
+        </mat-card>
+
+        <mat-card class="mat-elevation-z1">
+            <div class="individual-setting">
+                <div>
+                    Programmed Start Time
+                </div>
+                <div class="individual-status-text">
+                    {{ this.upload.hour }}:{{ this.upload.minutes }}
+                </div>
+
+                <div class="time-input">
+                    <mat-form-field color="accent" appearance="outline">
+                        <mat-label>Hour</mat-label>
+                        <select matNativeControl [(ngModel)]="selectedHour" name="hour">
+                            <option value="" selected></option>
+                            <option *ngFor="let hr of hours" [value]="hr.value">
+                              {{ hr.value }}
+                            </option>
+                          </select>
+                    </mat-form-field>
+                    <mat-form-field color="accent" appearance="outline">
+                        <mat-label>Minutes</mat-label>
+                        <select matNativeControl [(ngModel)]="selectedMinutes" name="minutes">
+                            <option value="" selected></option>
+                            <option *ngFor="let mn of minutes" [value]="mn.value">
+                              {{ mn.value }}
+                            </option>
+                          </select>
+                    </mat-form-field>
                 </div>
             </div>
         </mat-card>
