@@ -96,7 +96,7 @@ String loadConfigVarsFromFile(String file_name) {
   File this_file = LittleFS.open(file_name, "r");
 
   if (!this_file) {
-    Serial.println("==> Failed to open configuration file, returning empty result");
+    Serial.println("[STATUS] - Failed to open configuration file, returning empty result");
     return result;
   }
   while (this_file.available()) {
@@ -111,14 +111,14 @@ bool writeConfigVarsToFile(String file_name, String contents) {
   File this_file = LittleFS.open(file_name, "w");
   
   if (!this_file) {
-    Serial.println("==> Failed to open configuration file");
+    Serial.println("[STATUS] - Failed to open configuration file");
     return false;
   }
 
   int bytesWritten = this_file.print(contents);
 
   if (bytesWritten == 0) {
-      Serial.println("==> Failed to write to configuration file");
+      Serial.println("[STATUS] - Failed to write to configuration file");
       return false;
   }
    
@@ -192,6 +192,7 @@ void startWebserver() {
   }});
 
   server.on("/api/reset", HTTP_GET, [](AsyncWebServerRequest *request) {
+    Serial.println("[STATUS] - Received reset command");
     AsyncResponseStream *response = request->beginResponseStream("application/json");
     DynamicJsonDocument json(1024);
     json["status"] = "Resetting";
@@ -223,9 +224,20 @@ void startWebserver() {
 // Initialize File System
 void initFS() {
   if (!LittleFS.begin(true)) {
-    Serial.println("An error has occurred while mounting LittleFS");
+    Serial.println("[STATUS] - An error has occurred while mounting LittleFS");
   }
-  Serial.println("LittleFS mounted successfully");
+  Serial.println("[STATUS] - LittleFS mounted");
+}
+
+void saveWifiCallback() {
+  // Slow blink to confirm success & restart
+  for ( int i = 0; i < 6; i++ ) {
+    digitalWrite(LED_BUILTIN, HIGH);
+    delay(500);
+    digitalWrite(LED_BUILTIN, LOW);
+    delay(500);
+  }
+  ESP.restart();
 }
 
  
@@ -235,29 +247,30 @@ void setup() {
   pinMode (LED_BUILTIN, OUTPUT);
 
   // WiFi Manager config    
+  wm.setConfigPortalTimeout(60);
   wm.setDarkMode(true);
   wm.setConfigPortalBlocking(false);
-  wm.setDebugOutput(true);
   wm.setHostname("Winderoo");
+  wm.setSaveConfigCallback(saveWifiCallback);
   
-  //automatically connect using saved credentials if they exist
-  //If connection fails it starts an access point with the specified name
+  // Connect using saved credentials, if they exist
+  // If connection fails, start setup Access Point
   if (wm.autoConnect("Winderoo Setup")) {
     initFS();
-    Serial.println("connected to saved network");
+    Serial.println("[STATUS] - connected to saved network");
 
     // retrieve & read saved settings
     String savedSettings = loadConfigVarsFromFile(settingsFile);
     parseSettings(savedSettings);
     
     if (!MDNS.begin("winderoo")) {
-      Serial.println("Failed to start mDNS");
+      Serial.println("[STATUS] - Failed to start mDNS");
     }
-    Serial.println("mDNS started");
+    Serial.println("[STATUS] - mDNS started");
 
     startWebserver();
   } else {
-    Serial.println("WiFi Config Portal running");
+    Serial.println("[STATUS] - WiFi Config Portal running");
     digitalWrite(LED_BUILTIN, HIGH);
   };
 }
@@ -271,16 +284,16 @@ void loop() {
       delay(100);
     }
 
-    Serial.println("Stopping webserver");
+    Serial.println("[STATUS] - Stopping webserver");
     server.end();
     delay(600);
-    Serial.println("Stopping File System");
+    Serial.println("[STATUS] - Stopping File System");
     LittleFS.end();
     delay(200);
-    Serial.println("Resetting Wifi Manager settings");
+    Serial.println("[STATUS] - Resetting Wifi Manager settings");
     wm.resetSettings();
     delay(200);
-    Serial.println("Restart device...");
+    Serial.println("[STATUS] - Restart device...");
     ESP.restart();
     delay(2000);
   }
