@@ -372,6 +372,10 @@ void loop() {
           delayed = false;
         }
       }
+    } else {
+      // Routine has finished
+      status = "Stopped";
+      routineRunning = false;
     }
   }
   
