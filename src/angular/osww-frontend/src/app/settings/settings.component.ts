@@ -72,7 +72,7 @@ export class SettingsComponent implements OnInit {
   ngOnInit(): void {
     this.upload.statusMessage = 'Save Settings'
 
-    this.apiService.getStatus().subscribe((data) => {
+    this.apiService.getStatus(ApiService.getWindowHref(window)).subscribe((data) => {
       this.upload.activityState = data.status;
       this.upload.rpd = data.rotationsPerDay;
       this.upload.direction = data.direction;
@@ -172,9 +172,9 @@ export class SettingsComponent implements OnInit {
       minutes: this.selectedMinutes == null ? this.upload.minutes : this.selectedMinutes,
     }
 
-    this.apiService.updateState(body).subscribe((response) => {
+    this.apiService.updateState(ApiService.getWindowHref(window), body).subscribe((response) => {
       if (response.status == 204) {
-        this.apiService.getStatus().subscribe((data) => {
+        this.apiService.getStatus(ApiService.getWindowHref(window)).subscribe((data) => {
           this.upload.activityState = data.status;
           this.upload.rpd = data.rotationsPerDay;
           this.upload.direction = data.direction;
@@ -187,11 +187,11 @@ export class SettingsComponent implements OnInit {
     });
   }
 
-  beginProgramming() {
+  beginProgramming(): void {
     this.uploadSettings('START');
   }
 
-  stopProgramming() {
+  stopProgramming(): void {
     this.uploadSettings('STOP');
   }
 

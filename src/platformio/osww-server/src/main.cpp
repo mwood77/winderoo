@@ -376,6 +376,7 @@ void loop() {
       // Routine has finished
       status = "Stopped";
       routineRunning = false;
+      Serial.println("[STATUS] - Winding complete!");
     }
   }
   

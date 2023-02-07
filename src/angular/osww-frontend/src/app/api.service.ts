@@ -1,4 +1,4 @@
-import { HttpClient, HttpParams } from '@angular/common/http';
+import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 
 
@@ -25,16 +25,41 @@ export interface Status {
 })
 export class ApiService {
 
-  URL = 'http://winderoo.local/api/';
+  DEFUALT_URL = 'http://winderoo.local';
 
   constructor(private http: HttpClient) { }
 
-  getStatus() {
-    return this.http.get<Status>(this.URL + 'status');
+  static getWindowHref(_window: typeof window): string {
+      if (_window.location.href.includes('192')) {
+        
+        // remove single trailing '/' from ip
+        const sanitizedHref = 
+          _window.location.href.substring(_window.location.href.length - 1) === '/' ?
+          _window.location.href.substring(0, _window.location.href.length - 1) :
+          _window.location.href
+
+      return sanitizedHref;
+    }
+
+    return 'http://winderoo.local';
   }
 
-  updateState(update: Update) {
-    const constructedURL = this.URL 
+  private constructURL(URL: string): string {
+    if (URL != this.DEFUALT_URL) {
+      return URL + "/api/";
+    }
+
+    return this.DEFUALT_URL + '/api/';
+  }
+
+  getStatus(URL: string) {
+    return this.http.get<Status>(this.constructURL(URL) + 'status');
+  }
+
+  updateState(URL: string, update: Update) {
+    const baseURL = this.constructURL(URL);
+
+    const constructedURL = baseURL
       + 'update?action=' + update.action + '&'
       + 'rotationDirection=' + update.rotationDirection +'&'
       + 'tpd=' + update.tpd +'&'
@@ -43,7 +68,7 @@ export class ApiService {
     return this.http.post(constructedURL, null, { observe: 'response' });
   }
 
-  resetDevice() {
-    return this.http.get<any>(this.URL + 'reset');
+  resetDevice(URL: string) {
+    return this.http.get<any>(this.constructURL(URL) + 'reset');
   }
 }

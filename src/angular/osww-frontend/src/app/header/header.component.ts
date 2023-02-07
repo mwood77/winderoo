@@ -38,7 +38,7 @@ export class DialogAnimationsExampleDialog {
     private apiService: ApiService) {}
   
   confirmReset() {
-    this.apiService.resetDevice().subscribe();
+    this.apiService.resetDevice(ApiService.getWindowHref(window)).subscribe();
   }
 
 }
