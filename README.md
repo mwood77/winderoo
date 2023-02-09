@@ -1,4 +1,4 @@
-<h2 align="center">
+<h3 align="center">
     <br>
     <img src="./docs/images/winder-running.gif" alt="Winderoo - The Open Source Watch Winder" width="300">
   
@@ -7,10 +7,14 @@
   <br>
   <i align="center">The open source modular watch winder</i>
 
-  <a align="center" href="#llink-goes-here">
+</h3>
+
+<div align="center">
+  <a href="#llink-goes-here">
     <img src="https://img.shields.io/badge/$-join us on discord-7289da.svg?maxAge=2592000&amp;style=flat">
   </a>
-</h2>
+</div>
+
 
 <hr>
 <p align="center">
