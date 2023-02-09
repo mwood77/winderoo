@@ -213,9 +213,8 @@ void startWebserver() {
         if( strcmp(p->name().c_str(), "minutes") == 0 ) {
           minutes = p->value().c_str();
         }
-
-      
     }
+
     String configs = status + "," + rotationsPerDay + "," + hour + "," + minutes + "," + direction;
 
     bool writeSuccess = writeConfigVarsToFile(settingsFile, configs);
