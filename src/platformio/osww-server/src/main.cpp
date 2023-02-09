@@ -302,6 +302,7 @@ void setup() {
     if (!MDNS.begin("winderoo")) {
       Serial.println("[STATUS] - Failed to start mDNS");
     }
+    MDNS.addService("winderoo", "tcp", 80);
     Serial.println("[STATUS] - mDNS started");
 
     getTime();
