@@ -18,7 +18,7 @@ Winderoo is an open source project which that helps you build a multifunction, h
 </p>
 <hr>
 
-## Key Features
+### Key Features
 
 * Controllable over wifi
 * Programmable number of rotations per day (RPD)
@@ -36,7 +36,7 @@ Winderoo is an open source project which that helps you build a multifunction, h
 
 <hr>
 
-## Prerequisites & Build Instructions
+### Prerequisites & Build Instructions
 > [**See the Prerequisites first**](./docs/prereqs.md)
 
 1. [Bill of Materials](./docs/bom-requirements.md)
