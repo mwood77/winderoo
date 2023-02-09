@@ -45,9 +45,10 @@
                 </div>
             </div>
 
+
             <div class="individual-setting">
                 <div class="">
-                Rotations Per Day
+                    Rotations Per Day
                 </div>
                 <div class="individual-status-text">{{ this.upload.rpd }}</div>
                 <mat-slider value="{{ this.upload.rpd }}" min="100" max="960" step="20" discrete (input)="setRotationsPerDay($event)">
@@ -63,11 +64,22 @@
                 </div>
             </div>
         </mat-card>
+        
+        <mat-card class="mat-elevation-z1">
+            <div class="individual-setting">
+                <div>
+                    Estimated Cycle Duration
+                </div>
+                <div class="individual-status-text">
+                    {{ this.estDuration }}
+                </div>
+            </div>
+        </mat-card>
 
         <mat-card class="mat-elevation-z1">
             <div class="individual-setting">
                 <div>
-                    Programmed Start Time
+                    Cycle Start Time
                 </div>
                 <div class="individual-status-text">
                     {{ this.upload.hour }}:{{ this.upload.minutes }}

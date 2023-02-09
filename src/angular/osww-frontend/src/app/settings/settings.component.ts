@@ -1,4 +1,5 @@
 import { Component, OnInit } from '@angular/core';
+import { DateAdapter } from '@angular/material/core';
 import { ApiService, Update } from '../api.service';
 
 interface SelectInterface {
@@ -64,6 +65,7 @@ export class SettingsComponent implements OnInit {
 
   selectedHour: any;
   selectedMinutes: any;
+  estDuration: any;
 
   watchWindingParametersURL = 'https://watch-winder.store/watch-winding-table/';
 
@@ -80,11 +82,14 @@ export class SettingsComponent implements OnInit {
       this.upload.minutes = data.minutes;
       this.wifiSignalIcon = this.getWifiSignalStrengthIcon(data.db *= -1);
       this.batteryStrength = this.getBatteryStrengthIcon(data.batteryLevel);  // @todo - add battery data
+      
+      this.estimateDuration(this.upload.rpd);
     })
   }
 
   setRotationsPerDay(rpd: any) {
     this.upload.rpd = rpd.value
+    this.estimateDuration(this.upload.rpd);
   }
 
   getColour(status: string): string {
@@ -193,6 +198,27 @@ export class SettingsComponent implements OnInit {
 
   stopProgramming(): void {
     this.uploadSettings('STOP');
+  }
+
+  estimateDuration(rpd: any) {
+    const totalSecondsSpentTurning = rpd * 10; // 10 seconds for one rotation (approx)
+    const totalNumberOfRestingPeriods = totalSecondsSpentTurning / 180;
+    const totalRestDuration = totalNumberOfRestingPeriods * 180;
+
+    const finalRoutineDuration = totalRestDuration + totalSecondsSpentTurning;
+
+    const readableDuration = new Date(0,0);
+    readableDuration.setSeconds(finalRoutineDuration);
+    readableDuration.setMinutes(finalRoutineDuration / 60);
+
+    console.log(finalRoutineDuration);
+
+    const hours = readableDuration.toTimeString().slice(0,2);
+    const mins = readableDuration.toTimeString().slice(3,5);
+
+    this.estDuration = 
+      hours < "10" ? `${hours.slice(1,2)} hours ${mins} minutes` :
+    `${hours} hours ${mins} minutes`;
   }
 
 }

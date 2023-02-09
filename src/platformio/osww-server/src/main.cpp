@@ -51,7 +51,6 @@ String getFullMemoryUsage() {
 unsigned long calculateWindingTime() {
   int tpd = atoi(rotationsPerDay.c_str());
 
-  long routineWindingDuration = 0;
   long totalSecondsSpentTurning = tpd * durationInSecondsToCompleteOneRevolution;
   
   // We want to rest every 3 minutes for 15 seconds
@@ -302,7 +301,7 @@ void setup() {
     if (!MDNS.begin("winderoo")) {
       Serial.println("[STATUS] - Failed to start mDNS");
     }
-    MDNS.addService("winderoo", "tcp", 80);
+    MDNS.addService("_winderoo", "_tcp", 80);
     Serial.println("[STATUS] - mDNS started");
 
     getTime();
