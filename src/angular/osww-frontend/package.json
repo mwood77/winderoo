@@ -34,7 +34,7 @@
     "delete": "^1.1.0",
     "gzip-cli": "^1.2.0",
     "jasmine-core": "~4.3.0",
-    "karma": "~6.4.0",
+    "karma": "^6.4.1",
     "karma-chrome-launcher": "~3.1.0",
     "karma-coverage": "~2.2.0",
     "karma-jasmine": "~5.1.0",
@@ -43,5 +43,9 @@
     "shx": "^0.3.4",
     "ts-node": "~8.3.0",
     "typescript": "~4.7.2"
+  },
+  "resolutions": {
+    "**/ua-parser-js": "^1.0.33",
+    "**/browser-sync": "^2.27.9"
   }
 }
