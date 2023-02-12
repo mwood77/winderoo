@@ -18,6 +18,7 @@ export interface Status {
   direction: string;
   hour: string;
   minutes: string;
+  durationInSecondsToCompleteOneRevolution: number;
 }
 
 @Injectable({

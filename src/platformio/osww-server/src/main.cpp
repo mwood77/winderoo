@@ -13,12 +13,17 @@ HTTPClient http;
 WiFiClient client;
 ESP32Time rtc;
 
+int dir1PinA = 25;
+int dir2PinA = 26;
+
+// 1 = clockwise, 0 = anticlockwise
+int motorDirection = 0;  
+
 WiFiManager wm;
 AsyncWebServer server(80);
 
 bool reset = false;
 bool routineRunning = false;
-bool delayed = false;
 String timeURL = "http://worldtimeapi.org/api/ip";
 
 int durationInSecondsToCompleteOneRevolution = 8;
@@ -36,16 +41,29 @@ unsigned long estimatedRoutineFinishEpoch;
 unsigned long previousEpoch;
 
 
-String getFullMemoryUsage() {
-  String usage = "Total heap: ";
-  usage = String(usage + ESP.getHeapSize());
-  usage = String(usage + "\nFree heap: ");
-  usage = String(usage + String(ESP.getFreeHeap()));
-  usage = String(usage + "\nTotal PSRAM: ");
-  usage = String(usage + String(ESP.getPsramSize()));
-  usage = String(usage + "\nFree PSRAM: ");
-  usage = String(usage + String(ESP.getFreePsram()));
-  return usage;
+void motorCW() {
+  digitalWrite(dir1PinA, HIGH);
+  digitalWrite(dir2PinA, LOW);
+}
+
+void motorCCW() {
+  digitalWrite(dir1PinA, LOW);
+  digitalWrite(dir2PinA, HIGH);
+}
+
+void motorSTOP() {
+  digitalWrite(dir1PinA, LOW);
+  digitalWrite(dir2PinA, LOW);
+}
+
+void determinsMotorDirectionAndBegin() {
+  motorSTOP();
+  
+  if (motorDirection) {
+    motorCW();
+  } else {
+    motorCCW();
+  }
 }
 
 unsigned long calculateWindingTime() {
@@ -70,9 +88,9 @@ unsigned long calculateWindingTime() {
 }
 
 void beginWindingRoutine() {
+  previousEpoch = rtc.getEpoch();
   routineRunning = true;
   status = "Winding";
-  previousEpoch = 181;
   Serial.println("[STATUS] - Begin winding routine");
 
   unsigned long finishTime = calculateWindingTime();
@@ -171,8 +189,8 @@ void startWebserver() {
     json["direction"] = direction;
     json["hour"] = hour;
     json["minutes"] = minutes;
+    json["durationInSecondsToCompleteOneRevolution"] = durationInSecondsToCompleteOneRevolution;
     json["db"] = WiFi.RSSI();
-    json["batteryLevel"] = 0;   // @todo - get battery level
     serializeJson(json, *response);
 
     request->send(response);
@@ -186,19 +204,23 @@ void startWebserver() {
     
     for ( int i = 0; i < params; i++ ) {
       AsyncWebParameter* p = request->getParam(i);
-      Serial.printf("RECEIVED[%s]: %s\n", p->name().c_str(), p->value().c_str());
-
-        if( strcmp(p->name().c_str(), "action") == 0) {
-          if ( strcmp(p->value().c_str(), "START") == 0 ) {
-            status = "Winding";
-          } else {
-            status = "Stopped";
-            routineRunning = false;
-          }
-        } 
+      // Serial.printf("RECEIVED[%s]: %s\n", p->name().c_str(), p->value().c_str());
     
         if( strcmp(p->name().c_str(), "rotationDirection") == 0 ) {
           direction = p->value().c_str();
+
+          motorSTOP();
+          delay(250);
+
+          // Update motor direction
+          if (direction == "CW" ) {
+            motorDirection = 1;
+          } else if (direction == "CCW") {
+            motorDirection = 0;
+          } else {
+            Serial.println("[STATUS] - direction not set, recieved 'BOTH'");
+          }
+          Serial.println("[STATUS] - direction set: " + direction);
         }
     
         if( strcmp(p->name().c_str(), "tpd") == 0 ) {
@@ -212,6 +234,19 @@ void startWebserver() {
         if( strcmp(p->name().c_str(), "minutes") == 0 ) {
           minutes = p->value().c_str();
         }
+
+        if( strcmp(p->name().c_str(), "action") == 0) {
+          if ( strcmp(p->value().c_str(), "START") == 0 ) {
+            if (!routineRunning) {
+              status = "Winding";
+              beginWindingRoutine();
+            }
+          } else {
+            status = "Stopped";
+            routineRunning = false;
+            motorSTOP();
+          }
+        } 
     }
 
     String configs = status + "," + rotationsPerDay + "," + hour + "," + minutes + "," + direction;
@@ -223,7 +258,6 @@ void startWebserver() {
     }
 
     request->send(204);
-    if (status == "Winding") beginWindingRoutine();
   });
 
   server.on("/api/reset", HTTP_GET, [](AsyncWebServerRequest *request) {
@@ -237,14 +271,9 @@ void startWebserver() {
     reset = true;
   });
 
-  server.on("/api/system/heap", HTTP_GET, [](AsyncWebServerRequest *request) {
-    request->send(200, "text/plain", getFullMemoryUsage());
-  });
 
   server.serveStatic("/css/", LittleFS, "/css/").setCacheControl("max-age=31536000");
   server.serveStatic("/js/", LittleFS, "/js/").setCacheControl("max-age=31536000");
-  server.serveStatic("/favicon.ico", LittleFS, "/favicon.ico").setCacheControl("max-age=31536000");
-  server.serveStatic("/icon.jpeg", LittleFS, "/icon.jpeg").setCacheControl("max-age=31536000");
   server.serveStatic("/", LittleFS, "/").setDefaultFile("index.html");
   
   server.onNotFound(notFound);
@@ -279,6 +308,10 @@ void saveWifiCallback() {
 void setup() {
   WiFi.mode(WIFI_STA);
   Serial.begin(115200);
+
+  // Prepare pins
+  pinMode(dir1PinA, OUTPUT);
+  pinMode(dir2PinA, OUTPUT);
   pinMode (LED_BUILTIN, OUTPUT);
 
   // WiFi Manager config    
@@ -348,9 +381,10 @@ void loop() {
     unsigned long currentTime = rtc.getEpoch();
     
     if (rtc.getEpoch() < estimatedRoutineFinishEpoch) {
-
+      
       // turn motor in direction
       Serial.println("[STATUS] - Motor rotating in direction: " + direction);
+      determinsMotorDirectionAndBegin();
       int r = rand() % 100;
 
       Serial.print("[STATUS] - time difference: ");
@@ -360,22 +394,27 @@ void loop() {
         if ((strcmp(direction.c_str(), "BOTH") == 0) && (currentTime - previousEpoch) > 180) {
           previousEpoch = currentTime;
           Serial.println("[STATUS] - Motor rotating in (opposite) direction: " + direction);
+          
+          motorDirection = !motorDirection;
+          determinsMotorDirectionAndBegin();
         } 
         
-        if ((currentTime - previousEpoch) > 180 && !delayed) {
-          previousEpoch = currentTime;
-          // Pause operation
+        if ((currentTime - previousEpoch) > 180) {
           Serial.println("[STATUS] - Pause");
-          delayed = true;
-          delay(15000);
-          delayed = false;
+          Serial.print("[STATUSLSDFJSDFL;KJASDFL;KJASDL;FJSDF] - previousEpoch: ");
+          Serial.println(previousEpoch);
+          Serial.print("currentTime: ");
+          Serial.println(currentTime);
+          previousEpoch = currentTime;
+          motorSTOP();
+          delay(3000);
         }
       }
     } else {
       // Routine has finished
       status = "Stopped";
       routineRunning = false;
-      Serial.println("[STATUS] - Winding complete!");
+      motorSTOP();
     }
   }
   

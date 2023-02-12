@@ -51,7 +51,6 @@ export class SettingsComponent implements OnInit {
   ];
 
   wifiSignalIcon = ''
-  batteryStrength = '';
   
   upload = {
     activityState: '',
@@ -60,7 +59,8 @@ export class SettingsComponent implements OnInit {
     direction: '',
     rpd: 0,
     hour: '00',
-    minutes: '00'
+    minutes: '00',
+    durationInSecondsToCompleteOneRevolution: 0
   }
 
   selectedHour: any;
@@ -81,7 +81,7 @@ export class SettingsComponent implements OnInit {
       this.upload.hour = data.hour;
       this.upload.minutes = data.minutes;
       this.wifiSignalIcon = this.getWifiSignalStrengthIcon(data.db *= -1);
-      this.batteryStrength = this.getBatteryStrengthIcon(data.batteryLevel);  // @todo - add battery data
+      this.upload.durationInSecondsToCompleteOneRevolution = data.durationInSecondsToCompleteOneRevolution;
       
       this.estimateDuration(this.upload.rpd);
     })
@@ -119,22 +119,6 @@ export class SettingsComponent implements OnInit {
       return 'wifi_1_bar';
     }
     return 'wifi_off';
-  }
-
-  getBatteryStrengthIcon(db: any) {
-    if (db <= 30) {
-      return 'battery_4_bar';
-    }
-    if (db >= 31 && db <= 60) {
-      return 'battery_4_bar';
-      }
-    if(db >= 61 && db <= 90) {
-      return 'battery_2_bar';
-    }
-    if( db >= 91 && db <= 120) {
-      return 'battery_0_bar';
-    }
-    return 'battery_unknown';
   }
 
   getReadableDirectionOfRotation(direction: string): string {
@@ -200,8 +184,9 @@ export class SettingsComponent implements OnInit {
     this.uploadSettings('STOP');
   }
 
+  // todo - double check math...
   estimateDuration(rpd: any) {
-    const totalSecondsSpentTurning = rpd * 10; // 10 seconds for one rotation (approx)
+    const totalSecondsSpentTurning = rpd * this.upload.durationInSecondsToCompleteOneRevolution;
     const totalNumberOfRestingPeriods = totalSecondsSpentTurning / 180;
     const totalRestDuration = totalNumberOfRestingPeriods * 180;
 

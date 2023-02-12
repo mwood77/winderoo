@@ -1,1 +1,1 @@
-Stopped,720,00,00,BOTH
+Stopped,480,00,00,BOTH
