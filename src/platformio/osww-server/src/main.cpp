@@ -308,7 +308,7 @@ void saveWifiCallback() {
 void setup() {
   WiFi.mode(WIFI_STA);
   Serial.begin(115200);
-
+  
   // Prepare pins
   pinMode(dir1PinA, OUTPUT);
   pinMode(dir2PinA, OUTPUT);
@@ -347,6 +347,12 @@ void setup() {
     Serial.println("[STATUS] - WiFi Config Portal running");
     digitalWrite(LED_BUILTIN, HIGH);
   };
+  
+  // Reduce power consumption
+  // We set the CPU & modem power levels here, as we 
+  // must wait for wifi to initialize via WiFi Manager
+  setCpuFrequencyMhz(80);
+  esp_wifi_set_ps(WIFI_PS_MAX_MODEM);
 }
  
 void loop() {
