@@ -192,16 +192,8 @@ export class SettingsComponent implements OnInit {
 
     const finalRoutineDuration = totalRestDuration + totalSecondsSpentTurning;
 
-    console.log(finalRoutineDuration);
-
     const readableDuration = new Date(0,0);
     readableDuration.setSeconds(finalRoutineDuration);
-    console.log(readableDuration);
-    
-    // readableDuration.setMinutes(finalRoutineDuration / 60);
-    console.log(readableDuration);
-
-
     const hours = readableDuration.toTimeString().slice(0,2);
     const mins = readableDuration.toTimeString().slice(3,5);
 
