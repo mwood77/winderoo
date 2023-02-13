@@ -1,116 +1,130 @@
 <div class="contianer">
-    <div class="col col-lg-6 col-md-9">
       
-        <mat-card class="mat-elevation-z1" [ngClass]="getColour(this.upload.activityState)">
-                <div>
-                    <span>Status</span>
-                    <div class="status-text col-8 d-flex justify-content-end">
-                        {{this.upload.activityState }}
-                    </div>
-                </div>
-                <span class="status-card-spacer"></span>
-                <mat-icon style="margin-right: 0.5rem">{{ this.wifiSignalIcon }}</mat-icon>
-        </mat-card>
-
-        <mat-card class="mat-elevation-z1">
-            <div class="control-buttons">
-                <button mat-raised-button color="accent" class="play-button" (click)="beginProgramming()" [disabled]="upload.disabled">
-                    <mat-icon>play_arrow</mat-icon>
-                </button>
-                <button mat-raised-button color="warn" class="stop-button" (click)="stopProgramming()" [disabled]="upload.disabled">
-                    <mat-icon>stop</mat-icon>
-                </button>
-            </div>
-        </mat-card>
-        
-        <mat-card class="mat-elevation-z1">
-            <div class="individual-setting ">
-                Direction
-                <div class="individual-status-text">{{ getReadableDirectionOfRotation(this.upload.direction) }}</div>
-                <div class="rotation-toggles">
-                    <mat-button-toggle-group [(ngModel)]="this.upload.direction" aria-label="Winding Direction">
-                        <mat-button-toggle value="CW" aria-label="Text align left">
-                            <mat-icon>rotate_right</mat-icon>
-                        </mat-button-toggle>
-                        <mat-button-toggle value="BOTH" aria-label="Text align center">
-                            <mat-icon>sync</mat-icon>
-                        </mat-button-toggle>
-                        <mat-button-toggle value="CCW" aria-label="Text align right">
-                            <mat-icon>rotate_left</mat-icon>
-                        </mat-button-toggle>
-                        </mat-button-toggle-group>
+    <mat-card class="mat-elevation-z1" [ngClass]="getColour(this.upload.activityState)">
+            <div>
+                <span>Status</span>
+                <div class="status-text col-8 d-flex justify-content-end">
+                    {{ this.upload.activityState }}
                 </div>
             </div>
+            <span class="status-card-spacer"></span>
+            <mat-icon style="margin-right: 0.5rem">{{ this.wifiSignalIcon }}</mat-icon>
+    </mat-card>
 
-
-            <div class="individual-setting">
-                <div class="">
-                    Rotations Per Day
+    <mat-card class="mat-elevation-z1" class="progres-bar" *ngIf="this.upload.activityState === 'Winding'">
+            <div>
+                <div *ngIf="this.progressPercentageComplete === 100; else elseBlock">
+                    <span>Cycle Complete!</span>
                 </div>
-                <div class="individual-status-text">{{ this.upload.rpd }}</div>
-                <mat-slider value="{{ this.upload.rpd }}" min="100" max="960" step="20" discrete (input)="setRotationsPerDay($event)">
-                    <input matSliderThumb [(ngModel)]="this.upload.rpd">
-                </mat-slider>
-            </div>
-
-            <div class="individual-setting">
-                <div class="individual-status-text">
-                    <a target="_blank" mat-stroked-button (click)="openSite(watchWindingParametersURL)">
-                        Find your watch's winding parameters
-                    </a>
-                </div>
-            </div>
-        </mat-card>
-        
-        <mat-card class="mat-elevation-z1">
-            <div class="individual-setting">
-                <div>
-                    Estimated Cycle Duration
-                </div>
-                <div class="individual-status-text">
-                    {{ this.estDuration }}
+                <ng-template #elseBlock><span>Cycle Progress</span></ng-template>
+                <div class="status-text justify-content-end">
+                    <mat-progress-bar
+                        class="example-margin"
+                        color="accent"
+                        [mode]="this.progressMode"
+                        value="{{ this.progressPercentageComplete }}">
+                </mat-progress-bar>
                 </div>
             </div>
-        </mat-card>
+    </mat-card>
 
-        <mat-card class="mat-elevation-z1">
-            <div class="individual-setting">
-                <div>
-                    Cycle Start Time
-                </div>
-                <div class="individual-status-text">
-                    {{ this.upload.hour }}:{{ this.upload.minutes }}
-                </div>
-
-                <div class="time-input">
-                    <mat-form-field color="accent" appearance="outline">
-                        <mat-label>Hour</mat-label>
-                        <select matNativeControl [(ngModel)]="selectedHour" name="hour">
-                            <option value="" selected></option>
-                            <option *ngFor="let hr of hours" [value]="hr.value">
-                              {{ hr.value }}
-                            </option>
-                          </select>
-                    </mat-form-field>
-                    <mat-form-field color="accent" appearance="outline">
-                        <mat-label>Minutes</mat-label>
-                        <select matNativeControl [(ngModel)]="selectedMinutes" name="minutes">
-                            <option value="" selected></option>
-                            <option *ngFor="let mn of minutes" [value]="mn.value">
-                              {{ mn.value }}
-                            </option>
-                          </select>
-                    </mat-form-field>
-                </div>
+    <mat-card class="mat-elevation-z1">
+        <div class="control-buttons">
+            <button mat-raised-button color="accent" class="play-button" (click)="beginProgramming()" [disabled]="upload.disabled">
+                <mat-icon>play_arrow</mat-icon>
+            </button>
+            <button mat-raised-button color="warn" class="stop-button" (click)="stopProgramming()" [disabled]="upload.disabled">
+                <mat-icon>stop</mat-icon>
+            </button>
+        </div>
+    </mat-card>
+    
+    <mat-card class="mat-elevation-z1">
+        <div class="individual-setting ">
+            Direction
+            <div class="individual-status-text">{{ getReadableDirectionOfRotation(this.upload.direction) }}</div>
+            <div class="rotation-toggles">
+                <mat-button-toggle-group [(ngModel)]="this.upload.direction" aria-label="Winding Direction">
+                    <mat-button-toggle value="CW" aria-label="Text align left">
+                        <mat-icon>rotate_right</mat-icon>
+                    </mat-button-toggle>
+                    <mat-button-toggle value="BOTH" aria-label="Text align center">
+                        <mat-icon>sync</mat-icon>
+                    </mat-button-toggle>
+                    <mat-button-toggle value="CCW" aria-label="Text align right">
+                        <mat-icon>rotate_left</mat-icon>
+                    </mat-button-toggle>
+                    </mat-button-toggle-group>
             </div>
-        </mat-card>
+        </div>
 
-        <mat-card class="mat-elevation-z1">
-                <button mat-raised-button color="primary" class="upload-button" (click)="uploadSettings()" [disabled]="upload.disabled">
-                    <div class="save-button-text">{{ upload.statusMessage }}</div>
-                </button>
-        </mat-card>
 
-    </div>
+        <div class="individual-setting">
+            <div class="">
+                Rotations Per Day
+            </div>
+            <div class="individual-status-text">{{ this.upload.rpd }}</div>
+            <mat-slider value="{{ this.upload.rpd }}" min="100" max="960" step="20" discrete (input)="setRotationsPerDay($event)">
+                <input matSliderThumb [(ngModel)]="this.upload.rpd">
+            </mat-slider>
+        </div>
+
+        <div class="individual-setting">
+            <div class="individual-status-text">
+                <a target="_blank" mat-stroked-button (click)="openSite(watchWindingParametersURL)">
+                    Find your watch's winding parameters
+                </a>
+            </div>
+        </div>
+    </mat-card>
+    
+    <mat-card class="mat-elevation-z1">
+        <div class="individual-setting">
+            <div>
+                Estimated Cycle Duration
+            </div>
+            <div class="individual-status-text">
+                {{ this.estDuration }}
+            </div>
+        </div>
+    </mat-card>
+
+    <mat-card class="mat-elevation-z1">
+        <div class="individual-setting">
+            <div>
+                Cycle Start Time
+            </div>
+            <div class="individual-status-text">
+                {{ this.upload.hour }}:{{ this.upload.minutes }}
+            </div>
+
+            <div class="time-input">
+                <mat-form-field color="accent" appearance="outline">
+                    <mat-label>Hour</mat-label>
+                    <select matNativeControl [(ngModel)]="selectedHour" name="hour">
+                        <option value="" selected></option>
+                        <option *ngFor="let hr of hours" [value]="hr.value">
+                            {{ hr.value }}
+                        </option>
+                        </select>
+                </mat-form-field>
+                <mat-form-field color="accent" appearance="outline">
+                    <mat-label>Minutes</mat-label>
+                    <select matNativeControl [(ngModel)]="selectedMinutes" name="minutes">
+                        <option value="" selected></option>
+                        <option *ngFor="let mn of minutes" [value]="mn.value">
+                            {{ mn.value }}
+                        </option>
+                        </select>
+                </mat-form-field>
+            </div>
+        </div>
+    </mat-card>
+
+    <mat-card class="mat-elevation-z1">
+            <button mat-raised-button color="primary" class="upload-button" (click)="uploadSettings()" [disabled]="upload.disabled">
+                <div class="save-button-text">{{ upload.statusMessage }}</div>
+            </button>
+    </mat-card>
   </div>
   

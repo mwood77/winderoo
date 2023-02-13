@@ -1,6 +1,6 @@
 import { Component, OnInit } from '@angular/core';
-import { DateAdapter } from '@angular/material/core';
 import { ApiService, Update } from '../api.service';
+import { ProgressBarMode } from '@angular/material/progress-bar';
 
 interface SelectInterface {
   value: string;
@@ -60,12 +60,17 @@ export class SettingsComponent implements OnInit {
     rpd: 0,
     hour: '00',
     minutes: '00',
-    durationInSecondsToCompleteOneRevolution: 0
+    durationInSecondsToCompleteOneRevolution: 0,
+    startTimeEpoch: 0,
+    estimatedRoutineFinishEpoch: 0
   }
 
   selectedHour: any;
   selectedMinutes: any;
   estDuration: any;
+
+  progressMode: ProgressBarMode = 'indeterminate';
+  progressPercentageComplete: number =  0;
 
   watchWindingParametersURL = 'https://watch-winder.store/watch-winding-table/';
 
@@ -73,7 +78,10 @@ export class SettingsComponent implements OnInit {
 
   ngOnInit(): void {
     this.upload.statusMessage = 'Save Settings'
+    this.getData();
+  }
 
+  getData() {
     this.apiService.getStatus(ApiService.getWindowHref(window)).subscribe((data) => {
       this.upload.activityState = data.status;
       this.upload.rpd = data.rotationsPerDay;
@@ -82,9 +90,12 @@ export class SettingsComponent implements OnInit {
       this.upload.minutes = data.minutes;
       this.wifiSignalIcon = this.getWifiSignalStrengthIcon(data.db *= -1);
       this.upload.durationInSecondsToCompleteOneRevolution = data.durationInSecondsToCompleteOneRevolution;
-      
+      this.upload.startTimeEpoch = data.startTimeEpoch;
+      this.upload.estimatedRoutineFinishEpoch = data.estimatedRoutineFinishEpoch;
+
       this.estimateDuration(this.upload.rpd);
-    })
+      this.getProgressComplete(data.startTimeEpoch, data.currentTimeEpoch, data.estimatedRoutineFinishEpoch);
+    });
   }
 
   setRotationsPerDay(rpd: any) {
@@ -163,13 +174,19 @@ export class SettingsComponent implements OnInit {
 
     this.apiService.updateState(ApiService.getWindowHref(window), body).subscribe((response) => {
       if (response.status == 204) {
-        this.apiService.getStatus(ApiService.getWindowHref(window)).subscribe((data) => {
-          this.upload.activityState = data.status;
-          this.upload.rpd = data.rotationsPerDay;
-          this.upload.direction = data.direction;
-          this.upload.hour = data.hour;
-          this.upload.minutes = data.minutes;
-        })
+        this.getData();
+        // this.apiService.getStatus(ApiService.getWindowHref(window)).subscribe((data) => {
+        //   this.upload.activityState = data.status;
+        //   this.upload.rpd = data.rotationsPerDay;
+        //   this.upload.direction = data.direction;
+        //   this.upload.hour = data.hour;
+        //   this.upload.minutes = data.minutes;
+
+        //   this.upload.durationInSecondsToCompleteOneRevolution = data.durationInSecondsToCompleteOneRevolution;
+        //   this.upload.startTimeEpoch = data.startTimeEpoch;
+        //   this.upload.estimatedRoutineFinishEpoch = data.estimatedRoutineFinishEpoch;
+        //   this.getProgressComplete(data.startTimeEpoch, data.currentTimeEpoch, data.estimatedRoutineFinishEpoch);
+        // })
       }
       this.upload.disabled = false;
       this.upload.statusMessage = 'Save Settings';
@@ -184,8 +201,7 @@ export class SettingsComponent implements OnInit {
     this.uploadSettings('STOP');
   }
 
-  // todo - double check math...
-  estimateDuration(rpd: any) {
+  estimateDuration(rpd: number) {
     const totalSecondsSpentTurning = rpd * this.upload.durationInSecondsToCompleteOneRevolution;
     const totalNumberOfRestingPeriods = totalSecondsSpentTurning / 180;
     const totalRestDuration = totalNumberOfRestingPeriods * 180;
@@ -200,6 +216,22 @@ export class SettingsComponent implements OnInit {
     this.estDuration = 
       hours < "10" ? `${hours.slice(1,2)} hours ${mins} minutes` :
     `${hours} hours ${mins} minutes`;
+  }
+
+  getProgressComplete(startTimeEpoch: number, currentTimeEpoch: number, estimatedRoutineFinishEpoch: number): void {
+    if (this.upload.activityState == 'Winding' && currentTimeEpoch < estimatedRoutineFinishEpoch) {
+      this.progressMode = 'determinate';
+      const difference = (currentTimeEpoch - startTimeEpoch) / (estimatedRoutineFinishEpoch - startTimeEpoch);
+      const percentage = difference * 100;
+
+      // When 'Start" button pressed
+      if (percentage <= 0.05) {
+        this.progressMode = 'indeterminate';
+        setTimeout(() => this.getData(), 5000);
+      }
+
+      this.progressPercentageComplete = percentage;
+    }
   }
 
 }

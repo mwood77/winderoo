@@ -55,6 +55,13 @@ mat-card {
     margin-bottom: 1rem;
 }
 
+.progress-bar {
+  display: flex;
+  align-content: center;
+  align-items: center;
+  height: 60px;
+}
+
 .time-input {
     display: flex;
     flex-wrap: wrap;

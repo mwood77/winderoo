@@ -39,7 +39,7 @@ unsigned long rtc_offset;
 unsigned long rtc_epoch;
 unsigned long estimatedRoutineFinishEpoch;
 unsigned long previousEpoch;
-
+unsigned long startTimeEpoch;
 
 void motorCW() {
   digitalWrite(dir1PinA, HIGH);
@@ -58,6 +58,7 @@ void motorSTOP() {
 
 void determinsMotorDirectionAndBegin() {
   motorSTOP();
+
   
   if (motorDirection) {
     motorCW();
@@ -88,13 +89,17 @@ unsigned long calculateWindingTime() {
 }
 
 void beginWindingRoutine() {
-  previousEpoch = rtc.getEpoch();
+  startTimeEpoch = rtc.getEpoch();
+  previousEpoch = startTimeEpoch;
   routineRunning = true;
   status = "Winding";
   Serial.println("[STATUS] - Begin winding routine");
 
   unsigned long finishTime = calculateWindingTime();
   estimatedRoutineFinishEpoch = finishTime;
+
+  Serial.print("[STATUS] - Current time: ");
+  Serial.println(rtc.getEpoch());
 
   Serial.print("[STATUS] - Estimated finish time: ");
   Serial.println(finishTime);
@@ -190,6 +195,9 @@ void startWebserver() {
     json["hour"] = hour;
     json["minutes"] = minutes;
     json["durationInSecondsToCompleteOneRevolution"] = durationInSecondsToCompleteOneRevolution;
+    json["startTimeEpoch"] = startTimeEpoch;
+    json["currentTimeEpoch"] = rtc.getEpoch();
+    json["estimatedRoutineFinishEpoch"] = estimatedRoutineFinishEpoch;
     json["db"] = WiFi.RSSI();
     serializeJson(json, *response);
 
@@ -204,7 +212,6 @@ void startWebserver() {
     
     for ( int i = 0; i < params; i++ ) {
       AsyncWebParameter* p = request->getParam(i);
-      // Serial.printf("RECEIVED[%s]: %s\n", p->name().c_str(), p->value().c_str());
     
         if( strcmp(p->name().c_str(), "rotationDirection") == 0 ) {
           direction = p->value().c_str();
@@ -217,14 +224,22 @@ void startWebserver() {
             motorDirection = 1;
           } else if (direction == "CCW") {
             motorDirection = 0;
-          } else {
-            Serial.println("[STATUS] - direction not set, recieved 'BOTH'");
           }
+
           Serial.println("[STATUS] - direction set: " + direction);
         }
     
         if( strcmp(p->name().c_str(), "tpd") == 0 ) {
-          rotationsPerDay = p->value().c_str();
+          const char* newTpd = p->value().c_str();
+
+          if (strcmp(newTpd, rotationsPerDay.c_str()) != 0) {
+            rotationsPerDay = p->value().c_str();
+
+            Serial.println("[STATUS] - Updating finish time");
+            unsigned long finishTime = calculateWindingTime();
+            estimatedRoutineFinishEpoch = finishTime;
+          }
+
         }
 
         if( strcmp(p->name().c_str(), "hour") == 0 ) {
@@ -316,7 +331,7 @@ void setup() {
   pinMode (LED_BUILTIN, OUTPUT);
 
   // WiFi Manager config    
-  wm.setConfigPortalTimeout(60);
+  wm.setConfigPortalTimeout(3600);
   wm.setDarkMode(true);
   wm.setConfigPortalBlocking(false);
   wm.setHostname("Winderoo");
@@ -384,7 +399,7 @@ void loop() {
     if (rtc.getEpoch() < estimatedRoutineFinishEpoch) {
       
       // turn motor in direction
-      Serial.println("[STATUS] - Motor rotating in direction: " + direction);
+      // Serial.println("[STATUS] - Motor rotating in direction: " + direction);
       determinsMotorDirectionAndBegin();
       int r = rand() % 100;
 
@@ -393,19 +408,19 @@ void loop() {
 
       if (r <= 25) {
         if ((strcmp(direction.c_str(), "BOTH") == 0) && (currentTime - previousEpoch) > 180) {
+          // Serial.println("[STATUS] - Paused before changing direction");
+          motorSTOP();
+          delay(3000);
+
           previousEpoch = currentTime;
-          Serial.println("[STATUS] - Motor rotating in (opposite) direction: " + direction);
-          
           motorDirection = !motorDirection;
+          Serial.println("[STATUS] - Motor changing direction, mode: " + direction);
+          
           determinsMotorDirectionAndBegin();
         } 
         
         if ((currentTime - previousEpoch) > 180) {
           Serial.println("[STATUS] - Pause");
-          Serial.print("[STATUSLSDFJSDFL;KJASDFL;KJASDL;FJSDF] - previousEpoch: ");
-          Serial.println(previousEpoch);
-          Serial.print("currentTime: ");
-          Serial.println(currentTime);
           previousEpoch = currentTime;
           motorSTOP();
           delay(3000);

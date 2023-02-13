@@ -19,6 +19,9 @@ export interface Status {
   hour: string;
   minutes: string;
   durationInSecondsToCompleteOneRevolution: number;
+  startTimeEpoch: number,
+  currentTimeEpoch: number;
+  estimatedRoutineFinishEpoch: number;
 }
 
 @Injectable({
