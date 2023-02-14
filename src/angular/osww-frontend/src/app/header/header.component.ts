@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { MatDialog, MatDialogRef } from '@angular/material/dialog';
 import { ApiService } from '../api.service';
+import packageJson from '../../../package.json';
 
 @Component({
   selector: 'app-header',
@@ -8,12 +9,29 @@ import { ApiService } from '../api.service';
   styleUrls: ['./header.component.scss']
 })
 export class HeaderComponent implements OnInit {
+  
+  isWinderEnabled: boolean;
+  isWinderEnabledNum: number;
+    
+  constructor(private dialog: MatDialog, private apiService: ApiService) { 
+    this.isWinderEnabledNum = this.apiService.isWinderEnabled$.getValue();
+    this.isWinderEnabled = false;
+  }
 
+  private mapEnabledState($event: number): void {
+    if ($event == 1) {
+      this.isWinderEnabled = true;
+    } else {
+      this.isWinderEnabled = false;
+    };
+  }
 
-
-  constructor(private dialog: MatDialog) { }
-
-  ngOnInit(): void {}
+  ngOnInit(): void {  
+    this.apiService.isWinderEnabled$.subscribe((e) => {
+      this.isWinderEnabledNum = e;
+      this.mapEnabledState(e);
+    })
+  }
 
   openDialog(): void {
     this.dialog.open(DialogAnimationsExampleDialog, {
@@ -21,9 +39,22 @@ export class HeaderComponent implements OnInit {
     });
   }
 
-  reset() {
+  reset(): void {
     this.openDialog();
   }
+
+  updateWinderEnabledState($state: any) {
+    this.apiService.updatePowerState(ApiService.getWindowHref(window), $state).subscribe(
+      (data) => {
+        this.apiService.isWinderEnabled$.next($state);
+
+        this.mapEnabledState($state)
+        // signal settings to component to refresh
+        this.apiService.shouldRefresh$.next(true);
+        
+        console.log(this.apiService.shouldRefresh$.getValue());
+      });
+  };
   
 }
 
@@ -34,11 +65,17 @@ export class HeaderComponent implements OnInit {
 })
 export class DialogAnimationsExampleDialog {
 
+  version = packageJson.version;
+
   constructor(public dialogRef: MatDialogRef<DialogAnimationsExampleDialog>, 
     private apiService: ApiService) {}
   
-  confirmReset() {
+  confirmReset(): void {
     this.apiService.resetDevice(ApiService.getWindowHref(window)).subscribe();
+  }
+
+  closeDialog(): void {
+    this.dialogRef.close()
   }
 
 }

@@ -34,6 +34,7 @@ String rotationsPerDay = "";
 String direction = "";
 String hour = "00";
 String minutes = "00";
+String winderEnabled = "1";
 
 unsigned long rtc_offset;
 unsigned long rtc_epoch;
@@ -56,7 +57,7 @@ void motorSTOP() {
   digitalWrite(dir2PinA, LOW);
 }
 
-void determinsMotorDirectionAndBegin() {
+void determineMotorDirectionAndBegin() {
   motorSTOP();
 
   
@@ -198,6 +199,7 @@ void startWebserver() {
     json["startTimeEpoch"] = startTimeEpoch;
     json["currentTimeEpoch"] = rtc.getEpoch();
     json["estimatedRoutineFinishEpoch"] = estimatedRoutineFinishEpoch;
+    json["winderEnabled"] = winderEnabled;
     json["db"] = WiFi.RSSI();
     serializeJson(json, *response);
 
@@ -205,6 +207,27 @@ void startWebserver() {
 
     // Update RTC time ref
     getTime();
+  });
+
+  server.on("/api/power", HTTP_POST, [](AsyncWebServerRequest *request) {
+    int params = request->params();
+    
+    for ( int i = 0; i < params; i++ ) {
+      AsyncWebParameter* p = request->getParam(i);
+
+        if( strcmp(p->name().c_str(), "winderEnabled") == 0 ) {
+          winderEnabled = p->value().c_str();
+
+          if (winderEnabled == "0") {
+            Serial.println("[STATUS] - Switched off!");
+            status = "Stopped";
+            routineRunning = false;
+            motorSTOP();
+          }
+        }
+    }
+    
+    request->send(204);
   });
 
   server.on("/api/update", HTTP_POST, [](AsyncWebServerRequest *request) {
@@ -235,11 +258,9 @@ void startWebserver() {
           if (strcmp(newTpd, rotationsPerDay.c_str()) != 0) {
             rotationsPerDay = p->value().c_str();
 
-            Serial.println("[STATUS] - Updating finish time");
             unsigned long finishTime = calculateWindingTime();
             estimatedRoutineFinishEpoch = finishTime;
           }
-
         }
 
         if( strcmp(p->name().c_str(), "hour") == 0 ) {
@@ -323,7 +344,7 @@ void saveWifiCallback() {
 void setup() {
   WiFi.mode(WIFI_STA);
   Serial.begin(115200);
-  setCpuFrequencyMhz(80);
+  setCpuFrequencyMhz(160);
   
   // Prepare pins
   pinMode(dir1PinA, OUTPUT);
@@ -336,6 +357,8 @@ void setup() {
   wm.setConfigPortalBlocking(false);
   wm.setHostname("Winderoo");
   wm.setSaveConfigCallback(saveWifiCallback);
+
+  winderEnabled = true;
   
   // Connect using saved credentials, if they exist
   // If connection fails, start setup Access Point
@@ -389,7 +412,10 @@ void loop() {
     delay(2000);
   }
 
-  if (rtc.getHour(true) == hour.toInt() && rtc.getMinute() == minutes.toInt() && !routineRunning) {
+  if (rtc.getHour(true) == hour.toInt() && 
+      rtc.getMinute() == minutes.toInt() && 
+      !routineRunning && 
+      winderEnabled == "1") {
     beginWindingRoutine();
   }
 
@@ -399,16 +425,11 @@ void loop() {
     if (rtc.getEpoch() < estimatedRoutineFinishEpoch) {
       
       // turn motor in direction
-      // Serial.println("[STATUS] - Motor rotating in direction: " + direction);
-      determinsMotorDirectionAndBegin();
+      determineMotorDirectionAndBegin();
       int r = rand() % 100;
-
-      Serial.print("[STATUS] - time difference: ");
-      Serial.println(currentTime- previousEpoch);
 
       if (r <= 25) {
         if ((strcmp(direction.c_str(), "BOTH") == 0) && (currentTime - previousEpoch) > 180) {
-          // Serial.println("[STATUS] - Paused before changing direction");
           motorSTOP();
           delay(3000);
 
@@ -416,7 +437,7 @@ void loop() {
           motorDirection = !motorDirection;
           Serial.println("[STATUS] - Motor changing direction, mode: " + direction);
           
-          determinsMotorDirectionAndBegin();
+          determineMotorDirectionAndBegin();
         } 
         
         if ((currentTime - previousEpoch) > 180) {

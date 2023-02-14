@@ -3,10 +3,18 @@
         <span>Winderoo</span>
 
         <span class="toolbar-spacer"></span>
-        
+                
+        <mat-slide-toggle [(ngModel)]="isWinderEnabled" (ngModelChange)="updateWinderEnabledState($event)">
+            <span *ngIf="this.isWinderEnabled; else elseBlock">ON</span>
+            <ng-template #elseBlock><span>OFF</span></ng-template>
+        </mat-slide-toggle>
+
+        <span class="toolbar-spacer"></span>
+
         <button mat-stroked-button aria-label="Reset winder" (click)="reset()">
             <mat-icon>bolt</mat-icon>
             RESET
         </button>
+
     </mat-toolbar-row>
 </mat-toolbar>

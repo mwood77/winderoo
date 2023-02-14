@@ -1,5 +1,5 @@
-<div class="contianer">
-      
+<div class="contianer" [hidden]="this.isWinderEnabled == 0">
+
     <mat-card class="mat-elevation-z1" [ngClass]="getColour(this.upload.activityState)">
             <div>
                 <span>Status</span>
@@ -11,23 +11,6 @@
             <mat-icon style="margin-right: 0.5rem">{{ this.wifiSignalIcon }}</mat-icon>
     </mat-card>
 
-    <mat-card class="mat-elevation-z1" class="progres-bar" *ngIf="this.upload.activityState === 'Winding'">
-            <div>
-                <div *ngIf="this.progressPercentageComplete === 100; else elseBlock">
-                    <span>Cycle Complete!</span>
-                </div>
-                <ng-template #elseBlock><span>Cycle Progress</span></ng-template>
-                <div class="status-text justify-content-end">
-                    <mat-progress-bar
-                        class="example-margin"
-                        color="accent"
-                        [mode]="this.progressMode"
-                        value="{{ this.progressPercentageComplete }}">
-                </mat-progress-bar>
-                </div>
-            </div>
-    </mat-card>
-
     <mat-card class="mat-elevation-z1">
         <div class="control-buttons">
             <button mat-raised-button color="accent" class="play-button" (click)="beginProgramming()" [disabled]="upload.disabled">
@@ -36,6 +19,34 @@
             <button mat-raised-button color="warn" class="stop-button" (click)="stopProgramming()" [disabled]="upload.disabled">
                 <mat-icon>stop</mat-icon>
             </button>
+        </div>
+    </mat-card>
+
+    <mat-card class="mat-elevation-z1" class="progres-bar" *ngIf="this.upload.activityState === 'Winding'">
+        <div>
+            <div *ngIf="this.progressMode == 'indeterminate'; else elseBlock">
+                <span>Getting cycle progress, please wait</span>
+            </div>
+            <ng-template #elseBlock><span>Cycle Progress</span></ng-template>
+            <div class="status-text justify-content-end">
+                <mat-progress-bar
+                    class="example-margin"
+                    color="accent"
+                    [mode]="this.progressMode"
+                    value="{{ this.progressPercentageComplete }}">
+            </mat-progress-bar>
+            </div>
+        </div>
+    </mat-card>
+
+    <mat-card class="mat-elevation-z1">
+        <div class="individual-setting">
+            <div>
+                Estimated Cycle Duration
+            </div>
+            <div class="individual-status-text">
+                {{ this.estDuration }}
+            </div>
         </div>
     </mat-card>
     
@@ -74,17 +85,6 @@
                 <a target="_blank" mat-stroked-button (click)="openSite(watchWindingParametersURL)">
                     Find your watch's winding parameters
                 </a>
-            </div>
-        </div>
-    </mat-card>
-    
-    <mat-card class="mat-elevation-z1">
-        <div class="individual-setting">
-            <div>
-                Estimated Cycle Duration
-            </div>
-            <div class="individual-status-text">
-                {{ this.estDuration }}
             </div>
         </div>
     </mat-card>

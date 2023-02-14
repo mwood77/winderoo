@@ -102,3 +102,13 @@
 .pure-css-button:disabled::after {
   opacity: 0;
 }
+
+.version {
+  margin-top: 1rem;
+  margin-bottom: 0;
+  display: flex;
+  justify-content: center;
+  align-content: center;
+  width: 100%;
+  font-size: xx-small;
+}

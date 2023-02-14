@@ -5,6 +5,11 @@
 
 <div mat-dialog-content>
 
+  <button aria-label="Close dialog window" class="pure-css-button" style="background-color: #424242" (click)="closeDialog()">
+    CANCEL
+  </button>
+  
+
   <ol>
     <li>
     Reset is complete when the second LED stops fast blinking, then turns solid.
@@ -27,5 +32,9 @@
 </div>
 
 <button mat-stroked-button aria-label="Reset winder" class="pure-css-button" (click)="confirmReset()">
-  TAP THIS TO RESET
+  CONFIRM RESET
 </button>
+
+<p class="version">
+  {{ this.version }}
+</p>

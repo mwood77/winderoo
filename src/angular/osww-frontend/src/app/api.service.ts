@@ -1,13 +1,15 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
+import { Observable } from 'rxjs';
+import { BehaviorSubject } from 'rxjs/internal/BehaviorSubject';
 
 
 export interface Update {
-  action: string
-  rotationDirection: string,
-  tpd: number,
-  hour: string;
-  minutes: string;
+  action?: string
+  rotationDirection?: string,
+  tpd?: number,
+  hour?: string;
+  minutes?: string;
 }
 
 export interface Status {
@@ -22,6 +24,7 @@ export interface Status {
   startTimeEpoch: number,
   currentTimeEpoch: number;
   estimatedRoutineFinishEpoch: number;
+  winderEnabled: number;
 }
 
 @Injectable({
@@ -31,10 +34,13 @@ export class ApiService {
 
   DEFUALT_URL = 'http://winderoo.local';
 
+  isWinderEnabled$ = new BehaviorSubject(0);
+  shouldRefresh$ = new BehaviorSubject(false);
+
   constructor(private http: HttpClient) { }
 
   static getWindowHref(_window: typeof window): string {
-      if (_window.location.href.includes('192')) {
+    if (_window.location.href.includes('192')) {
         
         // remove single trailing '/' from ip
         const sanitizedHref = 
@@ -56,8 +62,29 @@ export class ApiService {
     return this.DEFUALT_URL + '/api/';
   }
 
+  getShouldRefresh() {
+    return this.shouldRefresh$.asObservable();
+  }
+
   getStatus(URL: string) {
     return this.http.get<Status>(this.constructURL(URL) + 'status');
+  }
+
+  updatePowerState(URL: string, powerState: boolean) {
+    let powerStateToNum;
+    const baseURL = this.constructURL(URL);
+    
+    if (powerState) { 
+      powerStateToNum = 1;
+    } else {
+      powerStateToNum = 0;
+    }
+
+    const constructedURL = baseURL 
+    + "power?"
+    + "winderEnabled=" + powerStateToNum;
+
+    return this.http.post(constructedURL, null, { observe:'response' });
   }
 
   updateState(URL: string, update: Update) {
@@ -69,7 +96,8 @@ export class ApiService {
       + 'tpd=' + update.tpd +'&'
       + 'hour=' + update.hour +'&'
       + 'minutes=' + update.minutes;
-    return this.http.post(constructedURL, null, { observe: 'response' });
+
+      return this.http.post(constructedURL, null, { observe: 'response' });
   }
 
   resetDevice(URL: string) {
