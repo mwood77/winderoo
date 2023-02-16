@@ -6,88 +6,72 @@
 #include <ESPmDNS.h>
 #include <ESP32Time.h>
 
-#include "LedControl.h"
+#include "./utils/LedControl.h"
+#include "./utils/MotorControl.h"
 
 #include "FS.h"
 #include "ESPAsyncWebServer.h"
 
-HTTPClient http;
-WiFiClient client;
-ESP32Time rtc;
-
-// Pinouts & onboard LED config
-int dir1PinA = 25;
-int dir2PinA = 26;
-int freq = 5000;
-int resolution = 8;
-
-// 1 = clockwise, 0 = anticlockwise
-int motorDirection = 0;  
-
-WiFiManager wm;
-AsyncWebServer server(80);
-LedControl LED(0);
-
-bool reset = false;
-bool routineRunning = false;
-String timeURL = "http://worldtimeapi.org/api/ip";
-
+// *************************************************************************************
+// ********************************* CONFIGURABLES *************************************
+// *************************************************************************************
+/*
+* durationInSecondsToCompleteOneRevolution = how long it takes the watch to complete one rotation on the winder. If you purchased the motor listed in the guide / Bill Of Materials, then this default value is correct!
+* directionalPinA = this is the pin that's wired to IN1 on your L298N circuit board
+* directionalPinB = this is the pin that's wired to IN2 on your L298N circuit board
+* ledPin = by default this is set to the ESP32's onboard LED. If you've wired an external LED, change this value to the GPIO pin the LED is wired to.
+*/
 int durationInSecondsToCompleteOneRevolution = 8;
+int directionalPinA = 25;
+int directionalPinB = 26;
+int ledPin = 0;
 
+/*
+* DO NOT CHANGE THESE VARIABLES!
+*/
+String timeURL = "http://worldtimeapi.org/api/ip";
 String settingsFile = "/settings.txt";
-String status = "";
-String rotationsPerDay = "";
-String direction = "";
-String hour = "00";
-String minutes = "00";
-String winderEnabled = "1";
-
 unsigned long rtc_offset;
 unsigned long rtc_epoch;
 unsigned long estimatedRoutineFinishEpoch;
 unsigned long previousEpoch;
 unsigned long startTimeEpoch;
+bool reset = false;
+bool routineRunning = false;
+struct RUNTIME_VARS {
+  String status = "";
+  String rotationsPerDay = "";
+  String direction = "";
+  String hour = "00";
+  String minutes = "00";
+  String winderEnabled = "1";
+};
 
-void motorCW() {
-  digitalWrite(dir1PinA, HIGH);
-  digitalWrite(dir2PinA, LOW);
-}
-
-void motorCCW() {
-  digitalWrite(dir1PinA, LOW);
-  digitalWrite(dir2PinA, HIGH);
-}
-
-void motorSTOP() {
-  digitalWrite(dir1PinA, LOW);
-  digitalWrite(dir2PinA, LOW);
-}
-
-void determineMotorDirectionAndBegin() {
-  motorSTOP();
-
-  if (motorDirection) {
-    motorCW();
-  } else {
-    motorCCW();
-  }
-}
+/*
+* DO NOT CHANGE THESE VARIABLES!
+*/
+RUNTIME_VARS userDefinedSettings;
+LedControl LED(ledPin);
+MotorControl motor(directionalPinA, directionalPinB);
+WiFiManager wm;
+AsyncWebServer server(80);
+HTTPClient http;
+WiFiClient client;
+ESP32Time rtc;
 
 unsigned long calculateWindingTime() {
-  int tpd = atoi(rotationsPerDay.c_str());
+  int tpd = atoi(userDefinedSettings.rotationsPerDay.c_str());
 
   long totalSecondsSpentTurning = tpd * durationInSecondsToCompleteOneRevolution;
   
   // We want to rest every 3 minutes for 15 seconds
   long totalNumberOfRestingPeriods = totalSecondsSpentTurning / 180;
   long totalRestDuration = totalNumberOfRestingPeriods * 180;
-
   long finalRoutineDuration = totalRestDuration + totalSecondsSpentTurning;
 
   Serial.print("[STATUS] - Total winding duration: ");
   Serial.println(finalRoutineDuration);
 
-  // compute 'finish time'
   unsigned long epoch = rtc.getEpoch();
   unsigned long estimatedFinishTime = epoch + finalRoutineDuration;
 
@@ -98,7 +82,7 @@ void beginWindingRoutine() {
   startTimeEpoch = rtc.getEpoch();
   previousEpoch = startTimeEpoch;
   routineRunning = true;
-  status = "Winding";
+  userDefinedSettings.status = "Winding";
   Serial.println("[STATUS] - Begin winding routine");
 
   unsigned long finishTime = calculateWindingTime();
@@ -111,7 +95,6 @@ void beginWindingRoutine() {
   Serial.println(finishTime);
 }
 
-// For prioritizing winding time
 void getTime() {
   http.begin(client, timeURL);
   int httpCode = http.GET();
@@ -182,11 +165,11 @@ void parseSettings(String settings) {
   String savedMinutes = settings.substring(15, 17); // 00
   String savedDirection = settings.substring(18);   // CW || CCW || BOTH
 
-  status = savedStatus;
-  rotationsPerDay = savedTPD;
-  hour = savedHour;
-  minutes = savedMinutes;
-  direction = savedDirection;
+  userDefinedSettings.status = savedStatus;
+  userDefinedSettings.rotationsPerDay = savedTPD;
+  userDefinedSettings.hour = savedHour;
+  userDefinedSettings.minutes = savedMinutes;
+  userDefinedSettings.direction = savedDirection;
 }
 
 
@@ -195,16 +178,16 @@ void startWebserver() {
   server.on("/api/status", HTTP_GET, [](AsyncWebServerRequest *request) {
     AsyncResponseStream *response = request->beginResponseStream("application/json");
     DynamicJsonDocument json(1024);
-    json["status"] = status;
-    json["rotationsPerDay"] = rotationsPerDay;
-    json["direction"] = direction;
-    json["hour"] = hour;
-    json["minutes"] = minutes;
+    json["status"] = userDefinedSettings.status;
+    json["rotationsPerDay"] = userDefinedSettings.rotationsPerDay;
+    json["direction"] = userDefinedSettings.direction;
+    json["hour"] = userDefinedSettings.hour;
+    json["minutes"] = userDefinedSettings.minutes;
     json["durationInSecondsToCompleteOneRevolution"] = durationInSecondsToCompleteOneRevolution;
     json["startTimeEpoch"] = startTimeEpoch;
     json["currentTimeEpoch"] = rtc.getEpoch();
     json["estimatedRoutineFinishEpoch"] = estimatedRoutineFinishEpoch;
-    json["winderEnabled"] = winderEnabled;
+    json["winderEnabled"] = userDefinedSettings.winderEnabled;
     json["db"] = WiFi.RSSI();
     serializeJson(json, *response);
 
@@ -221,13 +204,13 @@ void startWebserver() {
       AsyncWebParameter* p = request->getParam(i);
 
         if( strcmp(p->name().c_str(), "winderEnabled") == 0 ) {
-          winderEnabled = p->value().c_str();
+          userDefinedSettings.winderEnabled = p->value().c_str();
 
-          if (winderEnabled == "0") {
+          if (userDefinedSettings.winderEnabled == "0") {
             Serial.println("[STATUS] - Switched off!");
-            status = "Stopped";
+            userDefinedSettings.status = "Stopped";
             routineRunning = false;
-            motorSTOP();
+            motor.stop();
           }
         }
     }
@@ -242,26 +225,26 @@ void startWebserver() {
       AsyncWebParameter* p = request->getParam(i);
     
         if( strcmp(p->name().c_str(), "rotationDirection") == 0 ) {
-          direction = p->value().c_str();
+          userDefinedSettings.direction = p->value().c_str();
 
-          motorSTOP();
+          motor.stop();
           delay(250);
 
           // Update motor direction
-          if (direction == "CW" ) {
-            motorDirection = 1;
-          } else if (direction == "CCW") {
-            motorDirection = 0;
+          if (userDefinedSettings.direction == "CW" ) {
+            motor.setMotorDirection(1);
+          } else if (userDefinedSettings.direction == "CCW") {
+            motor.setMotorDirection(0);
           }
 
-          Serial.println("[STATUS] - direction set: " + direction);
+          Serial.println("[STATUS] - direction set: " + userDefinedSettings.direction);
         }
     
         if( strcmp(p->name().c_str(), "tpd") == 0 ) {
           const char* newTpd = p->value().c_str();
 
-          if (strcmp(newTpd, rotationsPerDay.c_str()) != 0) {
-            rotationsPerDay = p->value().c_str();
+          if (strcmp(newTpd, userDefinedSettings.rotationsPerDay.c_str()) != 0) {
+            userDefinedSettings.rotationsPerDay = p->value().c_str();
 
             unsigned long finishTime = calculateWindingTime();
             estimatedRoutineFinishEpoch = finishTime;
@@ -269,28 +252,28 @@ void startWebserver() {
         }
 
         if( strcmp(p->name().c_str(), "hour") == 0 ) {
-          hour = p->value().c_str();
+          userDefinedSettings.hour = p->value().c_str();
         }
 
         if( strcmp(p->name().c_str(), "minutes") == 0 ) {
-          minutes = p->value().c_str();
+          userDefinedSettings.minutes = p->value().c_str();
         }
 
         if( strcmp(p->name().c_str(), "action") == 0) {
           if ( strcmp(p->value().c_str(), "START") == 0 ) {
             if (!routineRunning) {
-              status = "Winding";
+              userDefinedSettings.status = "Winding";
               beginWindingRoutine();
             }
           } else {
-            status = "Stopped";
+            motor.stop();
             routineRunning = false;
-            motorSTOP();
+            userDefinedSettings.status = "Stopped";
           }
-        } 
+        }
     }
 
-    String configs = status + "," + rotationsPerDay + "," + hour + "," + minutes + "," + direction;
+    String configs = userDefinedSettings.status + "," + userDefinedSettings.rotationsPerDay + "," + userDefinedSettings.hour + "," + userDefinedSettings.minutes + "," + userDefinedSettings.direction;
 
     bool writeSuccess = writeConfigVarsToFile(settingsFile, configs);
 
@@ -334,8 +317,7 @@ void initFS() {
   Serial.println("[STATUS] - LittleFS mounted");
 }
 
-void onboardLEDControl(int blinkState) {
-  
+void triggerLEDCondition(int blinkState) {
   // remove any previous LED state (aka turn LED off)
   LED.off();
   delay(50);
@@ -358,7 +340,7 @@ void onboardLEDControl(int blinkState) {
 
 void saveWifiCallback() {
   // slow blink to confirm connection success
-  onboardLEDControl(1);
+  triggerLEDCondition(1);
   ESP.restart();
   delay(2000);
 }
@@ -369,10 +351,9 @@ void setup() {
   setCpuFrequencyMhz(80);
   
   // Prepare pins
-  pinMode(dir1PinA, OUTPUT);
-  pinMode(dir2PinA, OUTPUT);
-  
-  ledcSetup(LED.getChannel(), freq, resolution);
+  pinMode(directionalPinA, OUTPUT);
+  pinMode(directionalPinB, OUTPUT);
+  ledcSetup(LED.getChannel(), LED.getFrequency(), LED.getResolution());
   ledcAttachPin(LED_BUILTIN, LED.getChannel());
 
   // WiFi Manager config    
@@ -382,8 +363,8 @@ void setup() {
   wm.setHostname("Winderoo");
   wm.setSaveConfigCallback(saveWifiCallback);
 
-  winderEnabled = true;
-  
+  userDefinedSettings.winderEnabled = true;
+
   // Connect using saved credentials, if they exist
   // If connection fails, start setup Access Point
   if (wm.autoConnect("Winderoo Setup")) {
@@ -403,7 +384,7 @@ void setup() {
     getTime();
     startWebserver();
 
-    if (strcmp(status.c_str(), "Winding") == 0) {
+    if (strcmp(userDefinedSettings.status.c_str(), "Winding") == 0) {
       beginWindingRoutine();
     }
   } else {
@@ -415,9 +396,8 @@ void setup() {
 void loop() {
 
   if (reset) {
-
     // fast blink
-    onboardLEDControl(2);
+    triggerLEDCondition(2);
 
     Serial.println("[STATUS] - Stopping webserver");
     server.end();
@@ -433,10 +413,10 @@ void loop() {
     delay(2000);
   }
 
-  if (rtc.getHour(true) == hour.toInt() && 
-      rtc.getMinute() == minutes.toInt() && 
+  if (rtc.getHour(true) == userDefinedSettings.hour.toInt() && 
+      rtc.getMinute() == userDefinedSettings.minutes.toInt() && 
       !routineRunning && 
-      winderEnabled == "1") {
+      userDefinedSettings.winderEnabled == "1") {
     beginWindingRoutine();
   }
 
@@ -446,40 +426,43 @@ void loop() {
     if (rtc.getEpoch() < estimatedRoutineFinishEpoch) {
       
       // turn motor in direction
-      determineMotorDirectionAndBegin();
+      motor.determineMotorDirectionAndBegin();
       int r = rand() % 100;
 
       if (r <= 25) {
-        if ((strcmp(direction.c_str(), "BOTH") == 0) && (currentTime - previousEpoch) > 180) {
-          motorSTOP();
+        if ((strcmp(userDefinedSettings.direction.c_str(), "BOTH") == 0) && (currentTime - previousEpoch) > 180) {
+          motor.stop();
           delay(3000);
 
           previousEpoch = currentTime;
-          motorDirection = !motorDirection;
-          Serial.println("[STATUS] - Motor changing direction, mode: " + direction);
+
+          int currentDirection = motor.getMotorDirection();
+          motor.setMotorDirection(!currentDirection);
+          Serial.println("[STATUS] - Motor changing direction, mode: " + userDefinedSettings.direction);
           
-          determineMotorDirectionAndBegin();
+          motor.determineMotorDirectionAndBegin();
         } 
         
         if ((currentTime - previousEpoch) > 180) {
           Serial.println("[STATUS] - Pause");
           previousEpoch = currentTime;
-          motorSTOP();
+          motor.stop();
           delay(3000);
         }
       }
     } else {
       // Routine has finished
-      status = "Stopped";
+      userDefinedSettings.status = "Stopped";
       routineRunning = false;
-      motorSTOP();
+      motor.stop();
     }
   }
   
-  if (winderEnabled == "0") {
+  if (userDefinedSettings.winderEnabled == "0") {
     // pulse LED
-    onboardLEDControl(3);
+    triggerLEDCondition(3);
   }
 
   wm.process();
+  delay(1000);
 }

@@ -6,6 +6,8 @@
 class LedControl {
     private:
         int _ledChannel;
+        int _freq;
+        int _resolution;
 
     public:
         LedControl(int _ledChannel);
@@ -67,6 +69,14 @@ class LedControl {
 
         int getChannel() {
             return _ledChannel;
+        }
+
+        int getFrequency() {
+            return _freq;
+        }
+
+        int getResolution() {
+            return _resolution;
         }
 
 };
