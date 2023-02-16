@@ -1,7 +1,8 @@
 #include "LedControl.h"
 
-LedControl::LedControl(int ledChannel) {
+LedControl::LedControl(int ledChannel)
+{
     _ledChannel = ledChannel;
-     _freq = 5000;
-     _resolution = 8;
+    _freq = 5000;
+    _resolution = 8;
 }
