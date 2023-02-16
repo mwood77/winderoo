@@ -1,6 +1,6 @@
 <h3 align="center">
     <br>
-    <img src="./docs/images/winder-running.gif" alt="Winderoo - The Open Source Watch Winder" width="300">
+    <img src="./docs/images/splash-image.jpg" alt="Winderoo - The Open Source Watch Winder" width="600">
   
   <br>
     <b>Winderoo</b>
@@ -41,6 +41,7 @@ Winderoo is an open source project which that helps you build a multifunction, I
 <hr>
 
 ### Prerequisites & Build Instructions
+
 > [**See the Prerequisites first**](./docs/prereqs.md)
 
 1. [Bill of Materials (what you need to buy)](./docs/bom-requirements.md)
