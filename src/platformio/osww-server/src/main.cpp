@@ -22,11 +22,13 @@
  * directionalPinA = this is the pin that's wired to IN1 on your L298N circuit board
  * directionalPinB = this is the pin that's wired to IN2 on your L298N circuit board
  * ledPin = by default this is set to the ESP32's onboard LED. If you've wired an external LED, change this value to the GPIO pin the LED is wired to.
+ * externalButton = OPTIONAL - If you want to use an external ON/OFF button, connect it to this pin 13. If you need to use another pin, change the value here.
  */
 int durationInSecondsToCompleteOneRevolution = 8;
 int directionalPinA = 25;
 int directionalPinB = 26;
 int ledPin = 0;
+int externalButton = 13;
 /*
  * *************************************************************************************
  * ******************************* END CONFIGURABLES ***********************************
@@ -426,6 +428,7 @@ void setup()
 	// Prepare pins
 	pinMode(directionalPinA, OUTPUT);
 	pinMode(directionalPinB, OUTPUT);
+	pinMode(externalButton, INPUT);
 	ledcSetup(LED.getChannel(), LED.getFrequency(), LED.getResolution());
 	ledcAttachPin(LED_BUILTIN, LED.getChannel());
 
@@ -546,9 +549,22 @@ void loop()
 		}
 	}
 
+	// get physical button state
+	int buttonState = digitalRead(externalButton);
+
+	if (buttonState == HIGH)
+	{
+		if (userDefinedSettings.winderEnabled == "0") {
+            Serial.println("[STATUS] - Switched off!");
+            userDefinedSettings.status = "Stopped";
+            routineRunning = false;
+            motor.stop();
+		}
+	}
+
+
 	if (userDefinedSettings.winderEnabled == "0")
 	{
-		// pulse LED
 		triggerLEDCondition(3);
 	}
 
