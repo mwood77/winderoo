@@ -6,6 +6,8 @@
 #include <ESPmDNS.h>
 #include <ESP32Time.h>
 
+#include "LedControl.h"
+
 #include "FS.h"
 #include "ESPAsyncWebServer.h"
 
@@ -13,14 +15,18 @@ HTTPClient http;
 WiFiClient client;
 ESP32Time rtc;
 
+// Pinouts & onboard LED config
 int dir1PinA = 25;
 int dir2PinA = 26;
+int freq = 5000;
+int resolution = 8;
 
 // 1 = clockwise, 0 = anticlockwise
 int motorDirection = 0;  
 
 WiFiManager wm;
 AsyncWebServer server(80);
+LedControl LED(0);
 
 bool reset = false;
 bool routineRunning = false;
@@ -60,7 +66,6 @@ void motorSTOP() {
 void determineMotorDirectionAndBegin() {
   motorSTOP();
 
-  
   if (motorDirection) {
     motorCW();
   } else {
@@ -329,14 +334,31 @@ void initFS() {
   Serial.println("[STATUS] - LittleFS mounted");
 }
 
-void saveWifiCallback() {
-  // Slow blink to confirm success & restart
-  for ( int i = 0; i < 6; i++ ) {
-    digitalWrite(LED_BUILTIN, HIGH);
-    delay(500);
-    digitalWrite(LED_BUILTIN, LOW);
-    delay(500);
+void onboardLEDControl(int blinkState) {
+  
+  // remove any previous LED state (aka turn LED off)
+  LED.off();
+  delay(50);
+
+  switch(blinkState) {
+    case 1:
+      LED.slowBlink();
+      break;
+    case 2:
+      LED.fastBlink();
+      break;
+    case 3:
+      LED.pwm();
+      break;
+    default:
+      Serial.println("[WARN] - blinkState not recognized");
+      break;
   }
+}
+
+void saveWifiCallback() {
+  // slow blink to confirm connection success
+  onboardLEDControl(1);
   ESP.restart();
   delay(2000);
 }
@@ -344,12 +366,14 @@ void saveWifiCallback() {
 void setup() {
   WiFi.mode(WIFI_STA);
   Serial.begin(115200);
-  setCpuFrequencyMhz(160);
+  setCpuFrequencyMhz(80);
   
   // Prepare pins
   pinMode(dir1PinA, OUTPUT);
   pinMode(dir2PinA, OUTPUT);
-  pinMode (LED_BUILTIN, OUTPUT);
+  
+  ledcSetup(LED.getChannel(), freq, resolution);
+  ledcAttachPin(LED_BUILTIN, LED.getChannel());
 
   // WiFi Manager config    
   wm.setConfigPortalTimeout(3600);
@@ -384,19 +408,16 @@ void setup() {
     }
   } else {
     Serial.println("[STATUS] - WiFi Config Portal running");
-    digitalWrite(LED_BUILTIN, HIGH);
+    ledcWrite(LED.getChannel(), 255);
   };
 }
  
 void loop() {
 
   if (reset) {
-    for ( int i = 0; i < 40; i++ ) {
-      digitalWrite(LED_BUILTIN, HIGH);
-      delay(100);
-      digitalWrite(LED_BUILTIN, LOW);
-      delay(100);
-    }
+
+    // fast blink
+    onboardLEDControl(2);
 
     Serial.println("[STATUS] - Stopping webserver");
     server.end();
@@ -455,6 +476,10 @@ void loop() {
     }
   }
   
+  if (winderEnabled == "0") {
+    // pulse LED
+    onboardLEDControl(3);
+  }
+
   wm.process();
-  delay(1000);
 }

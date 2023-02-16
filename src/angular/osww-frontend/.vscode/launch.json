@@ -10,6 +10,13 @@
       "url": "http://localhost:4200/"
     },
     {
+      "name": "build & copy to data dir",
+      "type": "pwa-chrome",
+      "request": "launch",
+      "command": "npm run build-arduino",
+      "url": "http://localhost:4200/"
+    },
+    {
       "name": "ng test",
       "type": "chrome",
       "request": "launch",
