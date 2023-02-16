@@ -9,31 +9,31 @@
 
 </h3>
 
-<div align="center">
+<!-- <div align="center">
   <a href="#llink-goes-here">
     <img src="https://img.shields.io/badge/$-join us on discord-7289da.svg?maxAge=2592000&amp;style=flat">
   </a>
-</div>
+</div> -->
 
 
 <hr>
 <p align="center">
-Winderoo is an open source project which that helps you build a multifunction, high quality, 3 watch winder, for less than $100 USD.
+Winderoo is an open source project which that helps you build a multifunction, IoT, high quality, 3 watch winder, for less than $100 USD.
 </p>
 <hr>
 
 ### Key Features
 
-* Controllable over wifi
-* Programmable number of rotations per day (RPD)
-  * 100 <-> 960 RPD
-* Programmable direction 
-  * clockwise, counter clockwise, or both
-* Programmabe winding offset. 
-  * Set it to run late at night, while you're asleep!
-* Modular design
-  * Add as many passive winding modules as you'd like, in almost any 2D orientation
-  * One powered unit is required to run passive units
+* Settable RPD (rotations per day) between 100 - 960rpd
+* Single direction (clockwise / anti-clockwise) or bi-directional winding.
+* Settable start time. Have it wind while you're asleep, or while you're away, or anytime for that matter. Manual start / stop is also available, of course.
+* 3 seconds of rest after 3 minutes of rotation, in every mode.
+* Estimated cycle duration (how long it'll take to wind your watch).
+* Cycle progress display (how far along the current winding routine is).
+* Software or optional physical button to trigger ON/OFF state, so you can disable it completely.
+* Simple setup. Flash the firmware with a few clicks, then connect your phone (or other device) to the winder's setup wifi network & add it to your home network.
+* Modular means that a single powered unit can drive N number of passive winders.
+* There's no app required! You control it from a web browser. 
 * Silent belt drive
 * Minimal electronics / programming experience required
 * Easy to print!
@@ -43,7 +43,7 @@ Winderoo is an open source project which that helps you build a multifunction, h
 ### Prerequisites & Build Instructions
 > [**See the Prerequisites first**](./docs/prereqs.md)
 
-1. [Bill of Materials](./docs/bom-requirements.md)
+1. [Bill of Materials (what you need to buy)](./docs/bom-requirements.md)
 1. [Software Installation](./docs/install-software.md)
 1. [Model Files](./model)
 1. [Build Guide](./docs/build-guide.md)
