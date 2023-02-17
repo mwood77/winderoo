@@ -3,11 +3,9 @@
 > [👈 Back to build guide](./build-guide.md)
 
 # Printing Recommendations
-
-> These are general priting recommendations, please remember that you know your printer better than I!
+* These are general priting recommendations, please remember that you know your printer better than I!
 
 ## General Advice
-
 1. The following models will require support:
     * `STRUCT_mid-plate`
     * `watch-mount`
@@ -20,8 +18,7 @@
     * For example, the `mounting-dowel`'s outter lip will need to be filed down so the `mounting-dowel-collar` can easily slip over it.
 
 ## Recommended Printing Orientation by Model
-
-> Total Printing Time is 24 hours per winder
+- Total time spent printing is 24 hours per winding unit
 
 | Model Name | Quantity To Print | Printing Time Per Unit | Printing Orientation |
 | :------------: | :------------: | :----------------------------------: | :--------:| 
