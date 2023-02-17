@@ -1,10 +1,10 @@
 <div align="center">  
-  <span style="font-size: xxx-large">Winderoo</span>
-  <p style="font-size: x-large; margin-top: 0; padding-top: 0"><i>The open source IoT watch winder</i></p>
+  <h2>
+    Winderoo
+    <p><i>the open source IoT watch winder</i></p>
+  </h2>
 </div>
-  
 
-<hr>
 <div align="center">
   <br>
   <img src="./docs/images/splash-image.jpg" alt="Winderoo - The Open Source Watch Winder" width="600">
@@ -14,7 +14,7 @@
     Winderoo is an open source project which that helps you build a multifunction, IoT, high quality, 3 watch winder, for less than $60 USD.
   </p>
 </div>
-<hr>
+
 
 ### Key Features
 * Settable RPD (rotations per day) between 100 - 960rpd
