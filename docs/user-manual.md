@@ -4,7 +4,7 @@
 
 | v1.0.0 | |
 | :---: |:---: |
-|<img src="gui/overview_v1.0.0.png" height="600">  | This is winderoo's primary interace. From here you'll be able to change any settings you need. What follows is a break-down of what each feature does |
+|<img src="gui/overview_v1.0.0.png" height="600">  | This is winderoo's primary interface. From here you can change any settings you need |
 
 
 ### Enable / Disable Winding
@@ -35,7 +35,7 @@
 
 | UI Element | Function |
 | :---: |:---: |
-|<img src="gui/progress-indicator_updating.png" >  | While animated, Winderoo's is attempting to update the progress indicator |
+|<img src="gui/progress-indicator_updating.png" >  | While animated, Winderoo is attempting to update the progress indicator |
 |<img src="gui/progress-indicator_status.png" >  | The progress of the current winding routine |
 
 ### Estimated Cycle Duration
@@ -58,14 +58,17 @@
 ### Save / Update Settings
 | UI Element | Function |
 | :---: |:---: |
-|<img src="gui/save-button.png" >  | This will capture and save all settings (winding direction, rotations per day, cycle start time). If a winding routine is currenty running, it does not reset the current routine (it will update and finish accordingly). If your wish to make sure the routine is changed, manually stop, then start the routine. See [control button](#control-buttons). |
+|<img src="gui/save-button.png" >  | This will capture and save all settings (winding direction, rotations per day, cycle start time). If a winding routine is currenty running, it does not reset the current routine (it will update and finish accordingly). If you wish to make sure the routine is changed, manually stop, then start the routine. See [control buttons](#control-buttons). |
 
 
 ## Understanding Winderoo's LED Blink Status
 
-- Most ESP32 dev boards have a primary RED LED that is always on. This is typically a RED led. This cannot be shut off via firmware. 
-    - If it bothers your, you can cover it with electrical tape, de-solder it, or scratch the trace with an exacto knife.
-- Most ESP32 dev boards have a secondary BLUE LED, however some may be a different colour. Please use the 'blinking' status to decipher what Winderoo is trying to tell you.
+- Most ESP32 dev boards have a primary RED LED that is always on. This cannot be shut off via firmware. 
+    - If you find it bothersome, you can cover it with electrical tape, de-solder it, or cut the trace with an exacto knife.
+
+- Most ESP32 dev boards have a secondary BLUE LED, however some may be a different colour. 
+    - Please use the following table to understand what Winderoo is telling you.
+
 
 | ESP32 Board (or optional external LED) | LED State | Meaning |
 | :------------: | :------------: | :----------------------------------: |
