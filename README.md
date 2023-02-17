@@ -9,17 +9,10 @@
 
 </h3>
 
-<!-- <div align="center">
-  <a href="#llink-goes-here">
-    <img src="https://img.shields.io/badge/$-join us on discord-7289da.svg?maxAge=2592000&amp;style=flat">
-  </a>
-</div> -->
-
-
 <hr>
-<p align="center">
-Winderoo is an open source project which that helps you build a multifunction, IoT, high quality, 3 watch winder, for less than $100 USD.
-</p>
+  <p align="center">
+    Winderoo is an open source project which that helps you build a multifunction, IoT, high quality, 3 watch winder, for less than $60 USD.
+  </p>
 <hr>
 
 ### Key Features
@@ -46,5 +39,6 @@ Winderoo is an open source project which that helps you build a multifunction, I
 
 1. [Bill of Materials (what you need to buy)](./docs/bom-requirements.md)
 1. [Software Installation](./docs/install-software.md)
-1. [Model Files](./model)
+1. [Printing Recommendations](./docs/printing-recommendations.md)
+   - [Model Files](./model)
 1. [Build Guide](./docs/build-guide.md)
