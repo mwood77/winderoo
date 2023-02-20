@@ -53,6 +53,7 @@
 ### Cycle Start Time
 | UI Element | Function |
 | :---: |:---: |
+|<img src="gui/cycle-start-time-toggle.png" >  | This will enable or disable the winder's timer. When the switch is set to **ENABLED**, Winderoo will begin winding at a your desired 'Cycle Start Time.' If the switch is set to **DISABLED**, you must start the winder using the [control buttons](#control-buttons) |
 |<img src="gui/cycle-start-time.png" >  | Set which time you'd like Winderoo to begin winding at. **_Important!_** WInderoo will _always_ start at this time, even if you've already triggered a manual run with a [control button](#control-buttons). To stop this behaviour, see: [Enable / Disable Winding](#enable--disable-winding) |
 
 ### Save / Update Settings
