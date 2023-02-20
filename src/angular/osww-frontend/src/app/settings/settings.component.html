@@ -3,11 +3,11 @@
     <mat-card class="mat-elevation-z1" [ngClass]="getColour(this.upload.activityState)">
             <div>
                 <span>Status</span>
-                <div class="status-text col-8 d-flex justify-content-end">
+                <div class="status-text justify-content-end">
                     {{ this.upload.activityState }}
                 </div>
             </div>
-            <span class="status-card-spacer"></span>
+            <span class="full-screen-spacer"></span>
             <mat-icon style="margin-right: 0.5rem">{{ this.wifiSignalIcon }}</mat-icon>
     </mat-card>
 
@@ -91,32 +91,43 @@
 
     <mat-card class="mat-elevation-z1">
         <div class="individual-setting">
-            <div>
-                Cycle Start Time
-            </div>
-            <div class="individual-status-text">
-                {{ this.upload.hour }}:{{ this.upload.minutes }}
+            <div>Cycle Start Time</div>
+            
+            <div style="display: flex; justify-content: center;">
+                <mat-slide-toggle [(ngModel)]="this.isTimerEnabled" (ngModelChange)="updateTimerEnabledState($event)">
+                    <span *ngIf="this.isTimerEnabled; else elseBlock">ENABLED</span>
+                    <ng-template #elseBlock><span>DISABLED</span></ng-template>
+                </mat-slide-toggle>
             </div>
 
-            <div class="time-input">
-                <mat-form-field color="accent" appearance="outline">
-                    <mat-label>Hour</mat-label>
-                    <select matNativeControl [(ngModel)]="selectedHour" name="hour">
-                        <option value="" selected></option>
-                        <option *ngFor="let hr of hours" [value]="hr.value">
-                            {{ hr.value }}
-                        </option>
-                        </select>
-                </mat-form-field>
-                <mat-form-field color="accent" appearance="outline">
-                    <mat-label>Minutes</mat-label>
-                    <select matNativeControl [(ngModel)]="selectedMinutes" name="minutes">
-                        <option value="" selected></option>
-                        <option *ngFor="let mn of minutes" [value]="mn.value">
-                            {{ mn.value }}
-                        </option>
-                        </select>
-                </mat-form-field>
+
+            <div *ngIf="this.isTimerEnabled">
+                
+                <div class="individual-status-text">
+                    {{ this.upload.hour }}:{{ this.upload.minutes }}
+                </div>
+    
+                <div class="time-input">
+                    <mat-form-field color="accent" appearance="outline">
+                        <mat-label>Hour</mat-label>
+                        <select matNativeControl [(ngModel)]="selectedHour" name="hour">
+                            <option value="" selected></option>
+                            <option *ngFor="let hr of hours" [value]="hr.value">
+                                {{ hr.value }}
+                            </option>
+                            </select>
+                    </mat-form-field>
+                    <mat-form-field color="accent" appearance="outline">
+                        <mat-label>Minutes</mat-label>
+                        <select matNativeControl [(ngModel)]="selectedMinutes" name="minutes">
+                            <option value="" selected></option>
+                            <option *ngFor="let mn of minutes" [value]="mn.value">
+                                {{ mn.value }}
+                            </option>
+                            </select>
+                    </mat-form-field>
+                </div>
+
             </div>
         </div>
     </mat-card>

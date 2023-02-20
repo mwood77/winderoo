@@ -17,7 +17,7 @@
  * ********************************* CONFIGURABLES *************************************
  * *************************************************************************************
  *
- * durationInSecondsToCompleteOneRevolution = how long it takes the watch to complete one rotation on the winder. 
+ * durationInSecondsToCompleteOneRevolution = how long it takes the watch to complete one rotation on the winder.
  * 												If you purchased the motor listed in the guide / Bill Of Materials, then this default value is correct!
  * directionalPinA = this is the pin that's wired to IN1 on your L298N circuit board
  * directionalPinB = this is the pin that's wired to IN2 on your L298N circuit board
@@ -55,6 +55,7 @@ struct RUNTIME_VARS
 	String hour = "00";
 	String minutes = "00";
 	String winderEnabled = "1";
+	String timerEnabled = "0";
 };
 
 /*
@@ -199,16 +200,18 @@ bool writeConfigVarsToFile(String file_name, String contents)
  */
 void parseSettings(String settings)
 {
-	String savedStatus = settings.substring(0, 7);	  // Winding || Stopped = 7char
-	String savedTPD = settings.substring(8, 11);	  // min = 100 || max = 960
-	String savedHour = settings.substring(12, 14);	  // 00
-	String savedMinutes = settings.substring(15, 17); // 00
-	String savedDirection = settings.substring(18);	  // CW || CCW || BOTH
+	String savedStatus = settings.substring(0, 7);		 // Winding || Stopped = 7char
+	String savedTPD = settings.substring(8, 11);		 // min = 100 || max = 960
+	String savedHour = settings.substring(12, 14);		 // 00
+	String savedMinutes = settings.substring(15, 17);	 // 00
+	String savedTimerState = settings.substring(18, 19); // 0 || 1
+	String savedDirection = settings.substring(20);		 // CW || CCW || BOTH
 
 	userDefinedSettings.status = savedStatus;
 	userDefinedSettings.rotationsPerDay = savedTPD;
 	userDefinedSettings.hour = savedHour;
 	userDefinedSettings.minutes = savedMinutes;
+	userDefinedSettings.timerEnabled = savedTimerState;
 	userDefinedSettings.direction = savedDirection;
 }
 
@@ -249,6 +252,7 @@ void startWebserver()
     json["currentTimeEpoch"] = rtc.getEpoch();
     json["estimatedRoutineFinishEpoch"] = estimatedRoutineFinishEpoch;
     json["winderEnabled"] = userDefinedSettings.winderEnabled;
+    json["timerEnabled"] = userDefinedSettings.timerEnabled;
     json["db"] = WiFi.RSSI();
     serializeJson(json, *response);
 
@@ -315,6 +319,10 @@ void startWebserver()
         if( strcmp(p->name().c_str(), "hour") == 0 ) {
           userDefinedSettings.hour = p->value().c_str();
         }
+		
+		if( strcmp(p->name().c_str(), "timerEnabled") == 0 ) {
+          userDefinedSettings.timerEnabled = p->value().c_str();
+		}
 
         if( strcmp(p->name().c_str(), "minutes") == 0 ) {
           userDefinedSettings.minutes = p->value().c_str();
@@ -334,7 +342,7 @@ void startWebserver()
         }
     }
 
-    String configs = userDefinedSettings.status + "," + userDefinedSettings.rotationsPerDay + "," + userDefinedSettings.hour + "," + userDefinedSettings.minutes + "," + userDefinedSettings.direction;
+    String configs = userDefinedSettings.status + "," + userDefinedSettings.rotationsPerDay + "," + userDefinedSettings.hour + "," + userDefinedSettings.minutes + "," +  userDefinedSettings.timerEnabled + "," + userDefinedSettings.direction;
 
     bool writeSuccess = writeConfigVarsToFile(settingsFile, configs);
 
@@ -346,14 +354,14 @@ void startWebserver()
 
 	server.on("/api/reset", HTTP_GET, [](AsyncWebServerRequest *request)
 			  {
-    Serial.println("[STATUS] - Received reset command");
-    AsyncResponseStream *response = request->beginResponseStream("application/json");
-    DynamicJsonDocument json(1024);
-    json["status"] = "Resetting";
-    serializeJson(json, *response);
-    request->send(response);
-    
-    reset = true; });
+		Serial.println("[STATUS] - Received reset command");
+		AsyncResponseStream *response = request->beginResponseStream("application/json");
+		DynamicJsonDocument json(1024);
+		json["status"] = "Resetting";
+		serializeJson(json, *response);
+		request->send(response);
+		
+		reset = true; });
 
 	server.serveStatic("/css/", LittleFS, "/css/").setCacheControl("max-age=31536000");
 	server.serveStatic("/js/", LittleFS, "/js/").setCacheControl("max-age=31536000");
@@ -496,12 +504,15 @@ void loop()
 		delay(2000);
 	}
 
-	if (rtc.getHour(true) == userDefinedSettings.hour.toInt() &&
-		rtc.getMinute() == userDefinedSettings.minutes.toInt() &&
-		!routineRunning &&
-		userDefinedSettings.winderEnabled == "1")
+	if (userDefinedSettings.timerEnabled == "1")
 	{
-		beginWindingRoutine();
+		if (rtc.getHour(true) == userDefinedSettings.hour.toInt() &&
+			rtc.getMinute() == userDefinedSettings.minutes.toInt() &&
+			!routineRunning &&
+			userDefinedSettings.winderEnabled == "1")
+		{
+			beginWindingRoutine();
+		}
 	}
 
 	if (routineRunning)
@@ -554,14 +565,14 @@ void loop()
 
 	if (buttonState == HIGH)
 	{
-		if (userDefinedSettings.winderEnabled == "0") {
-            Serial.println("[STATUS] - Switched off!");
-            userDefinedSettings.status = "Stopped";
-            routineRunning = false;
-            motor.stop();
+		if (userDefinedSettings.winderEnabled == "0")
+		{
+			Serial.println("[STATUS] - Switched off!");
+			userDefinedSettings.status = "Stopped";
+			routineRunning = false;
+			motor.stop();
 		}
 	}
-
 
 	if (userDefinedSettings.winderEnabled == "0")
 	{

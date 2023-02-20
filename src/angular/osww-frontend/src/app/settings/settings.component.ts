@@ -1,7 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { ApiService, Update } from '../api.service';
 import { ProgressBarMode } from '@angular/material/progress-bar';
-import { take } from 'rxjs';
 
 interface SelectInterface {
   value: string;
@@ -63,7 +62,8 @@ export class SettingsComponent implements OnInit {
     minutes: '00',
     durationInSecondsToCompleteOneRevolution: 0,
     startTimeEpoch: 0,
-    estimatedRoutineFinishEpoch: 0
+    estimatedRoutineFinishEpoch: 0,
+    isTimerEnabledNum: 0
   }
 
   selectedHour: any;
@@ -73,12 +73,13 @@ export class SettingsComponent implements OnInit {
   progressMode: ProgressBarMode = 'indeterminate';
   progressPercentageComplete: number =  0;
   isWinderEnabled: number;
+  isTimerEnabled: boolean;
 
   watchWindingParametersURL = 'https://watch-winder.store/watch-winding-table/';
 
   constructor(private apiService: ApiService) {
-
     this.isWinderEnabled = this.apiService.isWinderEnabled$.getValue();
+    this.isTimerEnabled = false;
    }
 
   ngOnInit(): void {
@@ -112,9 +113,11 @@ export class SettingsComponent implements OnInit {
       this.upload.durationInSecondsToCompleteOneRevolution = data.durationInSecondsToCompleteOneRevolution;
       this.upload.startTimeEpoch = data.startTimeEpoch;
       this.upload.estimatedRoutineFinishEpoch = data.estimatedRoutineFinishEpoch;
+      this.upload.isTimerEnabledNum = data.timerEnabled;
 
       this.apiService.isWinderEnabled$.next(data.winderEnabled);
 
+      this.mapTimerEnabledState(this.upload.isTimerEnabledNum);
       this.estimateDuration(this.upload.rpd);
       this.getProgressComplete(data.startTimeEpoch, data.currentTimeEpoch, data.estimatedRoutineFinishEpoch);
     });
@@ -192,6 +195,7 @@ export class SettingsComponent implements OnInit {
       tpd: this.upload.rpd,
       hour: this.selectedHour == null ? this.upload.hour : this.selectedHour,
       minutes: this.selectedMinutes == null ? this.upload.minutes : this.selectedMinutes,
+      timerEnabled: this.upload.isTimerEnabledNum,
     }
 
     this.apiService.updateState(ApiService.getWindowHref(window), body).subscribe((response) => {
@@ -212,6 +216,14 @@ export class SettingsComponent implements OnInit {
     this.uploadSettings('STOP');
   }
 
+  mapTimerEnabledState($event: number): void {
+    if ($event == 1) {
+      this.isTimerEnabled = true;
+    } else {
+      this.isTimerEnabled = false;
+    };
+  }
+
   estimateDuration(rpd: number): void {
     const totalSecondsSpentTurning = rpd * this.upload.durationInSecondsToCompleteOneRevolution;
     const totalNumberOfRestingPeriods = totalSecondsSpentTurning / 180;
@@ -226,7 +238,7 @@ export class SettingsComponent implements OnInit {
 
     this.estDuration = 
       hours < "10" ? `${hours.slice(1,2)} hours ${mins} minutes` :
-    `${hours} hours ${mins} minutes`;
+      `${hours} hours ${mins} minutes`;
   }
 
   getProgressComplete(startTimeEpoch: number, currentTimeEpoch: number, estimatedRoutineFinishEpoch: number): void {
@@ -244,5 +256,13 @@ export class SettingsComponent implements OnInit {
       this.progressPercentageComplete = percentage;
     }
   }
+
+  updateTimerEnabledState($state: any) {
+    this.upload.isTimerEnabledNum = $state;
+    this.apiService.updateTimerState(ApiService.getWindowHref(window), $state).subscribe(
+      (data) => {
+        this.mapTimerEnabledState($state)
+      });
+  };
 
 }

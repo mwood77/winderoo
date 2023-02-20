@@ -10,6 +10,7 @@ export interface Update {
   tpd?: number,
   hour?: string;
   minutes?: string;
+  timerEnabled?: number;
 }
 
 export interface Status {
@@ -25,6 +26,7 @@ export interface Status {
   currentTimeEpoch: number;
   estimatedRoutineFinishEpoch: number;
   winderEnabled: number;
+  timerEnabled: number;
 }
 
 @Injectable({
@@ -81,10 +83,27 @@ export class ApiService {
     }
 
     const constructedURL = baseURL 
-    + "power?"
-    + "winderEnabled=" + powerStateToNum;
+      + "power?"
+      + "winderEnabled=" + powerStateToNum;
 
     return this.http.post(constructedURL, null, { observe:'response' });
+  }
+
+  updateTimerState(URL: string, timerState: boolean) {
+    let timerStateToNum;
+    const baseURL = this.constructURL(URL);
+    console.log(timerState)
+    if (timerState) {
+      timerStateToNum = 1;
+    } else {
+      timerStateToNum = 0;
+    }
+
+    const constructedURL = baseURL
+      + "update?"
+      + "timerEnabled=" + timerStateToNum;
+
+    return this.http.post(constructedURL, null, { observe: 'response' });
   }
 
   updateState(URL: string, update: Update) {
@@ -92,12 +111,12 @@ export class ApiService {
 
     const constructedURL = baseURL
       + 'update?action=' + update.action + '&'
-      + 'rotationDirection=' + update.rotationDirection +'&'
-      + 'tpd=' + update.tpd +'&'
-      + 'hour=' + update.hour +'&'
+      + 'rotationDirection=' + update.rotationDirection + '&'
+      + 'tpd=' + update.tpd + '&'
+      + 'hour=' + update.hour + '&'
       + 'minutes=' + update.minutes;
 
-      return this.http.post(constructedURL, null, { observe: 'response' });
+    return this.http.post(constructedURL, null, { observe: 'response' });
   }
 
   resetDevice(URL: string) {

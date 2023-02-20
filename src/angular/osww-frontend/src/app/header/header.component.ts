@@ -51,8 +51,6 @@ export class HeaderComponent implements OnInit {
         this.mapEnabledState($state)
         // signal settings to component to refresh
         this.apiService.shouldRefresh$.next(true);
-        
-        console.log(this.apiService.shouldRefresh$.getValue());
       });
   };
   
