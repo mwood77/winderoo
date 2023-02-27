@@ -11,7 +11,7 @@
   <br>
   <br>
   <p>
-    Winderoo is an open source project which that helps you build a multifunction, IoT, high quality, 3 watch winder, for less than $60 USD.
+    Winderoo is an open source project guides you how to build a multifunction, IoT, high quality, 3 watch winder, for less than $60 USD.
   </p>
 </div>
 

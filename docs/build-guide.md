@@ -5,11 +5,11 @@
 > *Make sure you've ordered all required materials first!*
 > - [You can find the ***Bill of Materials*** here](./bom-requirements.md)
 
-> **Assembly legend and definitions**
-> - Text formatted `like_this` referes to a 3D printed model, by filename
-> - Text formatted ***like this*** (bold & italicized) referes to a purchased part from the Bill of Materials
-> - Bore - the long cylindrical hollow part of something. [^1]
-> - Flush - smoothly aligned, not sticking out.. [^2]
+ ## Assembly legend and definitions
+ - Text formatted `like_this` referes to a 3D printed model, by filename
+ - Text formatted ***like this*** (bold & italicized) referes to a purchased part from the Bill of Materials
+ - Bore - the long cylindrical hollow part of something. [^1]
+ - Flush - smoothly aligned, not sticking out. [^2]
 
 
 ## Watch Jig Assembly
@@ -100,8 +100,16 @@
 - `STRUCT_mid_plate` model
 - `STRUCT_back_plate` model
 
-1. Lay each plate on a flat surface, then lay a ***608ZZ bearing*** overtop of the center housing of each plate.
-1. Gently tap the bearing down until it sits level inside the center housing.
+1. Lay the `STRUCT_back_plate` on a flat surface, then lay a ***608ZZ bearing*** overtop of the center housing of each plate.
+    <div align="center">
+        <img src="images/bearing_press_fitting/bearing_finger_tight.jpg" alt="" height="300">
+        <img src="images/bearing_press_fitting/bearing_proud.jpg" alt="" height="300">
+    <div>
+1. Gently tap the bearing down until it sits level and flush inside the center housing.
+    <div align="center">
+        <img src="images/bearing_press_fitting/bearing_flush.jpg" alt="" height="300">
+    <div>
+1. Repeat the steps above for `STRUCT_mid_plate`
 
 
 [^1]: https://www.merriam-webster.com/dictionary/bore
