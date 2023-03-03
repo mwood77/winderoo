@@ -86,6 +86,7 @@
     <div>
 1. **Read the next step in full before you begin!** 
 1. Take your dowel assembly and one ***heat set nut***. Place the nut on the end of the dowel and make sure it's sitting straight. Take your _hot_ soldering iron and hold it against the nut. After a few seconds the nut should beging to melt into the dowel. Try to get it as straight as can be, and make sure the nut's face is flush with the end of the dowel. If it's gone 'too deep,' or crooked, hold your soldering iron against the nut until it is free to move inside the bore and re-adjust as necessary. It does not need to be perfect. Repeat the same step for the other end of the dowel.
+     - [Here's a how-to video which shows this process](https://youtu.be/KqSmCHr4fdA?t=165). Note that this creator uses a special tool, which isn't needed. Any regular soldering tip can do this.
     <div align="center">
         <img src="images/watch_jig_assembly/1.jpg" alt="" height="300">  
         <img src="images/watch_jig_assembly/2.jpg" alt="" height="300"> 
