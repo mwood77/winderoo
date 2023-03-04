@@ -79,19 +79,18 @@
 
 1. Setup your soldering iron. We'll need it to insert our heat set nuts into each dowel end.
 1. While your soldering iron is heating up, test fit the `mounting_dowel` and `mounting_dowel_sleeve`. They should begin to push together by hand. If your printer is dialed in, these two parts will be a tight friction fit. Flip the assembly upside down so that the open end of the `mounting_dowel_sleeve` is resting on a flat surface. Gently push down on the `mounting_dowel` until it slides into place and the face of the dowel and sleeve are flush.
+
     <div align="center">
-        <img src="images/watch_jig_assembly/1.jpg" alt="" height="300">  
-        <img src="images/watch_jig_assembly/2.jpg" alt="" height="300"> 
-        <img src="images/watch_jig_assembly/3.jpg" alt="" height="300"> 
+        <img src="images/mounting_dowel/dowel+sleeve.jpg" alt="" height="300">  
+        <img src="images/mounting_dowel/dowel_assembled.jpg" alt="" height="300">  
     <div>
 1. **Read the next step in full before you begin!** 
 1. Take your dowel assembly and one ***heat set nut***. Place the nut on the end of the dowel and make sure it's sitting straight. Take your _hot_ soldering iron and hold it against the nut. After a few seconds the nut should beging to melt into the dowel. Try to get it as straight as can be, and make sure the nut's face is flush with the end of the dowel. If it's gone 'too deep,' or crooked, hold your soldering iron against the nut until it is free to move inside the bore and re-adjust as necessary. It does not need to be perfect. Repeat the same step for the other end of the dowel.
-     - [Here's a how-to video which shows this process](https://youtu.be/KqSmCHr4fdA?t=165). Note that this creator uses a special tool, which isn't needed. Any regular soldering tip can do this.
+     - [Here's a how-to video which shows this process](https://youtu.be/KqSmCHr4fdA?t=165). 
+         - Note that this creator uses a special tool, which isn't needed. Any regular soldering tip can do this.
     <div align="center">
-        <img src="images/watch_jig_assembly/1.jpg" alt="" height="300">  
-        <img src="images/watch_jig_assembly/2.jpg" alt="" height="300"> 
-        <img src="images/watch_jig_assembly/3.jpg" alt="" height="300"> 
-    <div>
+        <img src="images/mounting_dowel/dowel+heat_nut.jpg" alt="" height="300">
+    </div>
 1. Repeat all these steps for each dowel assembly. By the end, you should have 4 completed assemblies.
 
 ## Central Support Bearings
@@ -115,3 +114,38 @@
 
 [^1]: https://www.merriam-webster.com/dictionary/bore
 [^2]: https://en.wiktionary.org/wiki/flushness#:~:text=(engineering)%20The%20state%20of%20being,smoothly%20aligned%2C%20not%20sticking%20out.
+
+
+# Final Assembly
+
+### Required parts:
+- 4x completed mounting dowel assemblies
+- Tensioner assembly
+- Assembled `STRUCT_front_plate`
+- Assembled `STRUCT_mid_plate`
+- Assembled `STRUCT_back_plate`
+
+1. Get all required parts together and make sure they're complete assemblies; bearings press-fitted, heat nuts secure, sleeves, etc.
+    <div align="center">
+        <img src="images/final_assembly/final_assembly_1.jpg" alt="assembly 1" height="300">
+    <div>
+1. Begin by inserting the mounting dowel assemblies into the assembled `STRUCT_mid_plate`. Take note of the following numbers
+    - **1.** Note the side that the motor housing is on
+    - **2.** Note that the thicker end of the mounting dowel assembly faces towards the un-exposed bearing side of the `STRUCT_mid_plate`
+        <div align="center">
+            <img src="images/final_assembly/final_assembly_2.jpg" alt="assembly 2" height="300">
+        <div>
+1. Insert the remaining mounting dowel assemblies.
+        <div align="center">
+            <img src="images/final_assembly/final_assembly_3.jpg" alt="collection of required parts" height="300">
+        <div>
+1. Attach the `STRUCT_back_plate`. Make sure to align the motor housing holes.
+    - Attach the **Tensioner Assembly** on the lower left hand corner
+        <div align="center">
+            <img src="images/final_assembly/final_assembly_4.jpg" alt="assembly 3" height="300">
+            <img src="images/final_assembly/final_assembly_5.jpg" alt="assembly 4" height="300">
+        <div>
+1. Attach the `STRUCT_front_plate`. Make sure to align the motor housing holes.
+    <div align="center">
+        <img src="images/final_assembly/final_assembly_6.jpg" alt="assembly 5" height="300">
+    <div>
