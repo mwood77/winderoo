@@ -121,6 +121,7 @@
 ### Required parts:
 - 4x completed mounting dowel assemblies
 - Tensioner assembly
+- Watch Jig Assembly
 - Assembled `STRUCT_front_plate`
 - Assembled `STRUCT_mid_plate`
 - Assembled `STRUCT_back_plate`
@@ -145,7 +146,16 @@
             <img src="images/final_assembly/final_assembly_4.jpg" alt="assembly 3" height="300">
             <img src="images/final_assembly/final_assembly_5.jpg" alt="assembly 4" height="300">
         <div>
-1. Attach the `STRUCT_front_plate`. Make sure to align the motor housing holes.
+1. Attach the `STRUCT_front_plate`.
     <div align="center">
-        <img src="images/final_assembly/final_assembly_6.jpg" alt="assembly 5" height="300">
+        <img src="images/final_assembly/final_assembly_6.jpg" alt="assembly 6" height="300">
     <div>
+1. Apply a small drop of epoxy glue on the watch jig assembly, here:
+    <div align="center">
+        <img src="images/final_assembly/final_assembly_7.jpg" alt="assembly 7" height="300">
+    <div>
+1. Begin inserting the watch jig assembly, but before fully seated, add a small drop of epoxy glue, here:
+    <div align="center">
+        <img src="images/final_assembly/final_assembly_8.jpg" alt="assembly 8" height="300">
+    <div>
+1. Fully seat the watch jig assembly, and let dry.
