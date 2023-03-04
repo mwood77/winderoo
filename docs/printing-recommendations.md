@@ -3,7 +3,12 @@
 > [👈 Back to build guide](./build_guide.md)
 
 # Printing Recommendations
-* These are general priting recommendations, please remember that you know your printer better than I!
+> Total time spent printing is 24 hours per winding unit
+>
+> Total filament used is approximately 300g per winder
+
+* These are general priting recommendations. 
+* Remember that you know your printer better than I.
 
 ## General Advice
 1. The following models will require support:
@@ -17,10 +22,7 @@
 1. [If your printer has a tendency elephant foot](https://pick3dprinter.com/elephant_foot_3d_printing/), you'll need to file down some of the pieces.
     * For example, the `mounting_dowel`'s outter lip will need to be filed down so the `mounting_dowel_sleeve` can easily slip over it.
 
-## Recommended Printing Orientation by Model
-> Total time spent printing is 24 hours per winding unit
->
-> Total filament used is approximately 300g per winder
+## Recommended Printing Orientation and Duration by Model
 
 | Model Name | Quantity To Print | Printing Time Per Unit | Printing Orientation |
 | :------------: | :------------: | :----------------------------------: | :--------:| 
@@ -37,3 +39,4 @@
 | `watch_jig_driveshaft_v3` | 1 | 1 hour | ![watch_jig_driveshaft](images/printing/watch_jig_driveshaft_v3.png) |
 | `watch_jig_v4` | 1 | 6 hours | ![watch_jig](images/printing/watch_jig_v4.png) |
 | `watch_mount_v7` | 1 | 2 hours | ![watch_mount](images/printing/watch_mount_v7.png) |
+| `multi_clip` | 4 | 0.25 hours p/unit | ![multi_clip](images/printing/multi_clip_v1.png) |
