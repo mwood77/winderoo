@@ -2,6 +2,10 @@
 
 # Prerequisites
 
+> ⚠️ IMPORTANT - READ THIS ⚠️
+>
+> This project is an add-on to your already built [Open Source Watch Winder (OSWW)](https://github.com/mwood77/osww). 
+
 ## Download and install the following:
 1. [Visual Studio Code](https://code.visualstudio.com/)
 1. [PlatformIO](https://platformio.org/install/ide?install=vscode)
@@ -18,4 +22,3 @@ You may now proceed to either of these next steps: ***Software Installation*** o
 
 ## Next Steps
 - [👉 Software Installation & Flashing Your ESP32](./install-software.md)
-- [👉 Build Guide](./build-guide.md)

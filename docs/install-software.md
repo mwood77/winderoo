@@ -2,10 +2,18 @@
 
 # Software Installtion & Flashing your ESP32
 
-### Have you completed the Prerequisites?
-- [No? Read them here](./prereqs.md)
+> ⚠️ IMPORTANT - READ THIS ⚠️
+>
+> This project is an add-on to your already built [Open Source Watch Winder (OSWW)](https://github.com/mwood77/osww). 
+
+- This project requires a microncontroller which replaces the Pi Pico used in the OSWW.
+- The Raspberry Pi Pico is incompatible with this project and must be swapped.
+
 
 # Getting Started
+
+### Have you completed the Prerequisites?
+- [Read them here](./prereqs.md)
 
 ## Flashing your microcontroller
 
@@ -21,14 +29,17 @@
     <div align="center"><img src="images/code_uploaded.png" alt="code upload button"></div>
 1. Now expand the "Platform" heading, then click **Upload Filesystem Image**. You'll see a message if the code was uploaded successfully:
     <div align="center"><img src="images/code_uploaded.png" alt="upload filesystem button"></div>
-1. All done! Your microcontroller should now have 2 LEDs illuminated. If it does, proceed to [Next steps](#next-steps). If not, try to upload the code & file system again.
+1. All done! Your microcontroller should now have 2 LEDs illuminated (see beneath). If it does, proceed to [Next steps](#next-steps). If not, try to upload the code & file system again.
+    <div align="center" style="height: 300px"><img src="images/led_states/blue_on.png" alt="upload filesystem button"></div>
+1. If you have a different LED state, compare it with this table: 
+    - [Understanding Winderoo's LED Blink Status](user-manual.md#understanding-winderoos-led-blink-status)
 
 ## Next steps:
 
 Ok, you've got 2 LEDs illuminated on your board. Great! Let's make sure the code works.
 
-1. Get out your mobile device (phone/table) and navigate to the Wi-Fi / wireless network list. You'll want to find and join a WiFi network called "**Winderoo Setup**."
-    - it may take a minute or so to connect, or look like it isn't doing anything. Hold tight, it is.
+1. Get out your mobile device (phone/tablet) and navigate to the Wi-Fi / wireless network list. You'll want to find and join a WiFi network called "**Winderoo Setup**."
+    - It may take a minute or so to connect, or look like it isn't doing anything. Hold tight, it is.
 1. Once you've connected to "**Winderoo Setup**", a captive page will open called "WifiManger Winderoo Setup."
 1. Tap "Configure WiFi"
 1. Tap on the network you want to add Winderoo to, this is likely your home WiFi network
@@ -37,4 +48,4 @@ Ok, you've got 2 LEDs illuminated on your board. Great! Let's make sure the code
 1. Open up a web browser and try to navigate to the following webpage:
     - [http://winderoo.local/](http://winderoo.local/)
 1. If you see Winderoo's user interface, you're all done!
-    - [This provides an overview of Winderoo's user interface](./user-manual.md)
+    - [Here is an overview of Winderoo's user interface](./user-manual.md)

@@ -1,4 +1,4 @@
-# OSWW-Frontend (Winderoo)
+# Winderoo Frontend Readme
 
 ## Setup
 
@@ -10,13 +10,15 @@
 
 ## Development server
 
-1. Run `npm run serve` from this location (`src/angular/osww-frontend/`) & navigate to `http://localhost:4200/` in your browser. You'll see the application.
+1. Run `npm run serve` from this location (`src/angular/osww-frontend/`)
+1. Navigate to `http://localhost:4200/` in your browser. You'll see the application.
     - ⚠️ You'll need Winderoo's API running (on hardware, on your network) to interact with. 
-    - See [this README](../../../docs/install-software.md) for instructions on how to run the API on hardware.
+    - See [this README](../../../docs/install-software.md) for instructions on how to flash the API to your hardware.
 1. Happy hacking 
 
-## Build
+## Build & Deploy
 
 1. Run `npm run build-arduino` to build the project. 
-1. The build artifacts will be generated in the `dist/` directory.
-1. The build artifacts will then be `gzip`'d and copied to `../../../data/` directory.
+    - This scrip handles generating build artifacts in the `dist/` directory.
+    - These artifacts will then be compressed with `gzip` and copied to `../../../data/` directory.
+1. [Flash the file system image to your hardware - Step 6](../../../docs/install-software.md); PlatformIO > **Upload Filesystem Image**. 
