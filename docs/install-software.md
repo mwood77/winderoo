@@ -30,7 +30,7 @@
 1. Now expand the "Platform" heading, then click **Upload Filesystem Image**. You'll see a message if the code was uploaded successfully:
     <div align="center"><img src="images/code_uploaded.png" alt="upload filesystem button"></div>
 1. All done! Your microcontroller should now have 2 LEDs illuminated (see beneath). If it does, proceed to [Next steps](#next-steps). If not, try to upload the code & file system again.
-    <div align="center" style="height: 300px"><img src="images/led_states/blue_on.png" alt="upload filesystem button"></div>
+    <div align="center"><img src="images/led_states/blue_on.png" alt="upload filesystem button" height="300"></div>
 1. If you have a different LED state, compare it with this table: 
     - [Understanding Winderoo's LED Blink Status](user-manual.md#understanding-winderoos-led-blink-status)
 
