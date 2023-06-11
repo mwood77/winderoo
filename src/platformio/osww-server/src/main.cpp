@@ -417,6 +417,36 @@ void triggerLEDCondition(int blinkState)
 }
 
 /**
+ * This is a non-block button listener function.
+ * Credit to github OSWW ontribution from user @danagarcia
+ * 
+ * @param pauseInSeconds the amount of time to pause and listen
+*/
+void awaitWhileListening(int pauseInSeconds)
+{
+  // While waiting for the 1 second to pass, actively monitor/listen for button press.
+  int delayEnd = millis() + (1000 * pauseInSeconds);
+  while (millis() < delayEnd) {
+    // get physical button state
+    int buttonState = digitalRead(externalButton);
+
+	if (buttonState == HIGH)
+	{
+		if (userDefinedSettings.winderEnabled == "0")
+		{
+			Serial.println("[STATUS] - Switched off!");
+			userDefinedSettings.status = "Stopped";
+			routineRunning = false;
+			motor.stop();
+		}
+	} else {
+		userDefinedSettings.winderEnabled == "1";
+	}
+
+  }
+}
+
+/**
  * Callback triggered from WifiManager when successfully connected to new WiFi network
  */
 void saveWifiCallback()
@@ -560,25 +590,13 @@ void loop()
 		}
 	}
 
-	// get physical button state
-	int buttonState = digitalRead(externalButton);
-
-	if (buttonState == HIGH)
-	{
-		if (userDefinedSettings.winderEnabled == "0")
-		{
-			Serial.println("[STATUS] - Switched off!");
-			userDefinedSettings.status = "Stopped";
-			routineRunning = false;
-			motor.stop();
-		}
-	}
+	// non-blocking button listener
+	awaitWhileListening(1);	// 1 second
 
 	if (userDefinedSettings.winderEnabled == "0")
 	{
 		triggerLEDCondition(3);
 	}
-
+	
 	wm.process();
-	delay(1000);
 }
