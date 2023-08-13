@@ -1,4 +1,4 @@
-# Winderoo Frontend Readme
+# Winderoo Frontend
 
 ## Setup
 
@@ -19,6 +19,6 @@
 ## Build & Deploy
 
 1. Run `npm run build-arduino` to build the project. 
-    - This scrip handles generating build artifacts in the `dist/` directory.
-    - These artifacts will then be compressed with `gzip` and copied to `../../../data/` directory.
+    - This scrip generates build artifacts in the `dist/` directory.
+    - These artifacts will then be compressed with `gzip` and copied to the `../../../data/` directory.
 1. [Flash the file system image to your hardware - Step 6](../../../docs/install-software.md); PlatformIO > **Upload Filesystem Image**. 

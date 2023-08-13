@@ -47,7 +47,7 @@ export class SettingsComponent implements OnInit {
       { value: '20', viewValue: '20' },
       { value: '21', viewValue: '21' },
       { value: '22', viewValue: '22' },
-      { value: '23', viewValue: '03' },
+      { value: '23', viewValue: '23' },
   ];
 
   wifiSignalIcon = ''

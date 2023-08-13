@@ -1,7 +1,7 @@
 <div align="center">  
   <h2>
     Winderoo
-    <p><i>Supercharge your OSWW Build!</i></p>
+    <p><i>Open source firmware for microcontolled watch winders</i></p>
   </h2>
 </div>
 
@@ -11,12 +11,12 @@
   <br>
   <br>
   <p>
-    Winderoo is open source firmware which adds additional functionality and a GUI to your OSWW.
+    Winderoo is open source firmware which adds "smart" functionality, and a GUI, to your <a href="https://github.com/mwood77/osww">OSWW</a> or other microcontroller equipped watch winder.
   </p>
 </div>
 
-### What's an OSWW?
-- OSWW is an open source modular watch winder, which you can read more about on [GitHub](https://github.com/mwood77/osww) or [Printables](https://www.printables.com/model/421249-osww-the-open-source-watch-winder).
+> ### What's OSWW?
+> - OSWW is an open source modular watch winder, which you can read more about on [GitHub](https://github.com/mwood77/osww) or [Printables](https://www.printables.com/model/421249-osww-the-open-source-watch-winder).
 
 
 
@@ -40,18 +40,24 @@
 # User Manual
 * [Click Here to see the user manual](./docs/user-manual.md)
 
-# Installation
 ## Prerequisites
-- [**Read this first**](./docs/prereqs.md)
+> This project is an add-on to your already built [Open Source Watch Winder (OSWW)](https://github.com/mwood77/osww)
+
+#### Download and install the following on your computer:
+1. [Visual Studio Code](https://code.visualstudio.com/)
+1. [PlatformIO](https://platformio.org/install/ide?install=vscode)
+    - Note: the "extensions" button has changed since Platformio has created their install guide. You can access the extions pane with the following key combinations:
+        - Windows: Ctrl+Shift+X
+        - macOS: Command+Shift+X
+1. You may or may not need these drivers, but some 'knock off' ESP32 dev boards require them.
+    - [CP210x Drivers](https://www.silabs.com/developers/usb-to-uart-bridge-vcp-drivers?tab=downloads) 
+    - If the CP210x drivers don't work:  [CH340 Drivers](https://learn.sparkfun.com/tutorials/how-to-install-ch340-drivers) 
+
 
 ## Build Instructions
 1. [Bill of Materials (what you need to buy)](./docs/bom-requirements.md)
 1. [Software Installation](./docs/install-software.md)
-1. [Follow the OSWW Wiring Diagram](https://github.com/mwood77/osww/blob/main/instructions/wiring-diagram.md) but substitue the following connections:
-    - Connect the ESP32's 5V Output pin to the 5V input of the L298N driver board (red wire)
-    - Connect a ground from the ESP32 to the L298N driver board (black wire)
-    - Connect the ESP32's `GPIO25` to `IN1` on the L298N driver board (yellow wire)
-    - Connect the ESP32's `GPIO26` to `IN2` on the L298N driver board (blue wire)
+1. [Winderoo Wiring Diagram](https://github.com/mwood77/osww/blob/main/instructions/wiring-diagram.md)
 
 ## Specifications
 The API has 4 endpoints which can be called:
