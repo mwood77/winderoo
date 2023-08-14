@@ -6,6 +6,7 @@
 </div>
 
 <div align="center">
+  <a href="https://www.youtube.com/watch?v=BJKpY6Zp8BI"><h3>👉 See Winderoo in action on youtube 👈</h3></a>
   <br>
   <img src="./docs/images/splash-image.jpg" alt="Winderoo - The Open Source Watch Winder" width="600">
   <br>
@@ -59,8 +60,20 @@
 1. [Software Installation](./docs/install-software.md)
 1. [Winderoo Wiring Diagram](https://github.com/mwood77/osww/blob/main/instructions/wiring-diagram.md)
 
-## Specifications
-The API has 4 endpoints which can be called:
+
+## Developer Resources
+This project welcomes contributions. Please follow the regular git workflow; fork + PR to contribute.
+### Front End
+- Angular with Angular Material
+- [Front End Readme](./src/angular/osww-frontend/README.md)
+
+### Backend 
+- C++ based API with mDns, a web server, local file system, and a bunch of other things.
+#### API Specification
+
+<details>
+
+<summary>The API has 4 endpoints. Expand to see more.</summary>
 
 ### `status`
   ```
@@ -134,5 +147,4 @@ Example Request:
   }
   ```
 
-### Front End / GUI
-- [See this dedicated Readme](src/angular/osww-frontend/README.md)
+</details>
