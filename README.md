@@ -6,13 +6,14 @@
 </div>
 
 <div align="center">
-  <a href="https://www.youtube.com/watch?v=BJKpY6Zp8BI"><h3>👉 See Winderoo in action on youtube 👈</h3></a>
+  <a href="https://www.youtube.com/watch?v=BJKpY6Zp8BI" target="_blank"><strong>👉 See Winderoo in action on youtube 👈</strong></a>
+  <br>
   <br>
   <img src="./docs/images/splash-image.jpg" alt="Winderoo - The Open Source Watch Winder" width="600">
   <br>
   <br>
   <p>
-    Winderoo is open source firmware which adds "smart" functionality, and a GUI, to your <a href="https://github.com/mwood77/osww">OSWW</a> or other microcontroller equipped watch winder.
+    Winderoo is open source firmware which adds "smart" functionality, and a GUI, to your <a href="https://github.com/mwood77/osww target="_blank">OSWW</a> or other microcontroller equipped watch winder.
   </p>
 </div>
 
