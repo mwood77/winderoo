@@ -13,7 +13,7 @@
   <br>
   <br>
   <p>
-    Winderoo is open source firmware which adds "smart" functionality, and a GUI, to your <a href="https://github.com/mwood77/osww target="_blank">OSWW</a> or other microcontroller equipped watch winder.
+    Winderoo is open source firmware which adds "smart" functionality, and a GUI, to your <a href="https://github.com/mwood77/osww" target="_blank">OSWW</a> or other microcontroller equipped watch winder.
   </p>
 </div>
 
@@ -64,9 +64,10 @@
 
 ## Developer Resources
 This project welcomes contributions. Please follow the regular git workflow; fork + PR to contribute.
-### Front End
+
+### Frontend
 - Angular with Angular Material
-- [Front End Readme](./src/angular/osww-frontend/README.md)
+- [Frontend Readme](./src/angular/osww-frontend/README.md)
 
 ### Backend 
 - C++ based API with mDns, a web server, local file system, and a bunch of other things.
