@@ -59,7 +59,7 @@
 ## Build Instructions
 1. [Bill of Materials (what you need to buy)](./docs/bom-requirements.md)
 1. [Software Installation](./docs/install-software.md)
-1. [Winderoo Wiring Diagram](https://github.com/mwood77/osww/blob/main/instructions/wiring-diagram.md)
+1. [Winderoo Wiring Diagram](./docs/wiring-diagram.md)
 
 
 ## Developer Resources
