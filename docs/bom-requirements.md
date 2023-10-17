@@ -19,7 +19,7 @@
 
 |     |  Quantity per Order | Link / Part Name                                                             |  Comments                                              |  Cost Incl. Shipping |
 | :-: | :------------: | :-------------------------------------------------------------------------------: | :-------------------------------------------------------------------: |:-----:|
-| 🔲 | 1               | [ESP32 Dev Kit](https://s.click.aliexpress.com/e/_DDrDtBL)                        | Select: "CP2102 No Welding"                                           | $8.00 |
+| 🔲 | 1               | [ESP32 Dev Kit](https://s.click.aliexpress.com/e/_DCVsQhl)                        | Select `Color: ESP32`                                           | $8.00 |
 
 
 ## Next Steps
