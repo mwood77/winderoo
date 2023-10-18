@@ -2,8 +2,7 @@
 
 # Bill of Materials & Cost
 
-> ⚠️ IMPORTANT - READ THIS ⚠️
->
+> [!IMPORTANT]
 > This project is an add-on to your already built [Open Source Watch Winder (OSWW)](https://github.com/mwood77/osww). 
 
 - This microcontroller replaces the Pi Pico used in the OSWW.

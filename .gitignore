@@ -4,6 +4,8 @@
 .vscode/launch.json
 .vscode/ipch
 
+node_modules/
+
 src/platformio/osww-server/src/configurables.h
 
 # System files

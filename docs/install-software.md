@@ -2,8 +2,7 @@
 
 # Software Installtion & Flashing your ESP32
 
-> ⚠️ IMPORTANT - READ THIS ⚠️
->
+> [!IMPORTANT]
 > This project is an add-on to your already built [Open Source Watch Winder (OSWW)](https://github.com/mwood77/osww). 
 
 - This project requires a microncontroller which replaces the Pi Pico used in the OSWW.
@@ -12,8 +11,9 @@
 
 # Getting Started
 
-### Have you completed the Prerequisites?
-- [Read them here](./prereqs.md)
+### Prerequisites
+- Download [Visual Studio Code (VSCode)](https://code.visualstudio.com/download)
+- Download [PlatformIO](https://platformio.org/install/ide?install=vscode)
 
 ## Flashing your microcontroller
 
