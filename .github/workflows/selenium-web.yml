@@ -15,7 +15,7 @@ jobs:
     services:
       selenium:
         image: selenium/standalone-firefox
-        shm_size: 2gb
+        options: --shm-size=2gb
 
     steps:
       - uses: actions/checkout@v4
@@ -29,7 +29,7 @@ jobs:
           browser: firefox
           version: latest
 
-      # Install some selenium dependencies...
+      Install some other selenium dependencies
       - run: |
           apt-get update -y &&
           apt-get install --no-install-recommends --no-install-suggests -y tzdata ca-certificates bzip2 curl wget libc-dev libxt6 &&
@@ -39,8 +39,7 @@ jobs:
           # Cleanup unnecessary stuff
           apt-get purge -y --auto-remove -o APT::AutoRemove::RecommendsImportant=false &&
           rm -rf /var/lib/apt/lists/* /tmp/*
-      
-      # Install more selenium dependencies...
+
       - run: |
           wget https://github.com/mozilla/geckodriver/releases/download/v0.31.0/geckodriver-v0.31.0-linux64.tar.gz &&
           tar -zxf geckodriver-v0.31.0-linux64.tar.gz -C /usr/local/bin &&
