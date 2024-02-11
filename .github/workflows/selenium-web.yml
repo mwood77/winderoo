@@ -27,7 +27,6 @@ jobs:
       - uses: abhi1693/setup-browser@v0.3.4
         with:
           browser: firefox
-          version: latest
 
       # Install some selenium dependencies...
       - run: |
