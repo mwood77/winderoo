@@ -25,10 +25,6 @@ jobs:
         with:
           node-version: 19
 
-      - uses: abhi1693/setup-browser@v0.3.4
-        with:
-          browser: firefox
-
       # Install some selenium dependencies...
       - run: |
           apt-get update -y &&
@@ -46,6 +42,14 @@ jobs:
           tar -zxf geckodriver-v0.31.0-linux64.tar.gz -C /usr/local/bin &&
           chmod +x /usr/local/bin/geckodriver &&
           rm geckodriver-v0.31.0-linux64.tar.gz
+
+      # Install and setup Firefox
+      - run: |
+          FIREFOX_SETUP=firefox-setup.tar.bz2 &&
+          wget -O $FIREFOX_SETUP "https://download.mozilla.org/?product=firefox-95.0.1&os=linux64" &&
+          tar xjf $FIREFOX_SETUP -C /opt/ &&
+          ln -s /opt/firefox/firefox /usr/bin/firefox &&
+          rm $FIREFOX_SETUP
 
       - run: npm i selenium-webdriver
       - run: npx node .github/workflows/test-ali-links.mjs
