@@ -33,6 +33,7 @@ jobs:
           which firefox
           firefox --version --headless
 
+      - run: sudo apt-get install firefox
 
       - run: npm i selenium-webdriver
 
