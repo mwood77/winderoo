@@ -40,6 +40,7 @@ content(bomDocument)
             options.addArguments("--no-sandbox")
             options.addArguments("--disable-gpu")
             options.addArguments("--window-size=1920,1080")
+            options.setLoggingPrefs({ browser: 'ALL' })
 
             driver = new Builder()
                 .forBrowser('firefox')
