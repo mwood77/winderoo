@@ -11,3 +11,7 @@ src/platformio/osww-server/src/configurables.h
 # System files
 .DS_Store
 Thumbs.db
+
+# ignore .github/* node stuff
+.github/workflows/package.json
+.github/workflows/package-lock.json
