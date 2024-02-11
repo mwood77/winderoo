@@ -37,9 +37,9 @@ content(bomDocument)
             
             const options = new Firefox.Options();
             options.addArguments('--headless');
-            options.add_argument("--no-sandbox")
-            options.add_argument("--disable-gpu")
-            options.add_argument("--window-size=1920,1080")
+            options.addArguments("--no-sandbox")
+            options.addArguments("--disable-gpu")
+            options.addArguments("--window-size=1920,1080")
 
             driver = new Builder()
                 .forBrowser('firefox')
