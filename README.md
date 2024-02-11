@@ -1,4 +1,5 @@
-[![Product Links](https://github.com/mwood77/winderoo/actions/workflows/selenium-web.yml/badge.svg?branch=main)](https://github.com/mwood77/winderoo/actions/workflows/selenium-web.yml)
+[![Product Links](https://github.com/mwood77/winderoo/actions/workflows/selenium-web.yml/badge.svg)](https://github.com/mwood77/winderoo/actions/workflows/selenium-web.yml)
+[![Markdown Link Checker](https://github.com/mwood77/winderoo/actions/workflows/lint-markdown.yml/badge.svg)](https://github.com/mwood77/winderoo/actions/workflows/lint-markdown.yml)
 
 <div align="center">  
   <h2>
