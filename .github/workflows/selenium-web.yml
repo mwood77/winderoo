@@ -13,11 +13,6 @@ jobs:
     container:
       image: node:19
 
-    # services:
-    #   selenium:
-    #     image: selenium/standalone-firefox
-    #     options: --shm-size=2gb
-
     steps:
       - uses: actions/checkout@v4
 
@@ -25,6 +20,8 @@ jobs:
         with:
           node-version: 18
 
+      - run: sudo apt-get install firefox
+      
       - name: geckodriver/firefox
         run: |
           echo "geckodriver/firefox"
@@ -33,7 +30,6 @@ jobs:
           which firefox
           firefox --version --headless
 
-      - run: sudo apt-get install firefox
 
       - run: npm i selenium-webdriver
 
