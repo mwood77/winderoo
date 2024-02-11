@@ -10,9 +10,6 @@ jobs:
   check-aliexpress-links:
     runs-on: ubuntu-latest
 
-    container:
-      image: node:19
-
     steps:
       - uses: actions/checkout@v4
 
