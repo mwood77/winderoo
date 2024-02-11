@@ -20,7 +20,7 @@ jobs:
         with:
           node-version: 18
 
-      - run: sudo apt-get install firefox
+      - run: apt-get install firefox
       
       - name: geckodriver/firefox
         run: |
