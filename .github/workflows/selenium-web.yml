@@ -1,6 +1,7 @@
 name: Aliexpress Product Checker
 
 on:
+  pull_request:
   workflow_dispatch:
   schedule:
     - cron: 0 9 * * 1 # 9AM every monday
@@ -9,43 +10,18 @@ jobs:
   check-aliexpress-links:
     runs-on: ubuntu-latest
 
-    container:
-      image: node:19
-
-    services:
-      selenium:
-        image: selenium/standalone-firefox
-        options: --shm-size=2gb
-
     steps:
       - uses: actions/checkout@v4
 
       - uses: actions/setup-node@v3
         with:
-          node-version: 19
+          node-version: 18
 
-      - uses: abhi1693/setup-browser@v0.3.4
-        with:
-          browser: firefox
-          version: latest
-
-      # Install some selenium dependencies...
-      - run: |
-          apt-get update -y &&
-          apt-get install --no-install-recommends --no-install-suggests -y tzdata ca-certificates bzip2 curl wget libc-dev libxt6 &&
-          apt-get install --no-install-recommends --no-install-suggests -y `apt-cache depends firefox-esr | awk '/Depends:/{print$2}'` &&
-          update-ca-certificates &&
-
-          # Cleanup unnecessary stuff
-          apt-get purge -y --auto-remove -o APT::AutoRemove::RecommendsImportant=false &&
-          rm -rf /var/lib/apt/lists/* /tmp/*
-
-      # Install some more selenium dependencies...
-      - run: |
-          wget https://github.com/mozilla/geckodriver/releases/download/v0.31.0/geckodriver-v0.31.0-linux64.tar.gz &&
-          tar -zxf geckodriver-v0.31.0-linux64.tar.gz -C /usr/local/bin &&
-          chmod +x /usr/local/bin/geckodriver &&
-          rm geckodriver-v0.31.0-linux64.tar.gz
+      # - run: sudo apt-get install firefox
 
       - run: npm i selenium-webdriver
+
       - run: npx node .github/workflows/test-ali-links.mjs
+        env:
+          DISPLAY: :0
+          MOZ_HEADLESS: 1
