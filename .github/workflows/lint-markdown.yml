@@ -5,7 +5,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  check-links:
+  check-markdown:
     runs-on: ubuntu-latest
     steps:
 

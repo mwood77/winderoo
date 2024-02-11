@@ -18,7 +18,7 @@
 
 |     |  Quantity per Order | Link / Part Name                                                             |  Comments                                              |  Cost Incl. Shipping |
 | :-: | :------------: | :-------------------------------------------------------------------------------: | :-------------------------------------------------------------------: |:-----:|
-| 🔲 | 1               | [ESP32 Dev Kit](https://s.click.aliexpress.com/e/_DCVsQhl)                        | Select `Color: ESP32`                                           | $8.00 |
+| 🔲 | 1               | [ESP32 Dev Kit](https://s.click.aliexpress.com/e/_Derbd5r)                        | Select `Color: ESP32`                                           | $8.00 |
 
 
 ## Next Steps

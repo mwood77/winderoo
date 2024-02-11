@@ -5,6 +5,9 @@ import firefox from 'selenium-webdriver/firefox.js'
 const links = [];
 let driver;
 
+const bomDocument = './docs/bom-requirements.md';
+const bomDocumentPathForLocalTesting = '../../docs/bom-requirements.md';
+
 const content = async(file) => {
     return await readFile(file, 'utf8')
 }
@@ -14,7 +17,7 @@ const search = async (item) => {
     return await driver.findElements(By.className('not-found-page'))
 }
 
-content('./docs/bom-requirements.md')
+content(bomDocument)
     .then(
         result => {
             const sanitizedMD = result.split('/_')
@@ -28,7 +31,7 @@ content('./docs/bom-requirements.md')
         async () => {
             driver = new Builder()
                 .forBrowser('firefox')
-                .setFirefoxOptions(new firefox.Options().headless())
+                .setFirefoxOptions(new firefox.Options().addArguments('--headless'))
                 .build();
 
             // Test scraped aliexpress links from bom-doc
