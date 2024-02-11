@@ -29,7 +29,7 @@ jobs:
           browser: firefox
           version: latest
 
-      Install some other selenium dependencies
+      # Install some selenium dependencies...
       - run: |
           apt-get update -y &&
           apt-get install --no-install-recommends --no-install-suggests -y tzdata ca-certificates bzip2 curl wget libc-dev libxt6 &&
@@ -40,6 +40,7 @@ jobs:
           apt-get purge -y --auto-remove -o APT::AutoRemove::RecommendsImportant=false &&
           rm -rf /var/lib/apt/lists/* /tmp/*
 
+      # Install some more selenium dependencies...
       - run: |
           wget https://github.com/mozilla/geckodriver/releases/download/v0.31.0/geckodriver-v0.31.0-linux64.tar.gz &&
           tar -zxf geckodriver-v0.31.0-linux64.tar.gz -C /usr/local/bin &&
