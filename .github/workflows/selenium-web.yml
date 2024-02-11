@@ -52,8 +52,7 @@ jobs:
           rm $FIREFOX_SETUP
 
       # Set display variable for gecko
-      - run: |
-        export DISPLAY=127.0.0.1:99
+      - run: export DISPLAY=127.0.0.1:99
 
       - run: npm i selenium-webdriver
       - run: npx node .github/workflows/test-ali-links.mjs
