@@ -17,16 +17,7 @@ jobs:
         with:
           node-version: 18
 
-      - run: sudo apt-get install firefox
-      
-      - name: geckodriver/firefox
-        run: |
-          echo "geckodriver/firefox"
-          which geckodriver
-          geckodriver --version
-          which firefox
-          firefox --version --headless
-
+      # - run: sudo apt-get install firefox
 
       - run: npm i selenium-webdriver
 
