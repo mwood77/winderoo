@@ -1,6 +1,6 @@
 import { readFile } from 'fs/promises';
 import { By, Builder } from 'selenium-webdriver';
-import firefox from 'selenium-webdriver/firefox.js'
+import Firefox from 'selenium-webdriver/firefox.js'
 
 const links = [];
 let driver;
@@ -34,9 +34,13 @@ content(bomDocument)
     )
     .finally(
         async () => {
+            
+            const options = new Firefox.Options();
+            options.addArguments('--headless');
+
             driver = new Builder()
                 .forBrowser('firefox')
-                .setFirefoxOptions(new firefox.Options().addArguments('--headless'))
+                .setFirefoxOptions(options)
                 .build();
 
             // Test scraped aliexpress links from bom-doc
