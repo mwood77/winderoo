@@ -20,7 +20,8 @@
   </p>
 </div>
 
-> ### What's OSWW?
+> [!NOTE]
+> What's OSWW?
 > - OSWW is an open source modular watch winder, which you can read more about on [GitHub](https://github.com/mwood77/osww) or [Printables](https://www.printables.com/model/421249-osww-the-open-source-watch-winder).
 
 
@@ -66,8 +67,18 @@
 1. [Winderoo Wiring Diagram](./docs/wiring-diagram.md)
 
 
-## Developer Resources
+## Contributing
 This project welcomes contributions. Please follow the regular git workflow; fork + PR to contribute.
+
+### Translations / Localization
+Winderoo has multi-language support, and we welcome adding more langauges.
+
+To add another language:
+1. Duplicate one of the current localizations, and translate the text.:
+    - `src/angular/osww-frontend/src/assets/i18n/` stores the current localizations.
+1. Add a new menu item to enable your langauge in:
+    - `src/angular/osww-frontend/src/app/header/header.component.html`
+1. Open a Pull Request
 
 ### Frontend
 - Angular with Angular Material
