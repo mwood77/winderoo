@@ -1,13 +1,13 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ViewContainerRef } from '@angular/core';
 import { MatDialog, MatDialogRef } from '@angular/material/dialog';
-import { ApiService } from '../api.service';
-import { TranslateService } from '@ngx-translate/core';
+import { ApiService } from '../api.service';      
+import { TranslateService, TranslateModule } from '@ngx-translate/core';
 import packageJson from '../../../package.json';
 
 @Component({
   selector: 'app-header',
   templateUrl: './header.component.html',
-  styleUrls: ['./header.component.scss']
+  styleUrls: ['./header.component.scss'],
 })
 export class HeaderComponent implements OnInit {
   
@@ -65,7 +65,9 @@ export class HeaderComponent implements OnInit {
 @Component({
   selector: 'app-header-dialog',
   templateUrl: './header-dialog.component.html',
-  styleUrls: ['./header-dialog.component.scss']
+  styleUrls: ['./header-dialog.component.scss'],
+  standalone: true,
+  imports: [TranslateModule],
 })
 export class ResetDialog {
 

@@ -4,10 +4,15 @@
         "ON": "sur",
         "OFF": "désactivé",
         "DIALOG": {
-            "TITLE": "Reset takes 20 seconds",
-            "SUBTITLE": "This screen will not close during the reset process",
-            "CANCEL": "cancel",
-            "OFF": "off"
+            "TITLE": "La réinitialisation prend 20 secondes",
+            "SUBTITLE": "Cet écran ne se fermera pas pendant le processus de réinitialisation",
+            "CANCEL": "Annuler",
+            "POINT_1": "La réinitialisation est terminée lorsque la deuxième LED cesse de clignoter rapidement, puis devient fixe.",
+            "POINT_2": "Connectez votre appareil mobile au nouveau réseau WiFi appelé",
+            "POINT_3": "Ajoutez Winderoo à un réseau WiFi existant. Si la LED commence à clignoter lentement, Winderoo a réussi à rejoindre ce réseau.",
+            "POINT_4": "Attendez que votre appareil se reconnecte à votre réseau WiFi existant.",
+            "NOW_AVAILABLE": "Winderoo est maintenant disponible sur:",
+            "CONFIRM_RESET": "Confirmer la réinitialisation"
         }
     },
     "SETTINGS": {

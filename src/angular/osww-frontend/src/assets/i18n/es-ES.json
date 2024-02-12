@@ -4,10 +4,15 @@
         "ON": "en",
         "OFF": "apagado",
         "DIALOG": {
-            "TITLE": "Reset takes 20 seconds",
-            "SUBTITLE": "This screen will not close during the reset process",
-            "CANCEL": "cancel",
-            "OFF": "off"
+            "TITLE": "El reinicio tarda 20 segundos",
+            "SUBTITLE": "Esta pantalla no se cerrará durante el proceso de reinicio.",
+            "CANCEL": "cancelar",
+            "POINT_1": "El reinicio se completa cuando el segundo LED deja de parpadear rápidamente y luego se vuelve fijo.",
+            "POINT_2": "Conecta tu dispositivo móvil a la nueva red WiFi llamada",
+            "POINT_3": "Agregue Winderoo a una red WiFi existente. Si el LED comienza a parpadear lentamente, Winderoo se ha unido exitosamente a esa red.",
+            "POINT_4": "Espere a que su dispositivo se vuelva a conectar a su red WiFi existente.",
+            "NOW_AVAILABLE": "Winderoo ya está disponible en:",
+            "CONFIRM_RESET": "Confirmar reinicio"
         }
     },
     "SETTINGS": {

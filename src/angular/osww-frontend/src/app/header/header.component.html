@@ -3,7 +3,7 @@
         <span>Winderoo</span>
 
         <span class="toolbar-spacer"></span>
-                
+
         <mat-slide-toggle [(ngModel)]="isWinderEnabled" (ngModelChange)="updateWinderEnabledState($event)">
             <span *ngIf="this.isWinderEnabled; else elseBlock">
                 {{ "HEADER.ON" | translate | uppercase }}
@@ -15,13 +15,13 @@
 
         <span class="toolbar-spacer"></span>
 
-        <button mat-button aria-label="select language" [matMenuTriggerFor]="menu">
-            <mat-icon>translate</mat-icon>
-        </button>
-        
         <button mat-stroked-button aria-label="Reset winder" (click)="reset()">
             <mat-icon>bolt</mat-icon>
             {{ "HEADER.RESET" | translate }}
+        </button>
+
+        <button mat-button aria-label="select language" [matMenuTriggerFor]="menu">
+            <mat-icon>translate</mat-icon>
         </button>
 
         <mat-menu #menu="matMenu">

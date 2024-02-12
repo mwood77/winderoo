@@ -4,10 +4,15 @@
         "ON": "an",
         "OFF": "aus",
         "DIALOG": {
-            "TITLE": "Reset takes 20 seconds",
-            "SUBTITLE": "This screen will not close during the reset process",
-            "CANCEL": "cancel",
-            "OFF": "off"
+            "TITLE": "Das Zurücksetzen dauert 20 Sekunden",
+            "SUBTITLE": "Dieser Bildschirm wird während des Reset-Vorgangs nicht geschlossen",
+            "CANCEL": "stornieren",
+            "POINT_1": "Das Zurücksetzen ist abgeschlossen, wenn die zweite LED nicht mehr schnell blinkt, sondern dauerhaft leuchtet.",
+            "POINT_2": "Verbinden Sie Ihr Mobilgerät mit dem neuen WLAN-Netzwerk namens",
+            "POINT_3": "Fügen Sie Winderoo zu einem vorhandenen WLAN-Netzwerk hinzu. Wenn die LED langsam zu blinken beginnt, hat sich Winderoo diesem Netzwerk erfolgreich angeschlossen.",
+            "POINT_4": "Warten Sie, bis sich Ihr Gerät wieder mit Ihrem bestehenden WLAN-Netzwerk verbindet.",
+            "NOW_AVAILABLE": "Winderoo ist jetzt erhältlich unter:",
+            "CONFIRM_RESET": "Bestätigen Sie das Zurücksetzen"
         }
     },
     "SETTINGS": {
