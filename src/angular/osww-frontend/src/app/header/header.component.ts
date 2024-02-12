@@ -1,6 +1,7 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ViewContainerRef } from '@angular/core';
 import { MatDialog, MatDialogRef } from '@angular/material/dialog';
-import { ApiService } from '../api.service';
+import { ApiService } from '../api.service';      
+import { TranslateService, TranslateModule } from '@ngx-translate/core';
 import packageJson from '../../../package.json';
 
 @Component({
@@ -13,9 +14,14 @@ export class HeaderComponent implements OnInit {
   isWinderEnabled: boolean;
   isWinderEnabledNum: number;
     
-  constructor(private dialog: MatDialog, private apiService: ApiService) { 
+  constructor(private dialog: MatDialog, private apiService: ApiService, public translateService: TranslateService) { 
     this.isWinderEnabledNum = this.apiService.isWinderEnabled$.getValue();
     this.isWinderEnabled = false;
+  }
+
+  public changeLanguage(language: string): void {
+    this.translateService.use(language);
+    localStorage.setItem('selectedLanguage', language);
   }
 
   private mapEnabledState($event: number): void {
@@ -34,7 +40,7 @@ export class HeaderComponent implements OnInit {
   }
 
   openDialog(): void {
-    this.dialog.open(DialogAnimationsExampleDialog, {
+    this.dialog.open(ResetDialog, {
       width: '80%',
     });
   }
@@ -49,7 +55,7 @@ export class HeaderComponent implements OnInit {
         this.apiService.isWinderEnabled$.next($state);
 
         this.mapEnabledState($state)
-        // signal settings to component to refresh
+        // signal settings component to refresh
         this.apiService.shouldRefresh$.next(true);
       });
   };
@@ -59,14 +65,17 @@ export class HeaderComponent implements OnInit {
 @Component({
   selector: 'app-header-dialog',
   templateUrl: './header-dialog.component.html',
-  styleUrls: ['./header-dialog.component.scss']
+  styleUrls: ['./header-dialog.component.scss'],
+  standalone: true,
+  imports: [TranslateModule],
 })
-export class DialogAnimationsExampleDialog {
+export class ResetDialog {
 
   version = packageJson.version;
 
-  constructor(public dialogRef: MatDialogRef<DialogAnimationsExampleDialog>, 
-    private apiService: ApiService) {}
+  constructor(public dialogRef: MatDialogRef<ResetDialog>, 
+    private apiService: ApiService,
+    public translateService: TranslateService) {}
   
   confirmReset(): void {
     this.apiService.resetDevice(ApiService.getWindowHref(window)).subscribe();

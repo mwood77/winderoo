@@ -1,0 +1,39 @@
+{
+    "HEADER": {
+        "RESET": "Réinitialiser",
+        "ON": "sur",
+        "OFF": "désactivé",
+        "DIALOG": {
+            "TITLE": "La réinitialisation prend 20 secondes",
+            "SUBTITLE": "Cet écran ne se fermera pas pendant le processus de réinitialisation",
+            "CANCEL": "Annuler",
+            "POINT_1": "La réinitialisation est terminée lorsque la deuxième LED cesse de clignoter rapidement, puis devient fixe.",
+            "POINT_2": "Connectez votre appareil mobile au nouveau réseau WiFi appelé",
+            "POINT_3": "Ajoutez Winderoo à un réseau WiFi existant. Si la LED commence à clignoter lentement, Winderoo a réussi à rejoindre ce réseau.",
+            "POINT_4": "Attendez que votre appareil se reconnecte à votre réseau WiFi existant.",
+            "NOW_AVAILABLE": "Winderoo est maintenant disponible sur:",
+            "CONFIRM_RESET": "Confirmer la réinitialisation"
+        }
+    },
+    "SETTINGS": {
+        "STATUS": "Statut",
+        "STOPPED": "Arrêté",
+        "WINDING": "Enroulement",
+        "ESTIMATED_DURATION": "Durée estimée du cycle",
+        "DIRECTION": "Direction",
+        "ROTATIONS_PER_DAY": "Rotations par jour",
+        "FIND_WINDING_PARAMETERS": "Trouvez les paramètres de remontage de votre montre",
+        "CYCLE_START": "Heure de début du cycle",
+        "ENABLED": "Activé",
+        "DISABLED": "Désactivé",
+        "HOURS": "Heure",
+        "MINUTES": "Minutes",
+        "SAVE": "Enregistrer les paramètres",
+        "SAVE_IN_PROGRESS": "Téléchargement en cours",
+        "CLOCKWISE": "Dans le sens des aiguilles d'une montre",
+        "COUNTER_CLOCKWISE": "Dans le sens inverse des aiguilles d'une montre",
+        "BOTH": "Les deux",
+        "PLEASE_WAIT": "Obtenir la progression du cycle, veuillez patienter",
+        "PROGRESS": "Progression du cycle"
+    }
+}

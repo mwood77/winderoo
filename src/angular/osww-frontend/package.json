@@ -1,10 +1,11 @@
 {
   "name": "osww-frontend",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "scripts": {
     "ng": "ng",
     "start": "ng serve",
-    "build-arduino": "ng build --aot --build-optimizer --optimization --progress --output-hashing none && npm run gzip && npm run move-artifacts",
+    "build-arduino": "ng build --aot --build-optimizer --optimization --progress --output-hashing none && npm run move-localization && npm run gzip && npm run move-artifacts",
+    "move-localization": "shx cp -r ./src/assets ../../../data/ && rm -rf ./dist/assets",
     "gzip": "gzip dist/**/* --extension=gz",
     "move-artifacts": "shx cp -r ./dist/**.gz ../../../data/",
     "bundle-analyze": "ng build --stats-json --output-hashing none && webpack-bundle-analyzer dist/stats.json",
@@ -22,6 +23,8 @@
     "@angular/platform-browser": "^14.2.0",
     "@angular/platform-browser-dynamic": "^14.2.0",
     "@angular/router": "^14.2.0",
+    "@ngx-translate/core": "^14.0.0",
+    "@ngx-translate/http-loader": "^7.0.0",
     "rxjs": "~7.5.0",
     "tslib": "^2.3.0",
     "zone.js": "~0.11.4"
@@ -31,8 +34,8 @@
     "@angular/cli": "~14.2.9",
     "@angular/compiler-cli": "^14.2.0",
     "@types/jasmine": "~4.0.0",
-    "gzip-cli": "^1.2.0",
     "delete": "^1.1.0",
+    "gzip-cli": "^1.2.0",
     "jasmine-core": "~4.3.0",
     "karma": "^6.4.1",
     "karma-chrome-launcher": "~3.1.0",

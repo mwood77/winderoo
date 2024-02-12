@@ -1,0 +1,39 @@
+{
+    "HEADER": {
+        "RESET": "Reiniciar",
+        "ON": "en",
+        "OFF": "apagado",
+        "DIALOG": {
+            "TITLE": "El reinicio tarda 20 segundos",
+            "SUBTITLE": "Esta pantalla no se cerrará durante el proceso de reinicio.",
+            "CANCEL": "cancelar",
+            "POINT_1": "El reinicio se completa cuando el segundo LED deja de parpadear rápidamente y luego se vuelve fijo.",
+            "POINT_2": "Conecta tu dispositivo móvil a la nueva red WiFi llamada",
+            "POINT_3": "Agregue Winderoo a una red WiFi existente. Si el LED comienza a parpadear lentamente, Winderoo se ha unido exitosamente a esa red.",
+            "POINT_4": "Espere a que su dispositivo se vuelva a conectar a su red WiFi existente.",
+            "NOW_AVAILABLE": "Winderoo ya está disponible en:",
+            "CONFIRM_RESET": "Confirmar reinicio"
+        }
+    },
+    "SETTINGS": {
+        "STATUS": "Estado",
+        "STOPPED": "Interrumpido",
+        "WINDING": "Devanado",
+        "ESTIMATED_DURATION": "Duración estimada del ciclo",
+        "DIRECTION": "Dirección",
+        "ROTATIONS_PER_DAY": "Rotaciones por día",
+        "FIND_WINDING_PARAMETERS": "Encuentre los parámetros de cuerda de su reloj",
+        "CYCLE_START": "Hora de inicio del ciclo",
+        "ENABLED": "Activado",
+        "DISABLED": "Desactivado",
+        "HOURS": "Hora",
+        "MINUTES": "Minutos",
+        "SAVE": "Guardar ajustes",
+        "SAVE_IN_PROGRESS": "Carga en progreso",
+        "CLOCKWISE": "Agujas del reloj",
+        "COUNTER_CLOCKWISE": "En sentido anti-horario",
+        "BOTH": "Ambos",
+        "PLEASE_WAIT": "Obteniendo el progreso del ciclo, espere",
+        "PROGRESS": "Progreso del ciclo"
+    }
+}

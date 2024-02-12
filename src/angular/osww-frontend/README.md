@@ -10,7 +10,7 @@
 
 ## Development server
 
-1. Run `npm run serve` from this location (`src/angular/osww-frontend/`)
+1. Run `npm run start` from this location (`src/angular/osww-frontend/`)
 1. Navigate to `http://localhost:4200/` in your browser. You'll see the application.
     - ⚠️ You'll need Winderoo's API running (on hardware, on your network) to interact with. 
     - See [this README](../../../docs/install-software.md) for instructions on how to flash the API to your hardware.

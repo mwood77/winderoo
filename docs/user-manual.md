@@ -6,7 +6,7 @@
 
 | v1.0.0 | |
 | :---: |:---: |
-|<img src="gui/overview_v1.0.0.png" height="600">  | This is winderoo's primary interface. From here you can change any settings you need |
+|<img src="gui/overview_v0.1.0.png" height="600">  | This is winderoo's primary interface. From here you can change any settings you need |
 
 
 ### Enable / Disable Winding
@@ -18,6 +18,7 @@
 | UI Element | Function |
 | :---: |:---: |
 |<img src="gui/reset.png" >  | This is will open a pop-up window, which will ask you to confirm reset, and walk you through the reset proceedure. Use this to change the WiFi network Winderoo connects to. |
+|<img src="gui/language.png" >  | This will open a pop-up menu where you can select which language you'd prefer. |
 
 ### Status Bar
 | UI Element | Function |

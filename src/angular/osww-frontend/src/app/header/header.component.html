@@ -3,18 +3,33 @@
         <span>Winderoo</span>
 
         <span class="toolbar-spacer"></span>
-                
+
         <mat-slide-toggle [(ngModel)]="isWinderEnabled" (ngModelChange)="updateWinderEnabledState($event)">
-            <span *ngIf="this.isWinderEnabled; else elseBlock">ON</span>
-            <ng-template #elseBlock><span>OFF</span></ng-template>
+            <span *ngIf="this.isWinderEnabled; else elseBlock">
+                {{ "HEADER.ON" | translate | uppercase }}
+            </span>
+            <ng-template #elseBlock><span>
+                {{ "HEADER.OFF" | translate | uppercase }}
+            </span></ng-template>
         </mat-slide-toggle>
 
         <span class="toolbar-spacer"></span>
 
         <button mat-stroked-button aria-label="Reset winder" (click)="reset()">
             <mat-icon>bolt</mat-icon>
-            RESET
+            {{ "HEADER.RESET" | translate }}
         </button>
+
+        <button mat-button aria-label="select language" [matMenuTriggerFor]="menu">
+            <mat-icon>translate</mat-icon>
+        </button>
+
+        <mat-menu #menu="matMenu">
+            <button mat-menu-item (click)="changeLanguage('de-DE')" [class.active]="translateService.currentLang === 'de-DE'">Deutschland</button>
+            <button mat-menu-item (click)="changeLanguage('en-US')" [class.active]="!translateService.currentLang || translateService.currentLang === 'en-US'">English</button>
+            <button mat-menu-item (click)="changeLanguage('es-ES')" [class.active]="translateService.currentLang === 'es-ES'">Español</button>
+            <button mat-menu-item class="btn btn-sm btn-outline-secondary" (click)="changeLanguage('fr-FR')" [class.active]="translateService.currentLang === 'fr-FR'">Francés</button>
+        </mat-menu>
 
     </mat-toolbar-row>
 </mat-toolbar>
