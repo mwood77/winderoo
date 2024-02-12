@@ -17,8 +17,6 @@ jobs:
         with:
           node-version: 18
 
-      # - run: sudo apt-get install firefox
-
       - run: npm i selenium-webdriver
 
       - run: npx node .github/workflows/test-ali-links.mjs
