@@ -167,8 +167,8 @@ export class SettingsComponent implements OnInit, AfterViewChecked {
         return this.translateService.instant('SETTINGS.CLOCKWISE');
       case 'CCW':
         return this.translateService.instant('SETTINGS.COUNTER_CLOCKWISE');
-        case 'BOTH':
-          return this.translateService.instant('SETTINGS.BOTH');
+      case 'BOTH':
+        return this.translateService.instant('SETTINGS.BOTH');
       default:
         return this.translateService.instant('SETTINGS.CLOCKWISE');
     }
