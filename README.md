@@ -23,8 +23,6 @@
 > [!NOTE]
 > OSWW is an open source modular watch winder, which you can read more about on [GitHub](https://github.com/mwood77/osww) or [Printables](https://www.printables.com/model/421249-osww-the-open-source-watch-winder).
 
-
-
 ### Key Features
 * Settable RPD (rotations per day) between 100 - 960rpd
 * Single direction (clockwise / anti-clockwise) or bi-directional winding.
@@ -73,9 +71,9 @@ This project welcomes contributions. Please follow the regular git workflow; for
 Winderoo has multi-language support, and we welcome adding more langauges.
 
 To add another language:
-1. Duplicate one of the current localizations, and translate the text.:
+1. Duplicate one of the current localizations, and translate the text:
     - `src/angular/osww-frontend/src/assets/i18n/` stores the current localizations.
-1. Add a new menu item to enable your langauge in:
+1. Add a new langauge menu item here to enable your langauge:
     - `src/angular/osww-frontend/src/app/header/header.component.html`
 1. Open a Pull Request
 
