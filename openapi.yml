@@ -1,0 +1,152 @@
+openapi: 3.1.0
+info:
+  title: Winderoo API
+  version: 0.1.0
+servers:
+  - url: http://winderoo.local/api/
+    description: local development and deployed devices
+tags:
+  - name: Status
+    description: Retrieve the current state of Winderoo
+  - name: Modify
+    description: Modify the state of Winderoo
+paths:
+  /update:
+    post:
+      tags:
+        - Modify
+      description: Change the state of Winderoo
+      parameters:
+        - in: query
+          name: tpd
+          schema:
+            type: integer
+          description: how many turns are required
+          example: 330
+        - in: query
+          name: hour
+          schema:
+            type: integer
+          description: At what hour winderoo should begin winding at
+          example: 14
+        - in: query
+          name: minutes
+          schema:
+            type: integer
+          description: At what minute winderoo should begin winding at
+          example: 50
+        - in: query
+          name: timerEnabled
+          schema:
+            type: integer
+          description: Whether Winderoo should enable alarm-start winding; number represents a boolean where 0 == off and 1 == on
+          example: 0, 1
+        - in: query
+          name: action
+          schema:
+            type: string
+          description: Whether Winderoo should start or stop winding
+          example: START, STOP
+        - in: query
+          name: rotationDirection
+          schema:
+            type: string
+          description: The winding direction
+          example: CW, CCW, BOTH
+      responses:
+        '204':
+          description: Successful opeation
+        '500':
+          description: Something went wrong when writing to memory
+  /status:
+    get:
+      tags:
+        - Status
+      description: Get the current status of Winderoo
+      responses:
+        '200':
+          description: Service is alive with current winder state
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Status'
+  /power:
+    post:
+      tags:
+        - Modify
+      description: Toggle whether Winderoo is on or off (hard off state)
+      responses:
+        '204':
+          description: State toggled succesfully
+  /reset:
+    get:
+      tags:
+        - Modify
+      description: Resets Winderoo's network settings; re-initializes winderoo with setup access point
+      responses:
+        '200':
+          description: State toggled succesfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Resetting'
+components:
+  schemas:
+    Status:
+      type: object
+      properties:
+        status:
+          type: string
+          examples: 
+            - Stopped
+        rotationsPerDay:
+          type: string
+          examples:
+            - 300
+        direction:
+          type: string
+          examples:
+            - BOTH
+        hour:
+          type: string
+          examples:
+            - 12
+        minutes:
+          type: string
+          examples:
+            - 50
+        durationInSecondsToCompleteOneRevolution:
+          type: number
+          examples:
+            - 8
+        startTimeEpoch:
+          type: number
+          examples:
+            - 0
+        currentTimeEpoch:
+          type: number
+          examples:
+            - 1680555863
+        estimatedRoutineFinishEpoch:
+          type: number
+          examples:
+            - 0
+        winderEnabled:
+          type: string
+          examples:
+            - 1
+        timerEnabled:
+          type: string
+          examples:
+            - 1
+        db:
+          type: number
+          examples:
+            - -67
+    Resetting:
+      type: object
+      properties:
+        status:
+          type: string
+          examples:
+            - Resetting
