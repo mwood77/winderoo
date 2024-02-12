@@ -17,12 +17,16 @@
  * ********************************* CONFIGURABLES *************************************
  * *************************************************************************************
  *
+ * If you purchased the motor listed in the guide / Bill Of Materials, these default values are correct!
+ *
  * durationInSecondsToCompleteOneRevolution = how long it takes the watch to complete one rotation on the winder.
- * 												If you purchased the motor listed in the guide / Bill Of Materials, then this default value is correct!
  * directionalPinA = this is the pin that's wired to IN1 on your L298N circuit board
  * directionalPinB = this is the pin that's wired to IN2 on your L298N circuit board
  * ledPin = by default this is set to the ESP32's onboard LED. If you've wired an external LED, change this value to the GPIO pin the LED is wired to.
  * externalButton = OPTIONAL - If you want to use an external ON/OFF button, connect it to this pin 13. If you need to use another pin, change the value here.
+ * 
+ * If you're using a NeoPixel equipped board, you'll need to change directionalPinA, directionalPinB and ledPin (pin 18 on most, I think) to appropriate GPIOs. 
+ * Faiulre to set these pins on NeoPixel boards will result in kernel panics.
  */
 int durationInSecondsToCompleteOneRevolution = 8;
 int directionalPinA = 25;
@@ -39,7 +43,7 @@ int externalButton = 13;
  * DO NOT CHANGE THESE VARIABLES!
  */
 String timeURL = "http://worldtimeapi.org/api/ip";
-String settingsFile = "/settings.txt";
+String settingsFile = "/settings.json";
 unsigned long rtc_offset;
 unsigned long rtc_epoch;
 unsigned long estimatedRoutineFinishEpoch;
@@ -126,10 +130,10 @@ void getTime()
 
 	if (httpCode > 0)
 	{
-		DynamicJsonDocument doc(2048);
-		deserializeJson(doc, http.getStream());
-		const unsigned long epoch = doc["unixtime"];
-		const unsigned long offset = doc["raw_offset"];
+		JsonDocument json;
+		deserializeJson(json, http.getStream());
+		const unsigned long epoch = json["unixtime"];
+		const unsigned long offset = json["raw_offset"];
 
 		rtc.offset = offset;
 		rtc.setTime(epoch);
@@ -144,24 +148,32 @@ void getTime()
  * @param file_name fully qualified name of file to load
  * @return contents of file as a single string
  */
-String loadConfigVarsFromFile(String file_name)
+void loadConfigVarsFromFile(String file_name)
 {
 	String result = "";
 
 	File this_file = LittleFS.open(file_name, "r");
 
-	if (!this_file)
+	JsonDocument json;
+	DeserializationError error = deserializeJson(json, this_file);
+
+	if (!this_file || error)
 	{
 		Serial.println("[STATUS] - Failed to open configuration file, returning empty result");
-		return result;
 	}
 	while (this_file.available())
 	{
 		result += (char)this_file.read();
 	}
+	
+	userDefinedSettings.status = json["savedStatus"].as<String>();						// Winding || Stopped = 7char
+	userDefinedSettings.rotationsPerDay = json["savedTPD"].as<String>();				// min = 100 || max = 960
+	userDefinedSettings.hour = json["savedHour"].as<String>();							// 00
+	userDefinedSettings.minutes = json["savedMinutes"].as<String>();					// 00
+	userDefinedSettings.timerEnabled = json["savedTimerState"].as<String>();			// 0 || 1
+	userDefinedSettings.direction = json["savedDirection"].as<String>();				// CW || CCW || BOTH
 
 	this_file.close();
-	return result;
 }
 
 /**
@@ -171,9 +183,11 @@ String loadConfigVarsFromFile(String file_name)
  * @param contents entire contents to write to file
  * @return true if successfully wrote to file; else false
  */
-bool writeConfigVarsToFile(String file_name, String contents)
+bool writeConfigVarsToFile(String file_name, const RUNTIME_VARS& userDefinedSettings)
 {
 	File this_file = LittleFS.open(file_name, "w");
+
+	JsonDocument json;
 
 	if (!this_file)
 	{
@@ -181,9 +195,14 @@ bool writeConfigVarsToFile(String file_name, String contents)
 		return false;
 	}
 
-	int bytesWritten = this_file.print(contents);
+	json["savedStatus"] = userDefinedSettings.status;
+	json["savedTPD"] = userDefinedSettings.rotationsPerDay;
+	json["savedHour"] = userDefinedSettings.hour;
+	json["savedMinutes"] = userDefinedSettings.minutes;
+	json["savedTimerState"] = userDefinedSettings.timerEnabled;
+	json["savedDirection"] = userDefinedSettings.direction;
 
-	if (bytesWritten == 0)
+	if (serializeJson(json, this_file) == 0)
 	{
 		Serial.println("[STATUS] - Failed to write to configuration file");
 		return false;
@@ -191,28 +210,6 @@ bool writeConfigVarsToFile(String file_name, String contents)
 
 	this_file.close();
 	return true;
-}
-
-/**
- * Parses substrings from user settings file & maps to runtime variables
- *
- * @param settings non-delimited string of settings
- */
-void parseSettings(String settings)
-{
-	String savedStatus = settings.substring(0, 7);		 // Winding || Stopped = 7char
-	String savedTPD = settings.substring(8, 11);		 // min = 100 || max = 960
-	String savedHour = settings.substring(12, 14);		 // 00
-	String savedMinutes = settings.substring(15, 17);	 // 00
-	String savedTimerState = settings.substring(18, 19); // 0 || 1
-	String savedDirection = settings.substring(20);		 // CW || CCW || BOTH
-
-	userDefinedSettings.status = savedStatus;
-	userDefinedSettings.rotationsPerDay = savedTPD;
-	userDefinedSettings.hour = savedHour;
-	userDefinedSettings.minutes = savedMinutes;
-	userDefinedSettings.timerEnabled = savedTimerState;
-	userDefinedSettings.direction = savedDirection;
 }
 
 /**
@@ -239,129 +236,131 @@ void startWebserver()
 {
 
 	server.on("/api/status", HTTP_GET, [](AsyncWebServerRequest *request)
-			  {
-    AsyncResponseStream *response = request->beginResponseStream("application/json");
-    DynamicJsonDocument json(1024);
-    json["status"] = userDefinedSettings.status;
-    json["rotationsPerDay"] = userDefinedSettings.rotationsPerDay;
-    json["direction"] = userDefinedSettings.direction;
-    json["hour"] = userDefinedSettings.hour;
-    json["minutes"] = userDefinedSettings.minutes;
-    json["durationInSecondsToCompleteOneRevolution"] = durationInSecondsToCompleteOneRevolution;
-    json["startTimeEpoch"] = startTimeEpoch;
-    json["currentTimeEpoch"] = rtc.getEpoch();
-    json["estimatedRoutineFinishEpoch"] = estimatedRoutineFinishEpoch;
-    json["winderEnabled"] = userDefinedSettings.winderEnabled;
-    json["timerEnabled"] = userDefinedSettings.timerEnabled;
-    json["db"] = WiFi.RSSI();
-    serializeJson(json, *response);
+	{
+		AsyncResponseStream *response = request->beginResponseStream("application/json");
+		JsonDocument json;
+		json["status"] = userDefinedSettings.status;
+		json["rotationsPerDay"] = userDefinedSettings.rotationsPerDay;
+		json["direction"] = userDefinedSettings.direction;
+		json["hour"] = userDefinedSettings.hour;
+		json["minutes"] = userDefinedSettings.minutes;
+		json["durationInSecondsToCompleteOneRevolution"] = durationInSecondsToCompleteOneRevolution;
+		json["startTimeEpoch"] = startTimeEpoch;
+		json["currentTimeEpoch"] = rtc.getEpoch();
+		json["estimatedRoutineFinishEpoch"] = estimatedRoutineFinishEpoch;
+		json["winderEnabled"] = userDefinedSettings.winderEnabled;
+		json["timerEnabled"] = userDefinedSettings.timerEnabled;
+		json["db"] = WiFi.RSSI();
+		serializeJson(json, *response);
 
-    request->send(response);
+		request->send(response);
 
-    // Update RTC time ref
-    getTime(); });
+		// Update RTC time ref
+		getTime(); 
+	});
 
 	server.on("/api/power", HTTP_POST, [](AsyncWebServerRequest *request)
-			  {
-    int params = request->params();
-    
-    for ( int i = 0; i < params; i++ ) {
-      AsyncWebParameter* p = request->getParam(i);
+	{
+		int params = request->params();
 
-        if( strcmp(p->name().c_str(), "winderEnabled") == 0 ) {
-          userDefinedSettings.winderEnabled = p->value().c_str();
+		for ( int i = 0; i < params; i++ ) {
+		AsyncWebParameter* p = request->getParam(i);
 
-          if (userDefinedSettings.winderEnabled == "0") {
-            Serial.println("[STATUS] - Switched off!");
-            userDefinedSettings.status = "Stopped";
-            routineRunning = false;
-            motor.stop();
-          }
-        }
-    }
-    
-    request->send(204); });
+			if( strcmp(p->name().c_str(), "winderEnabled") == 0 ) {
+			userDefinedSettings.winderEnabled = p->value().c_str();
 
-	server.on("/api/update", HTTP_POST, [](AsyncWebServerRequest *request)
-			  {
-    int params = request->params();
-    
-    for ( int i = 0; i < params; i++ ) {
-      AsyncWebParameter* p = request->getParam(i);
-    
-        if( strcmp(p->name().c_str(), "rotationDirection") == 0 ) {
-          userDefinedSettings.direction = p->value().c_str();
-
-          motor.stop();
-          delay(250);
-
-          // Update motor direction
-          if (userDefinedSettings.direction == "CW" ) {
-            motor.setMotorDirection(1);
-          } else if (userDefinedSettings.direction == "CCW") {
-            motor.setMotorDirection(0);
-          }
-
-          Serial.println("[STATUS] - direction set: " + userDefinedSettings.direction);
-        }
-    
-        if( strcmp(p->name().c_str(), "tpd") == 0 ) {
-          const char* newTpd = p->value().c_str();
-
-          if (strcmp(newTpd, userDefinedSettings.rotationsPerDay.c_str()) != 0) {
-            userDefinedSettings.rotationsPerDay = p->value().c_str();
-
-            unsigned long finishTime = calculateWindingTime();
-            estimatedRoutineFinishEpoch = finishTime;
-          }
-        }
-
-        if( strcmp(p->name().c_str(), "hour") == 0 ) {
-          userDefinedSettings.hour = p->value().c_str();
-        }
-		
-		if( strcmp(p->name().c_str(), "timerEnabled") == 0 ) {
-          userDefinedSettings.timerEnabled = p->value().c_str();
+			if (userDefinedSettings.winderEnabled == "0") {
+				Serial.println("[STATUS] - Switched off!");
+				userDefinedSettings.status = "Stopped";
+				routineRunning = false;
+				motor.stop();
+			}
+			}
 		}
 
-        if( strcmp(p->name().c_str(), "minutes") == 0 ) {
-          userDefinedSettings.minutes = p->value().c_str();
-        }
+		request->send(204); 
+	});
 
-        if( strcmp(p->name().c_str(), "action") == 0) {
-          if ( strcmp(p->value().c_str(), "START") == 0 ) {
-            if (!routineRunning) {
-              userDefinedSettings.status = "Winding";
-              beginWindingRoutine();
-            }
-          } else {
-            motor.stop();
-            routineRunning = false;
-            userDefinedSettings.status = "Stopped";
-          }
-        }
-    }
+	server.on("/api/update", HTTP_POST, [](AsyncWebServerRequest *request)
+	{
+		int params = request->params();
 
-    String configs = userDefinedSettings.status + "," + userDefinedSettings.rotationsPerDay + "," + userDefinedSettings.hour + "," + userDefinedSettings.minutes + "," +  userDefinedSettings.timerEnabled + "," + userDefinedSettings.direction;
+		for ( int i = 0; i < params; i++ ) {
+		AsyncWebParameter* p = request->getParam(i);
 
-    bool writeSuccess = writeConfigVarsToFile(settingsFile, configs);
+			if( strcmp(p->name().c_str(), "rotationDirection") == 0 ) {
+			userDefinedSettings.direction = p->value().c_str();
 
-    if ( !writeSuccess ) {
-      request->send(500);
-    }
+			motor.stop();
+			delay(250);
 
-    request->send(204); });
+			// Update motor direction
+			if (userDefinedSettings.direction == "CW" ) {
+				motor.setMotorDirection(1);
+			} else if (userDefinedSettings.direction == "CCW") {
+				motor.setMotorDirection(0);
+			}
+
+			Serial.println("[STATUS] - direction set: " + userDefinedSettings.direction);
+			}
+
+			if( strcmp(p->name().c_str(), "tpd") == 0 ) {
+			const char* newTpd = p->value().c_str();
+
+			if (strcmp(newTpd, userDefinedSettings.rotationsPerDay.c_str()) != 0) {
+				userDefinedSettings.rotationsPerDay = p->value().c_str();
+
+				unsigned long finishTime = calculateWindingTime();
+				estimatedRoutineFinishEpoch = finishTime;
+			}
+			}
+
+			if( strcmp(p->name().c_str(), "hour") == 0 ) {
+			userDefinedSettings.hour = p->value().c_str();
+			}
+
+			if( strcmp(p->name().c_str(), "timerEnabled") == 0 ) {
+			userDefinedSettings.timerEnabled = p->value().c_str();
+			}
+
+			if( strcmp(p->name().c_str(), "minutes") == 0 ) {
+			userDefinedSettings.minutes = p->value().c_str();
+			}
+
+			if( strcmp(p->name().c_str(), "action") == 0) {
+			if ( strcmp(p->value().c_str(), "START") == 0 ) {
+				if (!routineRunning) {
+				userDefinedSettings.status = "Winding";
+				beginWindingRoutine();
+				}
+			} else {
+				motor.stop();
+				routineRunning = false;
+				userDefinedSettings.status = "Stopped";
+			}
+			}
+		}
+
+		bool writeSuccess = writeConfigVarsToFile(settingsFile, userDefinedSettings);
+
+		if ( !writeSuccess ) {
+			request->send(500);
+		}
+
+		request->send(204); 
+	});
 
 	server.on("/api/reset", HTTP_GET, [](AsyncWebServerRequest *request)
-			  {
+	{
 		Serial.println("[STATUS] - Received reset command");
 		AsyncResponseStream *response = request->beginResponseStream("application/json");
-		DynamicJsonDocument json(1024);
+		JsonDocument json;
 		json["status"] = "Resetting";
 		serializeJson(json, *response);
 		request->send(response);
-		
-		reset = true; });
+
+		reset = true; 
+	});
 
 	server.serveStatic("/css/", LittleFS, "/css/").setCacheControl("max-age=31536000");
 	server.serveStatic("/js/", LittleFS, "/js/").setCacheControl("max-age=31536000");
@@ -419,7 +418,7 @@ void triggerLEDCondition(int blinkState)
 /**
  * This is a non-block button listener function.
  * Credit to github OSWW ontribution from user @danagarcia
- * 
+ *
  * @param pauseInSeconds the amount of time to pause and listen
 */
 void awaitWhileListening(int pauseInSeconds)
@@ -487,8 +486,7 @@ void setup()
 		Serial.println("[STATUS] - connected to saved network");
 
 		// retrieve & read saved settings
-		String savedSettings = loadConfigVarsFromFile(settingsFile);
-		parseSettings(savedSettings);
+		loadConfigVarsFromFile(settingsFile);
 
 		if (!MDNS.begin("winderoo"))
 		{
@@ -597,6 +595,6 @@ void loop()
 	{
 		triggerLEDCondition(3);
 	}
-	
+
 	wm.process();
 }
