@@ -164,16 +164,13 @@ export class SettingsComponent implements OnInit, AfterViewChecked {
   getReadableDirectionOfRotation(direction: string): string {
     switch (direction) {
       case 'CW':
-        // return 'Clockwise';
         return this.translateService.instant('SETTINGS.CLOCKWISE');
       case 'CCW':
-        // return 'Counter-Clockwise';
         return this.translateService.instant('SETTINGS.COUNTER_CLOCKWISE');
         case 'BOTH':
-          // return 'Both';
           return this.translateService.instant('SETTINGS.BOTH');
       default:
-        return 'Clockwise';
+        return this.translateService.instant('SETTINGS.CLOCKWISE');
     }
   }
 
@@ -245,10 +242,6 @@ export class SettingsComponent implements OnInit, AfterViewChecked {
 
     this.estHoursDuration = hours < "10" ? hours.slice(1,2) : hours;
     this.estMinutesDuration = mins;
-
-    // this.estDuration = 
-    //   hours < "10" ? `${hours.slice(1,2)} hours ${mins} minutes` :
-    //   `${hours} hours ${mins} minutes`;
   }
 
   getProgressComplete(startTimeEpoch: number, currentTimeEpoch: number, estimatedRoutineFinishEpoch: number): void {
