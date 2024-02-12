@@ -17,12 +17,16 @@
  * ********************************* CONFIGURABLES *************************************
  * *************************************************************************************
  *
+ * If you purchased the motor listed in the guide / Bill Of Materials, these default values are correct!
+ *
  * durationInSecondsToCompleteOneRevolution = how long it takes the watch to complete one rotation on the winder.
- * 												If you purchased the motor listed in the guide / Bill Of Materials, then this default value is correct!
  * directionalPinA = this is the pin that's wired to IN1 on your L298N circuit board
  * directionalPinB = this is the pin that's wired to IN2 on your L298N circuit board
  * ledPin = by default this is set to the ESP32's onboard LED. If you've wired an external LED, change this value to the GPIO pin the LED is wired to.
  * externalButton = OPTIONAL - If you want to use an external ON/OFF button, connect it to this pin 13. If you need to use another pin, change the value here.
+ * 
+ * If you're using a NeoPixel equipped board, you'll need to change directionalPinA, directionalPinB and ledPin (pin 18 on most, I think) to appropriate GPIOs. 
+ * Faiulre to set these pins on NeoPixel boards will result in kernel panics.
  */
 int durationInSecondsToCompleteOneRevolution = 8;
 int directionalPinA = 25;
