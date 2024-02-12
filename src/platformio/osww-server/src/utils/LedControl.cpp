@@ -26,7 +26,7 @@ void LedControl::pwm()
 void LedControl::slowBlink()
 {
     // Slow blink to confirm success & restart
-    Serial.println("slow blink");
+    Serial.println("[STATUS] - slow blink");
 
     for (int dutyCycle = 0; dutyCycle <= 4; dutyCycle++)
     {
@@ -48,7 +48,7 @@ void LedControl::slowBlink()
 void LedControl::fastBlink()
 {
     // Fast blink to confirm resetting
-    Serial.println("slow blink");
+    Serial.println("[STATUS] - fast blink");
     for (int i = 0; i < 12; i++)
     {
 
