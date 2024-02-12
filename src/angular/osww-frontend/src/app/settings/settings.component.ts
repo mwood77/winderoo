@@ -1,6 +1,7 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, AfterViewChecked } from '@angular/core';
 import { ApiService, Update } from '../api.service';
 import { ProgressBarMode } from '@angular/material/progress-bar';
+import { TranslateService } from '@ngx-translate/core';
 
 interface SelectInterface {
   value: string;
@@ -12,7 +13,7 @@ interface SelectInterface {
   templateUrl: './settings.component.html',
   styleUrls: ['./settings.component.scss']
 })
-export class SettingsComponent implements OnInit {
+export class SettingsComponent implements OnInit, AfterViewChecked {
 
   minutes: SelectInterface[] = [
       { value: '00', viewValue: '00' },
@@ -68,7 +69,8 @@ export class SettingsComponent implements OnInit {
 
   selectedHour: any;
   selectedMinutes: any;
-  estDuration: any;
+  estHoursDuration: string = "";
+  estMinutesDuration: string = "";
 
   progressMode: ProgressBarMode = 'indeterminate';
   progressPercentageComplete: number =  0;
@@ -77,13 +79,15 @@ export class SettingsComponent implements OnInit {
 
   watchWindingParametersURL = 'https://watch-winder.store/watch-winding-table/';
 
-  constructor(private apiService: ApiService) {
+  constructor(private apiService: ApiService, private translateService: TranslateService) {
     this.isWinderEnabled = this.apiService.isWinderEnabled$.getValue();
     this.isTimerEnabled = false;
-   }
+  }
+  ngAfterViewChecked(): void {
+    this.upload.statusMessage = this.translateService.instant('SETTINGS.SAVE');
+  }
 
   ngOnInit(): void {
-    this.upload.statusMessage = 'Save Settings'
     this.getData();
     this.setupSubscriptions();
   }
@@ -160,11 +164,14 @@ export class SettingsComponent implements OnInit {
   getReadableDirectionOfRotation(direction: string): string {
     switch (direction) {
       case 'CW':
-        return 'Clockwise';
+        // return 'Clockwise';
+        return this.translateService.instant('SETTINGS.CLOCKWISE');
       case 'CCW':
-        return 'Counter-Clockwise';
-      case 'BOTH':
-        return 'Both';
+        // return 'Counter-Clockwise';
+        return this.translateService.instant('SETTINGS.COUNTER_CLOCKWISE');
+        case 'BOTH':
+          // return 'Both';
+          return this.translateService.instant('SETTINGS.BOTH');
       default:
         return 'Clockwise';
     }
@@ -186,7 +193,7 @@ export class SettingsComponent implements OnInit {
   }
 
   uploadSettings(actionToDo?: string): void {
-    this.upload.statusMessage = 'Upload in progress';
+    this.upload.statusMessage = this.translateService.instant('SETTINGS.SAVE_IN_PROGRESS');
     this.upload.disabled = true;
 
     const body: Update = {
@@ -204,7 +211,7 @@ export class SettingsComponent implements OnInit {
       }
 
       this.upload.disabled = false;
-      this.upload.statusMessage = 'Save Settings';
+      this.upload.statusMessage = this.translateService.instant('SETTINGS.SAVE');;
     });
   }
 
@@ -236,9 +243,12 @@ export class SettingsComponent implements OnInit {
     const hours = readableDuration.toTimeString().slice(0,2);
     const mins = readableDuration.toTimeString().slice(3,5);
 
-    this.estDuration = 
-      hours < "10" ? `${hours.slice(1,2)} hours ${mins} minutes` :
-      `${hours} hours ${mins} minutes`;
+    this.estHoursDuration = hours < "10" ? hours.slice(1,2) : hours;
+    this.estMinutesDuration = mins;
+
+    // this.estDuration = 
+    //   hours < "10" ? `${hours.slice(1,2)} hours ${mins} minutes` :
+    //   `${hours} hours ${mins} minutes`;
   }
 
   getProgressComplete(startTimeEpoch: number, currentTimeEpoch: number, estimatedRoutineFinishEpoch: number): void {

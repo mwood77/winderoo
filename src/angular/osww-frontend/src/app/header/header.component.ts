@@ -55,7 +55,7 @@ export class HeaderComponent implements OnInit {
         this.apiService.isWinderEnabled$.next($state);
 
         this.mapEnabledState($state)
-        // signal settings to component to refresh
+        // signal settings component to refresh
         this.apiService.shouldRefresh$.next(true);
       });
   };

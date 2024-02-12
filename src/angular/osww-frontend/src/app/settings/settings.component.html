@@ -27,9 +27,9 @@
     <mat-card class="mat-elevation-z1" class="progres-bar" *ngIf="this.upload.activityState === 'Winding'">
         <div>
             <div *ngIf="this.progressMode == 'indeterminate'; else elseBlock">
-                <span>Getting cycle progress, please wait</span>
+                <span>{{ "SETTINGS.PLEASE_WAIT" | translate }}</span>
             </div>
-            <ng-template #elseBlock><span>Cycle Progress</span></ng-template>
+            <ng-template #elseBlock><span>{{ "SETTINGS.PROGRESS" | translate }}</span></ng-template>
             <div class="status-text justify-content-end">
                 <mat-progress-bar
                     class="example-margin"
@@ -47,7 +47,7 @@
                 {{ "SETTINGS.ESTIMATED_DURATION" | translate }}
             </div>
             <div class="individual-status-text">
-                {{ this.estDuration }}
+                {{ this.estHoursDuration }} {{ "SETTINGS.HOURS" | translate }} {{ this.estMinutesDuration }} {{ "SETTINGS.MINUTES" | translate }}
             </div>
         </div>
     </mat-card>

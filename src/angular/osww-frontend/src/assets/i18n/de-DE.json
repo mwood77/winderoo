@@ -28,6 +28,12 @@
         "DISABLED": "Deaktiviert",
         "HOURS": "Stunde",
         "MINUTES": "Protokoll",
-        "SAVE": "Einstellungen speichern"
+        "SAVE": "Einstellungen speichern",
+        "SAVE_IN_PROGRESS": "Hochladen läuft",
+        "CLOCKWISE": "Im Uhrzeigersinn",
+        "COUNTER_CLOCKWISE": "Gegen den Uhrzeigersinn",
+        "BOTH": "Beide",
+        "PLEASE_WAIT": "Zyklusfortschritt wird angezeigt, bitte warten",
+        "PROGRESS": "Zyklusfortschritt"
     }
 }

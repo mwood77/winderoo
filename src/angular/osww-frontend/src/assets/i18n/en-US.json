@@ -13,7 +13,6 @@
             "POINT_4": "Wait for your device to reconnect to your existing WiFi network.",
             "NOW_AVAILABLE": "Winderoo is now available at:",
             "CONFIRM_RESET": "Confirm Reset"
-
         }
     },
     "SETTINGS": {
@@ -29,6 +28,12 @@
         "DISABLED": "Disabled",
         "HOURS": "Hour",
         "MINUTES": "Minutes",
-        "SAVE": "Save Settings"
+        "SAVE": "Save Settings",
+        "SAVE_IN_PROGRESS": "Upload in progress",
+        "CLOCKWISE": "Clockwise",
+        "COUNTER_CLOCKWISE": "Counter Clockwise",
+        "BOTH": "Both",
+        "PLEASE_WAIT": "Getting cycle progress, please wait",
+        "PROGRESS": "Cycle Progress"
     }
 }

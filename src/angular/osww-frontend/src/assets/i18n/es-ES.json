@@ -28,6 +28,12 @@
         "DISABLED": "Desactivado",
         "HOURS": "Hora",
         "MINUTES": "Minutos",
-        "SAVE": "Guardar ajustes"
+        "SAVE": "Guardar ajustes",
+        "SAVE_IN_PROGRESS": "Carga en progreso",
+        "CLOCKWISE": "Agujas del reloj",
+        "COUNTER_CLOCKWISE": "En sentido anti-horario",
+        "BOTH": "Ambos",
+        "PLEASE_WAIT": "Obteniendo el progreso del ciclo, espere",
+        "PROGRESS": "Progreso del ciclo"
     }
 }

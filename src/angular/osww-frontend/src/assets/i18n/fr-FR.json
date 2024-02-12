@@ -28,6 +28,12 @@
         "DISABLED": "Désactivé",
         "HOURS": "Heure",
         "MINUTES": "Minutes",
-        "SAVE": "Enregistrer les paramètres"
+        "SAVE": "Enregistrer les paramètres",
+        "SAVE_IN_PROGRESS": "Téléchargement en cours",
+        "CLOCKWISE": "Dans le sens des aiguilles d'une montre",
+        "COUNTER_CLOCKWISE": "Dans le sens inverse des aiguilles d'une montre",
+        "BOTH": "Les deux",
+        "PLEASE_WAIT": "Obtenir la progression du cycle, veuillez patienter",
+        "PROGRESS": "Progression du cycle"
     }
 }
