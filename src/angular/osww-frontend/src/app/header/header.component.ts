@@ -21,6 +21,7 @@ export class HeaderComponent implements OnInit {
 
   public changeLanguage(language: string): void {
     this.translateService.use(language);
+    localStorage.setItem('selectedLanguage', language);
   }
 
   private mapEnabledState($event: number): void {
@@ -39,7 +40,7 @@ export class HeaderComponent implements OnInit {
   }
 
   openDialog(): void {
-    this.dialog.open(DialogAnimationsExampleDialog, {
+    this.dialog.open(ResetDialog, {
       width: '80%',
     });
   }
@@ -66,12 +67,13 @@ export class HeaderComponent implements OnInit {
   templateUrl: './header-dialog.component.html',
   styleUrls: ['./header-dialog.component.scss']
 })
-export class DialogAnimationsExampleDialog {
+export class ResetDialog {
 
   version = packageJson.version;
 
-  constructor(public dialogRef: MatDialogRef<DialogAnimationsExampleDialog>, 
-    private apiService: ApiService) {}
+  constructor(public dialogRef: MatDialogRef<ResetDialog>, 
+    private apiService: ApiService,
+    public translateService: TranslateService) {}
   
   confirmReset(): void {
     this.apiService.resetDevice(ApiService.getWindowHref(window)).subscribe();

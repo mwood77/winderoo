@@ -2,7 +2,9 @@
 
     <mat-card class="mat-elevation-z1" [ngClass]="getColour(this.upload.activityState)">
             <div>
-                <span>Status</span>
+                <span>
+                    {{ "SETTINGS.STATUS" | translate }}
+                </span>
                 <div class="status-text justify-content-end">
                     {{ this.upload.activityState }}
                 </div>
@@ -42,7 +44,7 @@
     <mat-card class="mat-elevation-z1">
         <div class="individual-setting">
             <div>
-                Estimated Cycle Duration
+                {{ "SETTINGS.ESTIMATED_DURATION" | translate }}
             </div>
             <div class="individual-status-text">
                 {{ this.estDuration }}
@@ -52,7 +54,7 @@
     
     <mat-card class="mat-elevation-z1">
         <div class="individual-setting ">
-            Direction
+            {{ "SETTINGS.DIRECTION" | translate }}
             <div class="individual-status-text">{{ getReadableDirectionOfRotation(this.upload.direction) }}</div>
             <div class="rotation-toggles">
                 <mat-button-toggle-group [(ngModel)]="this.upload.direction" aria-label="Winding Direction">
@@ -72,7 +74,7 @@
 
         <div class="individual-setting">
             <div class="">
-                Rotations Per Day
+                {{ "SETTINGS.ROTATIONS_PER_DAY" | translate }}
             </div>
             <div class="individual-status-text">{{ this.upload.rpd }}</div>
             <mat-slider value="{{ this.upload.rpd }}" min="100" max="960" step="20" discrete (input)="setRotationsPerDay($event)">
@@ -83,7 +85,7 @@
         <div class="individual-setting">
             <div class="individual-status-text">
                 <a target="_blank" mat-stroked-button (click)="openSite(watchWindingParametersURL)">
-                    Find your watch's winding parameters
+                    {{ "SETTINGS.FIND_WINDING_PARAMETERS" | translate }}
                 </a>
             </div>
         </div>
@@ -91,12 +93,18 @@
 
     <mat-card class="mat-elevation-z1">
         <div class="individual-setting">
-            <div>Cycle Start Time</div>
+            <div>{{ "SETTINGS.CYCLE_START" | translate }}</div>
             
             <div style="display: flex; justify-content: center;">
                 <mat-slide-toggle [(ngModel)]="this.isTimerEnabled" (ngModelChange)="updateTimerEnabledState($event)">
-                    <span *ngIf="this.isTimerEnabled; else elseBlock">ENABLED</span>
-                    <ng-template #elseBlock><span>DISABLED</span></ng-template>
+                    <span *ngIf="this.isTimerEnabled; else elseBlock">
+                        {{ "SETTINGS.ENABLED" | translate | uppercase }}
+                    </span>
+                    <ng-template #elseBlock>
+                        <span>
+                        {{ "SETTINGS.DISABLED" | translate | uppercase }}
+                    </span>
+                </ng-template>
                 </mat-slide-toggle>
             </div>
 
@@ -109,7 +117,9 @@
     
                 <div class="time-input">
                     <mat-form-field color="accent" appearance="outline">
-                        <mat-label>Hour</mat-label>
+                        <mat-label>
+                            {{ "SETTINGS.HOURS" | translate }}
+                        </mat-label>
                         <select matNativeControl [(ngModel)]="selectedHour" name="hour">
                             <option value="" selected></option>
                             <option *ngFor="let hr of hours" [value]="hr.value">
@@ -118,7 +128,9 @@
                             </select>
                     </mat-form-field>
                     <mat-form-field color="accent" appearance="outline">
-                        <mat-label>Minutes</mat-label>
+                        <mat-label>
+                            {{ "SETTINGS.MINUTES" | translate }}
+                        </mat-label>
                         <select matNativeControl [(ngModel)]="selectedMinutes" name="minutes">
                             <option value="" selected></option>
                             <option *ngFor="let mn of minutes" [value]="mn.value">

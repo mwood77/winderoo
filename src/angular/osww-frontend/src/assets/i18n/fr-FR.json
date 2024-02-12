@@ -1,3 +1,28 @@
 {
-    "hello": "Bonjour, {{name}}!"
+    "HEADER": {
+        "RESET": "Réinitialiser",
+        "ON": "sur",
+        "OFF": "désactivé",
+        "DIALOG": {
+            "TITLE": "Reset takes 20 seconds",
+            "SUBTITLE": "This screen will not close during the reset process",
+            "CANCEL": "cancel",
+            "OFF": "off"
+        }
+    },
+    "SETTINGS": {
+        "STATUS": "Statut",
+        "STOPPED": "Arrêté",
+        "WINDING": "Enroulement",
+        "ESTIMATED_DURATION": "Durée estimée du cycle",
+        "DIRECTION": "Direction",
+        "ROTATIONS_PER_DAY": "Rotations par jour",
+        "FIND_WINDING_PARAMETERS": "Trouvez les paramètres de remontage de votre montre",
+        "CYCLE_START": "Heure de début du cycle",
+        "ENABLED": "Activé",
+        "DISABLED": "Désactivé",
+        "HOURS": "Heure",
+        "MINUTES": "Minutes",
+        "SAVE": "Enregistrer les paramètres"
+    }
 }

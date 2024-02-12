@@ -1,3 +1,28 @@
 {
-    "hello": "Hallo, {{name}}!"
+    "HEADER": {
+        "RESET": "Zurücksetzen",
+        "ON": "an",
+        "OFF": "aus",
+        "DIALOG": {
+            "TITLE": "Reset takes 20 seconds",
+            "SUBTITLE": "This screen will not close during the reset process",
+            "CANCEL": "cancel",
+            "OFF": "off"
+        }
+    },
+    "SETTINGS": {
+        "STATUS": "Status",
+        "STOPPED": "Gestoppt",
+        "WINDING": "Wicklung",
+        "ESTIMATED_DURATION": "Geschätzte Zyklusdauer",
+        "DIRECTION": "Richtung",
+        "ROTATIONS_PER_DAY": "Rotationen pro Tag",
+        "FIND_WINDING_PARAMETERS": "Finden Sie die Aufzugsparameter Ihrer Uhr",
+        "CYCLE_START": "Zyklusstartzeit",
+        "ENABLED": "Ermöglicht",
+        "DISABLED": "Deaktiviert",
+        "HOURS": "Stunde",
+        "MINUTES": "Protokoll",
+        "SAVE": "Einstellungen speichern"
+    }
 }

@@ -1,3 +1,28 @@
 {
-    "hello": "Hello, {{name}}!"
+    "HEADER": {
+        "RESET": "Reset",
+        "ON": "on",
+        "OFF": "off",
+        "DIALOG": {
+            "TITLE": "Reset takes 20 seconds",
+            "SUBTITLE": "This screen will not close during the reset process",
+            "CANCEL": "cancel",
+            "OFF": "off"
+        }
+    },
+    "SETTINGS": {
+        "STATUS": "Status",
+        "STOPPED": "Stopped",
+        "WINDING": "Winding",
+        "ESTIMATED_DURATION": "Estimated Cycle Duration",
+        "DIRECTION": "Direction",
+        "ROTATIONS_PER_DAY": "Rotations Per Day",
+        "FIND_WINDING_PARAMETERS": "Find your watch's winding parameters",
+        "CYCLE_START": "Cycle Start Time",
+        "ENABLED": "Enabled",
+        "DISABLED": "Disabled",
+        "HOURS": "Hour",
+        "MINUTES": "Minutes",
+        "SAVE": "Save Settings"
+    }
 }

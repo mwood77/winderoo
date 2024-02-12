@@ -1,3 +1,28 @@
 {
-    "hello": "Hola, {{name}}!"
+    "HEADER": {
+        "RESET": "Reiniciar",
+        "ON": "en",
+        "OFF": "apagado",
+        "DIALOG": {
+            "TITLE": "Reset takes 20 seconds",
+            "SUBTITLE": "This screen will not close during the reset process",
+            "CANCEL": "cancel",
+            "OFF": "off"
+        }
+    },
+    "SETTINGS": {
+        "STATUS": "Estado",
+        "STOPPED": "Interrumpido",
+        "WINDING": "Devanado",
+        "ESTIMATED_DURATION": "Duración estimada del ciclo",
+        "DIRECTION": "Dirección",
+        "ROTATIONS_PER_DAY": "Rotaciones por día",
+        "FIND_WINDING_PARAMETERS": "Encuentre los parámetros de cuerda de su reloj",
+        "CYCLE_START": "Hora de inicio del ciclo",
+        "ENABLED": "Activado",
+        "DISABLED": "Desactivado",
+        "HOURS": "Hora",
+        "MINUTES": "Minutos",
+        "SAVE": "Guardar ajustes"
+    }
 }

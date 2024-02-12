@@ -6,10 +6,10 @@
                 
         <mat-slide-toggle [(ngModel)]="isWinderEnabled" (ngModelChange)="updateWinderEnabledState($event)">
             <span *ngIf="this.isWinderEnabled; else elseBlock">
-                ON
+                {{ "HEADER.ON" | translate | uppercase }}
             </span>
             <ng-template #elseBlock><span>
-                OFF
+                {{ "HEADER.OFF" | translate | uppercase }}
             </span></ng-template>
         </mat-slide-toggle>
 
@@ -21,7 +21,7 @@
         
         <button mat-stroked-button aria-label="Reset winder" (click)="reset()">
             <mat-icon>bolt</mat-icon>
-            RESET
+            {{ "HEADER.RESET" | translate }}
         </button>
 
         <mat-menu #menu="matMenu">

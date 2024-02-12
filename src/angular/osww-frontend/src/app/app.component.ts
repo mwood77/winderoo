@@ -11,9 +11,10 @@ export class AppComponent {
 
   constructor(translate: TranslateService) {
     // Fallback language
-    translate.setDefaultLang('en');
-    
-    // The language to use if the desired one isn't available
-    translate.use('en');
+    translate.setDefaultLang('en-US');
+
+    // Check if we have a prefered language, if not set English
+    const selectedLanguage = localStorage.getItem('selectedLanguage');
+    translate.use(selectedLanguage ?? 'en-US');
   }
 }
