@@ -263,18 +263,21 @@ void startWebserver()
 	{
 		int params = request->params();
 
-		for ( int i = 0; i < params; i++ ) {
-		AsyncWebParameter* p = request->getParam(i);
+		for ( int i = 0; i < params; i++ ) 
+		{
+			AsyncWebParameter* p = request->getParam(i);
 
-			if( strcmp(p->name().c_str(), "winderEnabled") == 0 ) {
-			userDefinedSettings.winderEnabled = p->value().c_str();
+			if( strcmp(p->name().c_str(), "winderEnabled") == 0 ) 
+			{
+				userDefinedSettings.winderEnabled = p->value().c_str();
 
-			if (userDefinedSettings.winderEnabled == "0") {
-				Serial.println("[STATUS] - Switched off!");
-				userDefinedSettings.status = "Stopped";
-				routineRunning = false;
-				motor.stop();
-			}
+				if (userDefinedSettings.winderEnabled == "0") 
+				{
+					Serial.println("[STATUS] - Switched off!");
+					userDefinedSettings.status = "Stopped";
+					routineRunning = false;
+					motor.stop();
+				}
 			}
 		}
 
@@ -285,65 +288,81 @@ void startWebserver()
 	{
 		int params = request->params();
 
-		for ( int i = 0; i < params; i++ ) {
-		AsyncWebParameter* p = request->getParam(i);
+		for ( int i = 0; i < params; i++ ) 
+		{
+			AsyncWebParameter* p = request->getParam(i);
 
-			if( strcmp(p->name().c_str(), "rotationDirection") == 0 ) {
-			userDefinedSettings.direction = p->value().c_str();
+			if( strcmp(p->name().c_str(), "rotationDirection") == 0 ) 
+			{
+				userDefinedSettings.direction = p->value().c_str();
 
-			motor.stop();
-			delay(250);
-
-			// Update motor direction
-			if (userDefinedSettings.direction == "CW" ) {
-				motor.setMotorDirection(1);
-			} else if (userDefinedSettings.direction == "CCW") {
-				motor.setMotorDirection(0);
-			}
-
-			Serial.println("[STATUS] - direction set: " + userDefinedSettings.direction);
-			}
-
-			if( strcmp(p->name().c_str(), "tpd") == 0 ) {
-			const char* newTpd = p->value().c_str();
-
-			if (strcmp(newTpd, userDefinedSettings.rotationsPerDay.c_str()) != 0) {
-				userDefinedSettings.rotationsPerDay = p->value().c_str();
-
-				unsigned long finishTime = calculateWindingTime();
-				estimatedRoutineFinishEpoch = finishTime;
-			}
-			}
-
-			if( strcmp(p->name().c_str(), "hour") == 0 ) {
-			userDefinedSettings.hour = p->value().c_str();
-			}
-
-			if( strcmp(p->name().c_str(), "timerEnabled") == 0 ) {
-			userDefinedSettings.timerEnabled = p->value().c_str();
-			}
-
-			if( strcmp(p->name().c_str(), "minutes") == 0 ) {
-			userDefinedSettings.minutes = p->value().c_str();
-			}
-
-			if( strcmp(p->name().c_str(), "action") == 0) {
-			if ( strcmp(p->value().c_str(), "START") == 0 ) {
-				if (!routineRunning) {
-				userDefinedSettings.status = "Winding";
-				beginWindingRoutine();
-				}
-			} else {
 				motor.stop();
-				routineRunning = false;
-				userDefinedSettings.status = "Stopped";
+				delay(250);
+
+				// Update motor direction
+				if (userDefinedSettings.direction == "CW" ) 
+				{
+					motor.setMotorDirection(1);
+				}
+				else if (userDefinedSettings.direction == "CCW") 
+				{
+					motor.setMotorDirection(0);
+				}
+
+				Serial.println("[STATUS] - direction set: " + userDefinedSettings.direction);
 			}
+
+			if( strcmp(p->name().c_str(), "tpd") == 0 ) 
+			{
+				const char* newTpd = p->value().c_str();
+
+				if (strcmp(newTpd, userDefinedSettings.rotationsPerDay.c_str()) != 0) 
+				{
+					userDefinedSettings.rotationsPerDay = p->value().c_str();
+
+					unsigned long finishTime = calculateWindingTime();
+					estimatedRoutineFinishEpoch = finishTime;
+				}
+			}
+
+			if( strcmp(p->name().c_str(), "hour") == 0 ) 
+			{
+				userDefinedSettings.hour = p->value().c_str();
+			}
+
+			if( strcmp(p->name().c_str(), "timerEnabled") == 0 ) 
+			{
+				userDefinedSettings.timerEnabled = p->value().c_str();
+			}
+
+			if( strcmp(p->name().c_str(), "minutes") == 0 ) 
+			{
+				userDefinedSettings.minutes = p->value().c_str();
+			}
+
+			if( strcmp(p->name().c_str(), "action") == 0) 
+			{
+				if ( strcmp(p->value().c_str(), "START") == 0 ) 
+				{
+					if (!routineRunning) 
+					{
+						userDefinedSettings.status = "Winding";
+						beginWindingRoutine();
+					}
+				} 
+				else 
+				{
+					motor.stop();
+					routineRunning = false;
+					userDefinedSettings.status = "Stopped";
+				}
 			}
 		}
 
 		bool writeSuccess = writeConfigVarsToFile(settingsFile, userDefinedSettings);
 
-		if ( !writeSuccess ) {
+		if ( !writeSuccess ) 
+		{
 			request->send(500);
 		}
 
@@ -438,7 +457,9 @@ void awaitWhileListening(int pauseInSeconds)
 			routineRunning = false;
 			motor.stop();
 		}
-	} else {
+	} 
+	else
+	{
 		userDefinedSettings.winderEnabled == "1";
 	}
 
