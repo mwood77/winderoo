@@ -15,8 +15,8 @@ jobs:
       - name: Setup Node Environment
         uses: actions/setup-node@v4
 
-      - name: Move to Frontend Directory and Install Dependencies
+      - name: Install Dependencies
         run: cd src/angular/osww-frontend && npm i
 
-      - name: Create Build
+      - name: Create FE Build
         run: cd src/angular/osww-frontend && npm run build-arduino
