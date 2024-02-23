@@ -174,6 +174,17 @@ export class SettingsComponent implements OnInit, AfterViewChecked {
     }
   }
 
+  getReadableActivityState(activityState: string): string {
+    switch (activityState) {
+      case 'Winding':
+        return this.translateService.instant('SETTINGS.WINDING');
+      case 'Stopped':
+        return this.translateService.instant('SETTINGS.STOPPED');
+      default:
+        return this.translateService.instant('SETTINGS.STOPPED');
+    }
+  }
+
   getActivityStateForAPI(activityState: string): string {
     switch (activityState) {
       case 'Winding':

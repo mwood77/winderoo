@@ -6,7 +6,7 @@
                     {{ "SETTINGS.STATUS" | translate }}
                 </span>
                 <div class="status-text justify-content-end">
-                    {{ this.upload.activityState }}
+                    {{ getReadableActivityState(this.upload.activityState) }}
                 </div>
             </div>
             <span class="full-screen-spacer"></span>
