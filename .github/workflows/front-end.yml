@@ -12,14 +12,14 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Move to Frontend Directory
-        run: cd src/angular/osww-frontend
-
       - name: Setup Node Environment
         uses: actions/setup-node@v4
 
+      - name: Move to Frontend Directory
+        run: cd src/angular/osww-frontend
+
       - name: Install Dependencies
-        run: npm ci
+        run: npm i
 
       - name: Run Build
         run: npm run build-arduino
