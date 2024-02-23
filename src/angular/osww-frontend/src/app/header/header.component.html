@@ -25,7 +25,7 @@
         </button>
 
         <mat-menu #menu="matMenu">
-            <button mat-menu-item (click)="changeLanguage('de-DE')" [class.active]="translateService.currentLang === 'de-DE'">Deutschland</button>
+            <button mat-menu-item (click)="changeLanguage('de-DE')" [class.active]="translateService.currentLang === 'de-DE'">Deutsch</button>
             <button mat-menu-item (click)="changeLanguage('en-US')" [class.active]="!translateService.currentLang || translateService.currentLang === 'en-US'">English</button>
             <button mat-menu-item (click)="changeLanguage('es-ES')" [class.active]="translateService.currentLang === 'es-ES'">Español</button>
             <button mat-menu-item class="btn btn-sm btn-outline-secondary" (click)="changeLanguage('fr-FR')" [class.active]="translateService.currentLang === 'fr-FR'">Francés</button>
