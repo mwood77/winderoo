@@ -29,4 +29,4 @@ jobs:
         run: pio run
 
       - name: Build PlatformIO Filesystem
-        run: pio run --target uploadfs --environment esp32doit-devkit-v1 
+        run: pio run --target buildfs --environment esp32doit-devkit-v1
