@@ -34,34 +34,23 @@ export interface Status {
 })
 export class ApiService {
 
-  DEFUALT_URL = 'http://winderoo.local';
-
   isWinderEnabled$ = new BehaviorSubject(0);
   shouldRefresh$ = new BehaviorSubject(false);
 
   constructor(private http: HttpClient) { }
 
   static getWindowHref(_window: typeof window): string {
-    if (_window.location.href.includes('192')) {
-        
-        // remove single trailing '/' from ip
-        const sanitizedHref = 
-          _window.location.href.substring(_window.location.href.length - 1) === '/' ?
-          _window.location.href.substring(0, _window.location.href.length - 1) :
-          _window.location.href
+    // remove single trailing '/'
+    const sanitizedHref =
+      _window.location.href.substring(_window.location.href.length - 1) === '/'
+        ? _window.location.href.substring(0, _window.location.href.length - 1)
+        : _window.location.href;
 
-      return sanitizedHref;
-    }
-
-    return 'http://winderoo.local';
+    return sanitizedHref;
   }
 
   private constructURL(URL: string): string {
-    if (URL != this.DEFUALT_URL) {
-      return URL + "/api/";
-    }
-
-    return this.DEFUALT_URL + '/api/';
+    return URL + "/api/";
   }
 
   getShouldRefresh() {
