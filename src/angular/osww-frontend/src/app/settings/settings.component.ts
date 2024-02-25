@@ -107,7 +107,7 @@ export class SettingsComponent implements OnInit, AfterViewChecked {
   }
 
   getData(): void {
-    this.apiService.getStatus(ApiService.getWindowHref(window)).subscribe((data) => {
+    this.apiService.getStatus().subscribe((data) => {
       this.upload.activityState = data.status;
       this.upload.rpd = data.rotationsPerDay;
       this.upload.direction = data.direction;
@@ -213,7 +213,7 @@ export class SettingsComponent implements OnInit, AfterViewChecked {
       timerEnabled: this.upload.isTimerEnabledNum,
     }
 
-    this.apiService.updateState(ApiService.getWindowHref(window), body).subscribe((response) => {
+    this.apiService.updateState(body).subscribe((response) => {
       if (response.status == 204) {
         this.getData();
       }
@@ -273,7 +273,7 @@ export class SettingsComponent implements OnInit, AfterViewChecked {
 
   updateTimerEnabledState($state: any) {
     this.upload.isTimerEnabledNum = $state;
-    this.apiService.updateTimerState(ApiService.getWindowHref(window), $state).subscribe(
+    this.apiService.updateTimerState($state).subscribe(
       (data) => {
         this.mapTimerEnabledState($state)
       });

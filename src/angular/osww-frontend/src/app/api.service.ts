@@ -1,6 +1,6 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
-import { Observable } from 'rxjs';
+import { environment } from '../environments/environment';
 import { BehaviorSubject } from 'rxjs/internal/BehaviorSubject';
 
 
@@ -41,40 +41,21 @@ export class ApiService {
 
   constructor(private http: HttpClient) { }
 
-  static getWindowHref(_window: typeof window): string {
-    if (_window.location.href.includes('192')) {
-        
-        // remove single trailing '/' from ip
-        const sanitizedHref = 
-          _window.location.href.substring(_window.location.href.length - 1) === '/' ?
-          _window.location.href.substring(0, _window.location.href.length - 1) :
-          _window.location.href
-
-      return sanitizedHref;
-    }
-
-    return 'http://winderoo.local';
-  }
-
-  private constructURL(URL: string): string {
-    if (URL != this.DEFUALT_URL) {
-      return URL + "/api/";
-    }
-
-    return this.DEFUALT_URL + '/api/';
+  static constructURL(): string {
+    return environment.apiUrl + "/api/";
   }
 
   getShouldRefresh() {
     return this.shouldRefresh$.asObservable();
   }
 
-  getStatus(URL: string) {
-    return this.http.get<Status>(this.constructURL(URL) + 'status');
+  getStatus() {
+    return this.http.get<Status>(ApiService.constructURL() + 'status');
   }
 
-  updatePowerState(URL: string, powerState: boolean) {
+  updatePowerState(powerState: boolean) {
     let powerStateToNum;
-    const baseURL = this.constructURL(URL);
+    const baseURL = ApiService.constructURL();
     
     if (powerState) { 
       powerStateToNum = 1;
@@ -89,9 +70,9 @@ export class ApiService {
     return this.http.post(constructedURL, null, { observe:'response' });
   }
 
-  updateTimerState(URL: string, timerState: boolean) {
+  updateTimerState(timerState: boolean) {
     let timerStateToNum;
-    const baseURL = this.constructURL(URL);
+    const baseURL = ApiService.constructURL();
     console.log(timerState)
     if (timerState) {
       timerStateToNum = 1;
@@ -106,8 +87,8 @@ export class ApiService {
     return this.http.post(constructedURL, null, { observe: 'response' });
   }
 
-  updateState(URL: string, update: Update) {
-    const baseURL = this.constructURL(URL);
+  updateState(update: Update) {
+    const baseURL = ApiService.constructURL();
 
     const constructedURL = baseURL
       + 'update?action=' + update.action + '&'
@@ -119,7 +100,7 @@ export class ApiService {
     return this.http.post(constructedURL, null, { observe: 'response' });
   }
 
-  resetDevice(URL: string) {
-    return this.http.get<any>(this.constructURL(URL) + 'reset');
+  resetDevice() {
+    return this.http.get<any>(ApiService.constructURL() + 'reset');
   }
 }

@@ -1,4 +1,4 @@
-import { Component, OnInit, ViewContainerRef } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { MatDialog, MatDialogRef } from '@angular/material/dialog';
 import { ApiService } from '../api.service';      
 import { TranslateService, TranslateModule } from '@ngx-translate/core';
@@ -50,7 +50,7 @@ export class HeaderComponent implements OnInit {
   }
 
   updateWinderEnabledState($state: any) {
-    this.apiService.updatePowerState(ApiService.getWindowHref(window), $state).subscribe(
+    this.apiService.updatePowerState($state).subscribe(
       (data) => {
         this.apiService.isWinderEnabled$.next($state);
 
@@ -78,7 +78,7 @@ export class ResetDialog {
     public translateService: TranslateService) {}
   
   confirmReset(): void {
-    this.apiService.resetDevice(ApiService.getWindowHref(window)).subscribe();
+    this.apiService.resetDevice().subscribe();
   }
 
   closeDialog(): void {
