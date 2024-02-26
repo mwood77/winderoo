@@ -24,8 +24,8 @@
  * directionalPinB = this is the pin that's wired to IN2 on your L298N circuit board
  * ledPin = by default this is set to the ESP32's onboard LED. If you've wired an external LED, change this value to the GPIO pin the LED is wired to.
  * externalButton = OPTIONAL - If you want to use an external ON/OFF button, connect it to this pin 13. If you need to use another pin, change the value here.
- * 
- * If you're using a NeoPixel equipped board, you'll need to change directionalPinA, directionalPinB and ledPin (pin 18 on most, I think) to appropriate GPIOs. 
+ *
+ * If you're using a NeoPixel equipped board, you'll need to change directionalPinA, directionalPinB and ledPin (pin 18 on most, I think) to appropriate GPIOs.
  * Faiulre to set these pins on NeoPixel boards will result in kernel panics.
  */
 int durationInSecondsToCompleteOneRevolution = 8;
@@ -165,7 +165,7 @@ void loadConfigVarsFromFile(String file_name)
 	{
 		result += (char)this_file.read();
 	}
-	
+
 	userDefinedSettings.status = json["savedStatus"].as<String>();						// Winding || Stopped = 7char
 	userDefinedSettings.rotationsPerDay = json["savedTPD"].as<String>();				// min = 100 || max = 960
 	userDefinedSettings.hour = json["savedHour"].as<String>();							// 00
@@ -256,55 +256,90 @@ void startWebserver()
 		request->send(response);
 
 		// Update RTC time ref
-		getTime(); 
+		getTime();
 	});
 
-	server.on("/api/power", HTTP_POST, [](AsyncWebServerRequest *request)
+	server.onRequestBody([](AsyncWebServerRequest *request, uint8_t *data, size_t len, size_t index, size_t total)
 	{
-		int params = request->params();
 
-		for ( int i = 0; i < params; i++ ) 
+		if (request->url() == "/api/power")
 		{
-			AsyncWebParameter* p = request->getParam(i);
+			JsonDocument json;
+			DeserializationError error = deserializeJson(json, data);
 
-			if( strcmp(p->name().c_str(), "winderEnabled") == 0 ) 
+			if (error)
 			{
-				userDefinedSettings.winderEnabled = p->value().c_str();
-
-				if (userDefinedSettings.winderEnabled == "0") 
-				{
-					Serial.println("[STATUS] - Switched off!");
-					userDefinedSettings.status = "Stopped";
-					routineRunning = false;
-					motor.stop();
-				}
+				Serial.println("[ERROR] - Failed to deserialize [power] request body");
+				request->send(500, "text/plain", "Failed to deserialize request body");
+				return;
 			}
+
+			if (!json.containsKey("winderEnabled"))
+			{
+				request->send(400, "text/plain", "Missing required field: 'winderEnabled'");
+			}
+
+			userDefinedSettings.winderEnabled = json["winderEnabled"].as<String>();
+			
+			if (userDefinedSettings.winderEnabled == "0")
+			{
+				Serial.println("[STATUS] - Switched off!");
+				userDefinedSettings.status = "Stopped";
+				routineRunning = false;
+				motor.stop();
+			}
+			
+			request->send(204);
 		}
 
-		request->send(204); 
-	});
-
-	server.on("/api/update", HTTP_POST, [](AsyncWebServerRequest *request)
-	{
-		int params = request->params();
-
-		for ( int i = 0; i < params; i++ ) 
+		if (request->url() == "/api/update")
 		{
-			AsyncWebParameter* p = request->getParam(i);
+			JsonDocument json;
+			DeserializationError error = deserializeJson(json, data);
+			int arraySize = 6;
+			String requiredKeys[arraySize] = {"rotationDirection", "tpd", "action", "hour", "minutes", "timerEnabled"};
 
-			if( strcmp(p->name().c_str(), "rotationDirection") == 0 ) 
+			if (error)
 			{
-				userDefinedSettings.direction = p->value().c_str();
+				Serial.println("[ERROR] - Failed to deserialize [update] request body");
+				request->send(500, "text/plain", "Failed to deserialize request body");
+				return;
+			}
 
+			// validate request body
+			for (JsonPair kv : json.as<JsonObject>()) {
+				for (int i = 0; i < arraySize; i++)
+				{
+					if (strcmp(kv.key().c_str(), requiredKeys[i].c_str()) != 0)
+					{
+						request->send(400, "text/plain", "Missing required field: '" + requiredKeys[i] +"'");
+					}
+				}
+			}
+
+			// These values can be mutated / saved directly
+			userDefinedSettings.hour = json["hour"].as<String>();
+			userDefinedSettings.minutes = json["minutes"].as<String>();
+			userDefinedSettings.timerEnabled = json["timerEnabled"].as<String>();
+
+			// These values need to be compared to the current settings / running state
+			String requestRotationDirection = json["rotationDirection"].as<String>();
+			String requestTPD = json["tpd"].as<String>();
+			String requestAction = json["action"].as<String>();
+
+			// Update motor direction
+			if (strcmp(requestRotationDirection.c_str(), userDefinedSettings.direction.c_str()) != 0)
+			{
+				userDefinedSettings.direction = requestRotationDirection;
 				motor.stop();
 				delay(250);
 
 				// Update motor direction
-				if (userDefinedSettings.direction == "CW" ) 
+				if (userDefinedSettings.direction == "CW" )
 				{
 					motor.setMotorDirection(1);
 				}
-				else if (userDefinedSettings.direction == "CCW") 
+				else if (userDefinedSettings.direction == "CCW")
 				{
 					motor.setMotorDirection(0);
 				}
@@ -312,61 +347,41 @@ void startWebserver()
 				Serial.println("[STATUS] - direction set: " + userDefinedSettings.direction);
 			}
 
-			if( strcmp(p->name().c_str(), "tpd") == 0 ) 
+			// Update (turns) rotations per day
+			if (strcmp(requestTPD.c_str(), userDefinedSettings.rotationsPerDay .c_str()) != 0)
 			{
-				const char* newTpd = p->value().c_str();
+				userDefinedSettings.rotationsPerDay = requestTPD;
 
-				if (strcmp(newTpd, userDefinedSettings.rotationsPerDay.c_str()) != 0) 
+				unsigned long finishTime = calculateWindingTime();
+				estimatedRoutineFinishEpoch = finishTime;
+			}
+
+			// Update action (START/STOP)
+			if ( strcmp(requestAction.c_str(), "START") == 0 )
+			{
+				if (!routineRunning)
 				{
-					userDefinedSettings.rotationsPerDay = p->value().c_str();
-
-					unsigned long finishTime = calculateWindingTime();
-					estimatedRoutineFinishEpoch = finishTime;
+					userDefinedSettings.status = "Winding";
+					beginWindingRoutine();
 				}
 			}
-
-			if( strcmp(p->name().c_str(), "hour") == 0 ) 
+			else
 			{
-				userDefinedSettings.hour = p->value().c_str();
+				motor.stop();
+				routineRunning = false;
+				userDefinedSettings.status = "Stopped";
 			}
 
-			if( strcmp(p->name().c_str(), "timerEnabled") == 0 ) 
+			// Write new parameters to file
+			bool writeSuccess = writeConfigVarsToFile(settingsFile, userDefinedSettings);
+			if ( !writeSuccess ) 
 			{
-				userDefinedSettings.timerEnabled = p->value().c_str();
+				Serial.println("[ERROR] - Failed to write update endpoint data to file");
+				request->send(500, "text/plain", "Failed to write new configuration to file");
 			}
 
-			if( strcmp(p->name().c_str(), "minutes") == 0 ) 
-			{
-				userDefinedSettings.minutes = p->value().c_str();
-			}
-
-			if( strcmp(p->name().c_str(), "action") == 0) 
-			{
-				if ( strcmp(p->value().c_str(), "START") == 0 ) 
-				{
-					if (!routineRunning) 
-					{
-						userDefinedSettings.status = "Winding";
-						beginWindingRoutine();
-					}
-				} 
-				else 
-				{
-					motor.stop();
-					routineRunning = false;
-					userDefinedSettings.status = "Stopped";
-				}
-			}
+			request->send(204);
 		}
-
-		bool writeSuccess = writeConfigVarsToFile(settingsFile, userDefinedSettings);
-
-		if ( !writeSuccess ) 
-		{
-			request->send(500);
-		}
-
-		request->send(204); 
 	});
 
 	server.on("/api/reset", HTTP_GET, [](AsyncWebServerRequest *request)
@@ -378,7 +393,7 @@ void startWebserver()
 		serializeJson(json, *response);
 		request->send(response);
 
-		reset = true; 
+		reset = true;
 	});
 
 	server.serveStatic("/css/", LittleFS, "/css/").setCacheControl("max-age=31536000");
@@ -457,7 +472,7 @@ void awaitWhileListening(int pauseInSeconds)
 			routineRunning = false;
 			motor.stop();
 		}
-	} 
+	}
 	else
 	{
 		userDefinedSettings.winderEnabled == "1";

@@ -21,8 +21,22 @@ paths:
       responses:
         '204':
           description: Successful opeation
+        '400':
+          description: Missing required field in request body
+          content:
+            text/plain:
+              schema:
+                type: string
+                examples: 
+                  - "Missing required field: 'tpd'"
         '500':
-          description: Something went wrong when writing to memory
+          description: Something went wrong when writing to memory or during deserialization
+          content:
+            text/plain:
+              schema:
+                type: string
+                examples:
+                  - Failed to deserialize request body
   /status:
     get:
       tags:
@@ -40,9 +54,27 @@ paths:
       tags:
         - Modify
       summary: Toggle whether Winderoo is on or off (hard off state)
+      requestBody:
+        $ref: '#/components/requestBodies/PowerBody'
       responses:
         '204':
           description: State toggled succesfully
+        '400':
+          description: Missing required field in request body
+          content:
+            text/plain:
+              schema:
+                type: string
+                examples: 
+                  - "Missing required field: 'winderEnabled'"
+        '500':
+          description: Something went wrong when writing to memory or during deserialization
+          content:
+            text/plain:
+              schema:
+                type: string
+                examples: 
+                  - Failed to deserialize request body
   /reset:
     get:
       tags:
@@ -71,7 +103,26 @@ components:
             timerEnabled: "0"
             action: "START"
             rotationDirection: "BOTH"
+    PowerBody:
+      description: a JSON object containing winderoo power information
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Power'
+          example:
+            winderEnabled: "1"
   schemas:
+    Power:
+      type: object
+      propertries:
+        winderEnabled:
+          type: string
+          description:
+            Whether Winderoo should enable alarm-start winding; number represents a boolean where 0 == off and 1 == on.
+          examples:
+            - 0
+            - 1
     Update:
       type: object
       propertries:
