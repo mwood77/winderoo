@@ -264,10 +264,15 @@ export class SettingsComponent implements OnInit, AfterViewChecked {
       // When "Start" button pressed
       if (percentage <= 0.05) {
         this.progressMode = 'indeterminate';
-        setTimeout(() => this.getData(), 5000);
+        setTimeout(() => this.getData(), 2500);
       }
 
-      this.progressPercentageComplete = percentage;
+      // Add 2 percent to make the progress bar look more full at lower percentages
+      if (percentage < 10)  {
+        this.progressPercentageComplete = percentage + 2;
+      } else {
+        this.progressPercentageComplete = percentage;
+      }
     }
   }
 
