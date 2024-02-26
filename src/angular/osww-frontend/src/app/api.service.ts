@@ -68,19 +68,12 @@ export class ApiService {
     return this.http.post(baseURL, powerBody, { observe:'response' });
   }
 
-  updateTimerState(timerState: boolean) {
-    let timerStateToNum;
+  updateTimerState(timerState: number) {
     const baseURL = ApiService.constructURL();
-    console.log(timerState)
-    if (timerState) {
-      timerStateToNum = 1;
-    } else {
-      timerStateToNum = 0;
-    }
 
     const constructedURL = baseURL
       + "timer?"
-      + "timerEnabled=" + timerStateToNum;
+      + "timerEnabled=" + timerState;
 
     return this.http.post(constructedURL, null, { observe: 'response' });
   }

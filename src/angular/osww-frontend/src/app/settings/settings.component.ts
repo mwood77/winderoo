@@ -231,8 +231,8 @@ export class SettingsComponent implements OnInit, AfterViewChecked {
     this.uploadSettings('STOP');
   }
 
-  mapTimerEnabledState($event: number): void {
-    if ($event == 1) {
+  mapTimerEnabledState(enabledState: number): void {
+    if (enabledState == 1) {
       this.isTimerEnabled = true;
     } else {
       this.isTimerEnabled = false;
@@ -261,7 +261,7 @@ export class SettingsComponent implements OnInit, AfterViewChecked {
       const difference = (currentTimeEpoch - startTimeEpoch) / (estimatedRoutineFinishEpoch - startTimeEpoch);
       const percentage = difference * 100;
 
-      // When 'Start" button pressed
+      // When "Start" button pressed
       if (percentage <= 0.05) {
         this.progressMode = 'indeterminate';
         setTimeout(() => this.getData(), 5000);
@@ -271,11 +271,19 @@ export class SettingsComponent implements OnInit, AfterViewChecked {
     }
   }
 
-  updateTimerEnabledState($state: any) {
-    this.upload.isTimerEnabledNum = $state;
-    this.apiService.updateTimerState($state).subscribe(
-      (data) => {
-        this.mapTimerEnabledState($state)
+  updateTimerEnabledState($state: boolean) {
+    let timerStateToNum;
+    if ($state) {
+      timerStateToNum = 1;
+    } else {
+      timerStateToNum = 0;
+    }
+    this.upload.isTimerEnabledNum = timerStateToNum;
+    this.apiService.updateTimerState(this.upload.isTimerEnabledNum).subscribe(
+      (response) => {
+        if (response.status == 204) {
+          this.mapTimerEnabledState(this.upload.isTimerEnabledNum)
+        }
       });
   };
 
