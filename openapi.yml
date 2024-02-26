@@ -11,6 +11,37 @@ tags:
   - name: Modify
     description: Modify the state of Winderoo
 paths:
+  /timer:
+    post:
+      tags:
+        - Modify
+      summary: Change the state of Winderoo
+      parameters:
+        - in: query
+          name: timerEnabled
+          schema:
+            type: integer
+          description: Whether Winderoo should enable alarm-start winding; number represents a boolean where 0 == off and 1 == on.
+          example: 1
+      responses:
+        '204':
+          description: Successful opeation
+        '400':
+          description: Missing required field in request body
+          content:
+            text/plain:
+              schema:
+                type: string
+                examples: 
+                  - "Missing required field: 'tpd'"
+        '500':
+          description: Something went wrong when writing to memory or during deserialization
+          content:
+            text/plain:
+              schema:
+                type: string
+                examples:
+                  - Failed to deserialize request body
   /update:
     post:
       tags:

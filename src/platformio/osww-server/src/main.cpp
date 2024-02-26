@@ -259,6 +259,30 @@ void startWebserver()
 		getTime();
 	});
 
+	server.on("/api/timer", HTTP_POST, [](AsyncWebServerRequest *request)
+	{
+		int params = request->params();
+
+		for ( int i = 0; i < params; i++ ) 
+		{
+			AsyncWebParameter* p = request->getParam(i);
+
+			if( strcmp(p->name().c_str(), "timerEnabled") == 0 ) 
+			{
+				userDefinedSettings.timerEnabled = p->value().c_str();
+			}
+		}
+
+		bool writeSuccess = writeConfigVarsToFile(settingsFile, userDefinedSettings);
+		if ( !writeSuccess ) 
+		{
+			Serial.println("[ERROR] - Failed to write [timer] endpoint data to file");
+			request->send(500, "text/plain", "Failed to write new configuration to file");
+		}
+		
+		request->send(204);
+	});
+
 	server.onRequestBody([](AsyncWebServerRequest *request, uint8_t *data, size_t len, size_t index, size_t total)
 	{
 
@@ -307,15 +331,13 @@ void startWebserver()
 			}
 
 			// validate request body
-			for (JsonPair kv : json.as<JsonObject>()) {
 				for (int i = 0; i < arraySize; i++)
 				{
-					if (strcmp(kv.key().c_str(), requiredKeys[i].c_str()) != 0)
+					if(!json.containsKey(requiredKeys[i]))
 					{
 						request->send(400, "text/plain", "Missing required field: '" + requiredKeys[i] +"'");
 					}
 				}
-			}
 
 			// These values can be mutated / saved directly
 			userDefinedSettings.hour = json["hour"].as<String>();
@@ -345,6 +367,10 @@ void startWebserver()
 				}
 
 				Serial.println("[STATUS] - direction set: " + userDefinedSettings.direction);
+			} 
+			else
+			{
+				userDefinedSettings.direction = requestRotationDirection;
 			}
 
 			// Update (turns) rotations per day
@@ -376,7 +402,7 @@ void startWebserver()
 			bool writeSuccess = writeConfigVarsToFile(settingsFile, userDefinedSettings);
 			if ( !writeSuccess ) 
 			{
-				Serial.println("[ERROR] - Failed to write update endpoint data to file");
+				Serial.println("[ERROR] - Failed to write [update] endpoint data to file");
 				request->send(500, "text/plain", "Failed to write new configuration to file");
 			}
 
