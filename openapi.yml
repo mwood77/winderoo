@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: Winderoo API
-  version: 0.1.0
+  version: 2.0.0
 servers:
   - url: http://winderoo.local/api/
     description: local development and deployed devices
@@ -15,44 +15,9 @@ paths:
     post:
       tags:
         - Modify
-      description: Change the state of Winderoo
-      parameters:
-        - in: query
-          name: tpd
-          schema:
-            type: integer
-          description: how many turns are required
-          example: 330
-        - in: query
-          name: hour
-          schema:
-            type: integer
-          description: At what hour winderoo should begin winding at
-          example: 14
-        - in: query
-          name: minutes
-          schema:
-            type: integer
-          description: At what minute winderoo should begin winding at
-          example: 50
-        - in: query
-          name: timerEnabled
-          schema:
-            type: integer
-          description: Whether Winderoo should enable alarm-start winding; number represents a boolean where 0 == off and 1 == on
-          example: 0, 1
-        - in: query
-          name: action
-          schema:
-            type: string
-          description: Whether Winderoo should start or stop winding
-          example: START, STOP
-        - in: query
-          name: rotationDirection
-          schema:
-            type: string
-          description: The winding direction
-          example: CW, CCW, BOTH
+      summary: Change the state of Winderoo
+      requestBody:
+        $ref: '#/components/requestBodies/UpdateBody'
       responses:
         '204':
           description: Successful opeation
@@ -62,7 +27,7 @@ paths:
     get:
       tags:
         - Status
-      description: Get the current status of Winderoo
+      summary: Get the current status of Winderoo
       responses:
         '200':
           description: Service is alive with current winder state
@@ -74,7 +39,7 @@ paths:
     post:
       tags:
         - Modify
-      description: Toggle whether Winderoo is on or off (hard off state)
+      summary: Toggle whether Winderoo is on or off (hard off state)
       responses:
         '204':
           description: State toggled succesfully
@@ -82,7 +47,7 @@ paths:
     get:
       tags:
         - Modify
-      description: Resets Winderoo's network settings; re-initializes winderoo with setup access point
+      summary: Resets Winderoo's network settings; re-initializes winderoo with setup access point
       responses:
         '200':
           description: State toggled succesfully
@@ -91,7 +56,60 @@ paths:
               schema:
                 $ref: '#/components/schemas/Resetting'
 components:
+  requestBodies:
+    UpdateBody:
+      description: a JSON object containing winderoo information
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Update'
+          example:
+            tpd: "330"
+            hour: "14"
+            minutes: "50"
+            timerEnabled: "0"
+            action: "START"
+            rotationDirection: "BOTH"
   schemas:
+    Update:
+      type: object
+      propertries:
+        tpd:
+          type: string
+          description: how many turns are required
+          examples:
+            - 330
+        hour:
+          type: string
+          description: At what hour winderoo should begin winding at
+          examples:
+            - 14
+        minutes:
+          type: string
+          description: At what minute winderoo should begin winding at
+          examples:
+            - 50
+        timerEnabled:
+          type: string
+          description:
+            Whether Winderoo should enable alarm-start winding; number represents a boolean where 0 == off and 1 == on.
+          examples:
+            - 0
+            - 1
+        action:
+          type: string
+          description: Whether Winderoo should start or stop winding
+          examples:
+            - START
+            - STOP
+        rotationDirection:
+          type: string
+          description: The winding direction
+          examples:
+            - CW
+            - CCW
+            - BOTH
     Status:
       type: object
       properties:
@@ -140,6 +158,33 @@ components:
           examples:
             - 1
         db:
+          type: number
+          examples:
+            - -67
+        networkedUnits:
+          type: array
+          items:
+            $ref: '#/components/schemas/NetworkWinder'
+    NetworkWinder:
+      type: object
+      properties:
+        id:
+          type: string
+          examples:
+            - 35c967d3-60a2-46b0-8674-2fdf7b675151
+        status:
+          type: string
+          examples: 
+            - Stopped
+        direction:
+          type: string
+          examples:
+            - BOTH
+        rotationsPerDay:
+          type: string
+          examples:
+            - 300
+        meshStrength:
           type: number
           examples:
             - -67
