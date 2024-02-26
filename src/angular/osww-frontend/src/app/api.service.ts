@@ -5,12 +5,12 @@ import { BehaviorSubject } from 'rxjs/internal/BehaviorSubject';
 
 
 export interface Update {
-  action?: string
-  rotationDirection?: string,
-  tpd?: number,
-  hour?: string;
-  minutes?: string;
-  timerEnabled?: number;
+  action: string
+  rotationDirection: string,
+  tpd: number,
+  hour: string;
+  minutes: string;
+  timerEnabled: number;
 }
 
 export interface Status {
@@ -53,19 +53,19 @@ export class ApiService {
 
   updatePowerState(powerState: boolean) {
     let powerStateToNum;
-    const baseURL = ApiService.constructURL();
-    
+    const baseURL = ApiService.constructURL() + 'power';
+
     if (powerState) { 
       powerStateToNum = 1;
     } else {
       powerStateToNum = 0;
     }
+    
+    const powerBody = {
+      winderEnabled: powerStateToNum
+    }
 
-    const constructedURL = baseURL 
-      + "power?"
-      + "winderEnabled=" + powerStateToNum;
-
-    return this.http.post(constructedURL, null, { observe:'response' });
+    return this.http.post(baseURL, powerBody, { observe:'response' });
   }
 
   updateTimerState(timerState: boolean) {
@@ -79,23 +79,15 @@ export class ApiService {
     }
 
     const constructedURL = baseURL
-      + "update?"
+      + "timer?"
       + "timerEnabled=" + timerStateToNum;
 
     return this.http.post(constructedURL, null, { observe: 'response' });
   }
 
   updateState(update: Update) {
-    const baseURL = ApiService.constructURL();
-
-    const constructedURL = baseURL
-      + 'update?action=' + update.action + '&'
-      + 'rotationDirection=' + update.rotationDirection + '&'
-      + 'tpd=' + update.tpd + '&'
-      + 'hour=' + update.hour + '&'
-      + 'minutes=' + update.minutes;
-
-    return this.http.post(constructedURL, null, { observe: 'response' });
+    const baseURL = ApiService.constructURL() + 'update';
+    return this.http.post(baseURL, update, { observe: 'response' });
   }
 
   resetDevice() {
