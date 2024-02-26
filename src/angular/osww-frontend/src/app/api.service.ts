@@ -5,12 +5,12 @@ import { BehaviorSubject } from 'rxjs/internal/BehaviorSubject';
 
 
 export interface Update {
-  action?: string
-  rotationDirection?: string,
-  tpd?: number,
-  hour?: string;
-  minutes?: string;
-  timerEnabled?: number;
+  action: string
+  rotationDirection: string,
+  tpd: number,
+  hour: string;
+  minutes: string;
+  timerEnabled: number;
 }
 
 export interface Status {
@@ -34,8 +34,6 @@ export interface Status {
 })
 export class ApiService {
 
-  DEFUALT_URL = 'http://winderoo.local';
-
   isWinderEnabled$ = new BehaviorSubject(0);
   shouldRefresh$ = new BehaviorSubject(false);
 
@@ -55,49 +53,34 @@ export class ApiService {
 
   updatePowerState(powerState: boolean) {
     let powerStateToNum;
-    const baseURL = ApiService.constructURL();
-    
+    const baseURL = ApiService.constructURL() + 'power';
+
     if (powerState) { 
       powerStateToNum = 1;
     } else {
       powerStateToNum = 0;
     }
-
-    const constructedURL = baseURL 
-      + "power?"
-      + "winderEnabled=" + powerStateToNum;
-
-    return this.http.post(constructedURL, null, { observe:'response' });
-  }
-
-  updateTimerState(timerState: boolean) {
-    let timerStateToNum;
-    const baseURL = ApiService.constructURL();
-    console.log(timerState)
-    if (timerState) {
-      timerStateToNum = 1;
-    } else {
-      timerStateToNum = 0;
+    
+    const powerBody = {
+      winderEnabled: powerStateToNum
     }
 
+    return this.http.post(baseURL, powerBody, { observe:'response' });
+  }
+
+  updateTimerState(timerState: number) {
+    const baseURL = ApiService.constructURL();
+
     const constructedURL = baseURL
-      + "update?"
-      + "timerEnabled=" + timerStateToNum;
+      + "timer?"
+      + "timerEnabled=" + timerState;
 
     return this.http.post(constructedURL, null, { observe: 'response' });
   }
 
   updateState(update: Update) {
-    const baseURL = ApiService.constructURL();
-
-    const constructedURL = baseURL
-      + 'update?action=' + update.action + '&'
-      + 'rotationDirection=' + update.rotationDirection + '&'
-      + 'tpd=' + update.tpd + '&'
-      + 'hour=' + update.hour + '&'
-      + 'minutes=' + update.minutes;
-
-    return this.http.post(constructedURL, null, { observe: 'response' });
+    const baseURL = ApiService.constructURL() + 'update';
+    return this.http.post(baseURL, update, { observe: 'response' });
   }
 
   resetDevice() {

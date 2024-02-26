@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: Winderoo API
-  version: 0.1.0
+  version: 1.0.0
 servers:
   - url: http://winderoo.local/api/
     description: local development and deployed devices
@@ -11,58 +11,68 @@ tags:
   - name: Modify
     description: Modify the state of Winderoo
 paths:
-  /update:
+  /timer:
     post:
       tags:
         - Modify
-      description: Change the state of Winderoo
+      summary: Change the state of Winderoo
       parameters:
-        - in: query
-          name: tpd
-          schema:
-            type: integer
-          description: how many turns are required
-          example: 330
-        - in: query
-          name: hour
-          schema:
-            type: integer
-          description: At what hour winderoo should begin winding at
-          example: 14
-        - in: query
-          name: minutes
-          schema:
-            type: integer
-          description: At what minute winderoo should begin winding at
-          example: 50
         - in: query
           name: timerEnabled
           schema:
             type: integer
-          description: Whether Winderoo should enable alarm-start winding; number represents a boolean where 0 == off and 1 == on
-          example: 0, 1
-        - in: query
-          name: action
-          schema:
-            type: string
-          description: Whether Winderoo should start or stop winding
-          example: START, STOP
-        - in: query
-          name: rotationDirection
-          schema:
-            type: string
-          description: The winding direction
-          example: CW, CCW, BOTH
+          description: Whether Winderoo should enable alarm-start winding; number represents a boolean where 0 == off and 1 == on.
+          example: 1
       responses:
         '204':
           description: Successful opeation
+        '400':
+          description: Missing required field in request body
+          content:
+            text/plain:
+              schema:
+                type: string
+                examples: 
+                  - "Missing required field: 'tpd'"
         '500':
-          description: Something went wrong when writing to memory
+          description: Something went wrong when writing to memory or during deserialization
+          content:
+            text/plain:
+              schema:
+                type: string
+                examples:
+                  - Failed to deserialize request body
+  /update:
+    post:
+      tags:
+        - Modify
+      summary: Change the state of Winderoo
+      requestBody:
+        $ref: '#/components/requestBodies/UpdateBody'
+      responses:
+        '204':
+          description: Successful opeation
+        '400':
+          description: Missing required field in request body
+          content:
+            text/plain:
+              schema:
+                type: string
+                examples: 
+                  - "Missing required field: 'tpd'"
+        '500':
+          description: Something went wrong when writing to memory or during deserialization
+          content:
+            text/plain:
+              schema:
+                type: string
+                examples:
+                  - Failed to deserialize request body
   /status:
     get:
       tags:
         - Status
-      description: Get the current status of Winderoo
+      summary: Get the current status of Winderoo
       responses:
         '200':
           description: Service is alive with current winder state
@@ -74,15 +84,33 @@ paths:
     post:
       tags:
         - Modify
-      description: Toggle whether Winderoo is on or off (hard off state)
+      summary: Toggle whether Winderoo is on or off (hard off state)
+      requestBody:
+        $ref: '#/components/requestBodies/PowerBody'
       responses:
         '204':
           description: State toggled succesfully
+        '400':
+          description: Missing required field in request body
+          content:
+            text/plain:
+              schema:
+                type: string
+                examples: 
+                  - "Missing required field: 'winderEnabled'"
+        '500':
+          description: Something went wrong when writing to memory or during deserialization
+          content:
+            text/plain:
+              schema:
+                type: string
+                examples: 
+                  - Failed to deserialize request body
   /reset:
     get:
       tags:
         - Modify
-      description: Resets Winderoo's network settings; re-initializes winderoo with setup access point
+      summary: Resets Winderoo's network settings; re-initializes winderoo with setup access point
       responses:
         '200':
           description: State toggled succesfully
@@ -91,7 +119,79 @@ paths:
               schema:
                 $ref: '#/components/schemas/Resetting'
 components:
+  requestBodies:
+    UpdateBody:
+      description: a JSON object containing winderoo information
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Update'
+          example:
+            tpd: "330"
+            hour: "14"
+            minutes: "50"
+            timerEnabled: "0"
+            action: "START"
+            rotationDirection: "BOTH"
+    PowerBody:
+      description: a JSON object containing winderoo power information
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Power'
+          example:
+            winderEnabled: "1"
   schemas:
+    Power:
+      type: object
+      propertries:
+        winderEnabled:
+          type: string
+          description:
+            Whether Winderoo should enable alarm-start winding; number represents a boolean where 0 == off and 1 == on.
+          examples:
+            - 0
+            - 1
+    Update:
+      type: object
+      propertries:
+        tpd:
+          type: string
+          description: how many turns are required
+          examples:
+            - 330
+        hour:
+          type: string
+          description: At what hour winderoo should begin winding at
+          examples:
+            - 14
+        minutes:
+          type: string
+          description: At what minute winderoo should begin winding at
+          examples:
+            - 50
+        timerEnabled:
+          type: string
+          description:
+            Whether Winderoo should enable alarm-start winding; number represents a boolean where 0 == off and 1 == on.
+          examples:
+            - 0
+            - 1
+        action:
+          type: string
+          description: Whether Winderoo should start or stop winding
+          examples:
+            - START
+            - STOP
+        rotationDirection:
+          type: string
+          description: The winding direction
+          examples:
+            - CW
+            - CCW
+            - BOTH
     Status:
       type: object
       properties:

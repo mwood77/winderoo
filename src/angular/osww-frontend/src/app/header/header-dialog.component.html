@@ -6,12 +6,7 @@
 </h4>
 
 <div mat-dialog-content>
-
-  <button aria-label="Close dialog window" class="pure-css-button" style="background-color: white; color: black" (click)="closeDialog()">
-    {{ "HEADER.DIALOG.CANCEL" | translate }}
-  </button>
   
-
   <ol>
     <li>
       {{ "HEADER.DIALOG.POINT_1" | translate }}
@@ -36,6 +31,10 @@
     </li>
   </ul>
 </div>
+
+<button aria-label="Close dialog window" class="pure-css-button" style="background-color: white; color: black; margin-bottom: 1rem;" (click)="closeDialog()">
+  {{ "HEADER.DIALOG.CANCEL" | translate }}
+</button>
 
 <button mat-stroked-button aria-label="Reset winder" class="pure-css-button" (click)="confirmReset()">
   {{ "HEADER.DIALOG.CONFIRM_RESET" | translate }}
