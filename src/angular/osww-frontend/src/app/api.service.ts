@@ -34,8 +34,6 @@ export interface Status {
 })
 export class ApiService {
 
-  DEFUALT_URL = 'http://winderoo.local';
-
   isWinderEnabled$ = new BehaviorSubject(0);
   shouldRefresh$ = new BehaviorSubject(false);
 
