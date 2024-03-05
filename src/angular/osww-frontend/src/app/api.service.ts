@@ -40,7 +40,21 @@ export class ApiService {
   constructor(private http: HttpClient) { }
 
   static constructURL(): string {
-    return environment.apiUrl + "/api/";
+    if (
+      window.location.href.includes('127.0.0.1') ||
+      window.location.href.includes('localhost')
+    ) {
+      return environment.apiUrl + "/api/";
+    } else {
+      // remove single trailing '/'
+      const sanitizedHref =
+        window.location.href.substring(window.location.href.length - 1) ===
+        '/'
+          ? window.location.href.substring(0, window.location.href.length - 1)
+          : window.location.href;
+
+      return sanitizedHref + "/api/";
+    }
   }
 
   getShouldRefresh() {
