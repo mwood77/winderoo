@@ -29,6 +29,7 @@
             <button mat-menu-item (click)="changeLanguage('en-US')" [class.active]="!translateService.currentLang || translateService.currentLang === 'en-US'">English</button>
             <button mat-menu-item (click)="changeLanguage('es-ES')" [class.active]="translateService.currentLang === 'es-ES'">Español</button>
             <button mat-menu-item (click)="changeLanguage('fr-FR')" [class.active]="translateService.currentLang === 'fr-FR'">Francés</button>
+            <button mat-menu-item (click)="changeLanguage('pt-BR')" [class.active]="translateService.currentLang === 'pt-BR'">Português</button>
         </mat-menu>
 
     </mat-toolbar-row>

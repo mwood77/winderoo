@@ -1,0 +1,39 @@
+{
+    "HEADER": {
+        "RESET": "Reset",
+        "ON": "on",
+        "OFF": "off",
+        "DIALOG": {
+            "TITLE": "Reset takes 20 seconds",
+            "SUBTITLE": "This screen will not close during the reset process",
+            "CANCEL": "cancel",
+            "POINT_1": "Reset is complete when the second LED stops fast blinking, then turns solid.",
+            "POINT_2": "Connect your mobile device to the new WiFi network called",
+            "POINT_3": "Add Winderoo to an existing WiFi network. If the LED starts to slow blink, Winderoo has successfully joined that network.",
+            "POINT_4": "Wait for your device to reconnect to your existing WiFi network.",
+            "NOW_AVAILABLE": "Winderoo is now available at:",
+            "CONFIRM_RESET": "Confirm Reset"
+        }
+    },
+    "SETTINGS": {
+        "STATUS": "Status",
+        "STOPPED": "Stopped",
+        "WINDING": "Winding",
+        "ESTIMATED_DURATION": "Estimated Cycle Duration",
+        "DIRECTION": "Direction",
+        "ROTATIONS_PER_DAY": "Rotations Per Day",
+        "FIND_WINDING_PARAMETERS": "Find your watch's winding parameters",
+        "CYCLE_START": "Cycle Start Time",
+        "ENABLED": "Enabled",
+        "DISABLED": "Disabled",
+        "HOURS": "Hour",
+        "MINUTES": "Minutes",
+        "SAVE": "Save Settings",
+        "SAVE_IN_PROGRESS": "Upload in progress",
+        "CLOCKWISE": "Clockwise",
+        "COUNTER_CLOCKWISE": "Counter Clockwise",
+        "BOTH": "Both",
+        "PLEASE_WAIT": "Getting cycle progress, please wait",
+        "PROGRESS": "Cycle Progress"
+    }
+}
