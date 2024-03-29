@@ -104,7 +104,8 @@ void drawCentreString(const String &buf, int x, int y)
 }
 
 static void drawStaticGUI() {
-	if (OLED_ENABLED) {
+	if (OLED_ENABLED) 
+	{
 		display.clearDisplay();
 
 		display.setTextSize(1);
@@ -122,7 +123,8 @@ static void drawStaticGUI() {
 }
 
 static void drawDynamicGUI() {
-	if (OLED_ENABLED) {
+	if (OLED_ENABLED) 
+	{
 		display.setTextSize(2);
 
 		display.fillRect(8, 25, 54, 25, BLACK);
@@ -139,7 +141,8 @@ static void drawDynamicGUI() {
 }
 
 static void drawNotification(String message) {
-	if (OLED_ENABLED) {
+	if (OLED_ENABLED) 
+	{
 		display.setCursor(0, 0);
 		display.drawRect(0, 0, 128, 14, WHITE);
 		display.fillRect(0, 0, 128, 14, WHITE);
@@ -164,11 +167,15 @@ template <int N> static void drawMultiLineText(const String (&message)[N]) {
 
 		display.fillRect(0, 18, 128, 64, BLACK);
 
-		for (int i = 0; i < N; i++) {
-			if (i == 0) {
+		for (int i = 0; i < N; i++) 
+		{
+			if (i == 0) 
+			{
 				display.setCursor(0, yInitial);
 				display.print(message[i].c_str());
-			} else {
+			}
+			else
+			{
 				display.setCursor(0, yInitial + (yOffset * i));
 				display.print(message[i].c_str());
 			}
@@ -222,10 +229,7 @@ void beginWindingRoutine()
 	Serial.print("[STATUS] - Estimated finish time: ");
 	Serial.println(finishTime);
 
-	if (OLED_ENABLED)
-	{
-		drawNotification("Winding");
-	}
+	drawNotification("Winding");
 }
 
 /**
@@ -569,18 +573,18 @@ void triggerLEDCondition(int blinkState)
 
 	switch (blinkState)
 	{
-	case 1:
-		LED.slowBlink();
-		break;
-	case 2:
-		LED.fastBlink();
-		break;
-	case 3:
-		LED.pwm();
-		break;
-	default:
-		Serial.println("[WARN] - blinkState not recognized");
-		break;
+		case 1:
+			LED.slowBlink();
+			break;
+		case 2:
+			LED.fastBlink();
+			break;
+		case 3:
+			LED.pwm();
+			break;
+		default:
+			Serial.println("[WARN] - blinkState not recognized");
+			break;
 	}
 }
 
@@ -621,7 +625,8 @@ void awaitWhileListening(int pauseInSeconds)
  */
 void saveParamsCallback()
 {
-	if (OLED_ENABLED) {
+	if (OLED_ENABLED) 
+	{
 		display.clearDisplay();
 		display.display();
 		drawNotification("Connecting...");
@@ -633,7 +638,8 @@ void saveParamsCallback()
  */
 void saveWifiCallback()
 {
-	if (OLED_ENABLED) {
+	if (OLED_ENABLED) 
+	{
 		display.clearDisplay();
 		display.display();
 		drawNotification("Connected to WiFi");
