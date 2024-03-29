@@ -263,23 +263,23 @@ void startWebserver()
 	{
 		int params = request->params();
 
-		for ( int i = 0; i < params; i++ ) 
+		for ( int i = 0; i < params; i++ )
 		{
 			AsyncWebParameter* p = request->getParam(i);
 
-			if( strcmp(p->name().c_str(), "timerEnabled") == 0 ) 
+			if( strcmp(p->name().c_str(), "timerEnabled") == 0 )
 			{
 				userDefinedSettings.timerEnabled = p->value().c_str();
 			}
 		}
 
 		bool writeSuccess = writeConfigVarsToFile(settingsFile, userDefinedSettings);
-		if ( !writeSuccess ) 
+		if ( !writeSuccess )
 		{
 			Serial.println("[ERROR] - Failed to write [timer] endpoint data to file");
 			request->send(500, "text/plain", "Failed to write new configuration to file");
 		}
-		
+
 		request->send(204);
 	});
 
@@ -304,7 +304,7 @@ void startWebserver()
 			}
 
 			userDefinedSettings.winderEnabled = json["winderEnabled"].as<String>();
-			
+
 			if (userDefinedSettings.winderEnabled == "0")
 			{
 				Serial.println("[STATUS] - Switched off!");
@@ -312,7 +312,7 @@ void startWebserver()
 				routineRunning = false;
 				motor.stop();
 			}
-			
+
 			request->send(204);
 		}
 
@@ -367,7 +367,7 @@ void startWebserver()
 				}
 
 				Serial.println("[STATUS] - direction set: " + userDefinedSettings.direction);
-			} 
+			}
 			else
 			{
 				userDefinedSettings.direction = requestRotationDirection;
@@ -400,7 +400,7 @@ void startWebserver()
 
 			// Write new parameters to file
 			bool writeSuccess = writeConfigVarsToFile(settingsFile, userDefinedSettings);
-			if ( !writeSuccess ) 
+			if ( !writeSuccess )
 			{
 				Serial.println("[ERROR] - Failed to write [update] endpoint data to file");
 				request->send(500, "text/plain", "Failed to write new configuration to file");
@@ -647,6 +647,12 @@ void loop()
 			userDefinedSettings.status = "Stopped";
 			routineRunning = false;
 			motor.stop();
+
+			bool writeSuccess = writeConfigVarsToFile(settingsFile, userDefinedSettings);
+			if ( !writeSuccess )
+			{
+				Serial.println("[ERROR] - Failed to write updated configuration to file");
+			}
 		}
 	}
 
