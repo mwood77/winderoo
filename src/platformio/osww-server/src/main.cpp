@@ -65,6 +65,7 @@ unsigned long previousEpoch;
 unsigned long startTimeEpoch;
 bool reset = false;
 bool routineRunning = false;
+bool configPortalRunning = false;
 struct RUNTIME_VARS
 {
 	String status = "";
@@ -88,6 +89,64 @@ HTTPClient http;
 WiFiClient client;
 ESP32Time rtc;
 Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
+
+
+void drawCentreString(const char *buf, int x, int y)
+{
+    int16_t x1, y1;
+    uint16_t w, h;
+    display.getTextBounds(buf, x, y, &x1, &y1, &w, &h); //calc width of new string
+    display.setCursor(x - w / 2, y);
+    display.print(buf);
+}
+
+static void drawStaticGUI() {
+	display.clearDisplay();
+
+	display.setTextSize(1);
+	display.setTextColor(WHITE);
+
+	display.drawLine(0, 14, display.width(), 14, WHITE);
+	display.drawLine(64, 14, 64, display.height(), WHITE);
+
+	display.setCursor(30, 54);
+	display.println(F("TPD"));
+
+	display.setCursor(103, 54);
+	display.println(F("DIR"));
+}
+
+static void drawDynamicGUI() {
+	display.setTextSize(2);
+	
+	display.fillRect(8, 25, 54, 25, BLACK);
+    display.setCursor(8, 30);
+	display.print(userDefinedSettings.rotationsPerDay);
+
+	display.fillRect(66, 20, 62, 25, BLACK);
+	display.setCursor(74, 30);
+	display.print(userDefinedSettings.direction);
+
+	display.display();
+	display.setTextSize(1);
+}
+
+static void drawNotification(String message) {
+	display.setCursor(0, 0);
+	display.drawRect(0, 0, 128, 14, WHITE);
+	display.fillRect(0, 0, 128, 14, WHITE);
+	display.setTextColor(BLACK);
+	drawCentreString(message.c_str(), 64, 3);
+	display.display();
+	display.setTextColor(WHITE);
+	delay(200);
+	display.setCursor(0, 0);
+	display.drawRect(0, 0, 128, 14, BLACK);
+	display.fillRect(0, 0, 128, 14, BLACK);
+	display.setTextColor(WHITE);
+	drawCentreString(message.c_str(), 64, 3);
+	display.display();
+}
 
 /**
  * Calclates the duration and estimated finish time of the winding routine
@@ -133,6 +192,11 @@ void beginWindingRoutine()
 
 	Serial.print("[STATUS] - Estimated finish time: ");
 	Serial.println(finishTime);
+
+	if (OLED_ENABLED)
+	{
+		drawNotification("Winding");
+	}
 }
 
 /**
@@ -411,6 +475,7 @@ void startWebserver()
 				motor.stop();
 				routineRunning = false;
 				userDefinedSettings.status = "Stopped";
+				drawNotification("Stopped");
 			}
 
 			// Write new parameters to file
@@ -529,16 +594,14 @@ void saveWifiCallback()
 {
 	// slow blink to confirm connection success
 	triggerLEDCondition(1);
+
 	if (OLED_ENABLED)
 	{
 		display.clearDisplay();
-		display.setCursor(0, 0);
-		display.print("Connected to WiFi!");
-		display.display();
+		drawNotification("Connected to WiFi");
 	}
-
 	ESP.restart();
-	delay(2000);
+	delay(1500);
 }
 
 void setup()
@@ -571,20 +634,18 @@ void setup()
 			Serial.println(F("SSD1306 allocation failed"));
 			for(;;); // Don't proceed, loop forever
 		}
-			int rotate = OLED_ROTATE_SCREEN_180 ? 2 : 1;
-			display.clearDisplay();
-			display.invertDisplay(OLED_INVERT_SCREEN);
-			display.setRotation(rotate);
-			display.setTextSize(1);
-			display.setTextColor(WHITE);
-			display.setCursor(0, 0);
-			display.write("Winderoo");
-			display.display();
+		drawStaticGUI();
+
+		int rotate = OLED_ROTATE_SCREEN_180 ? 2 : 1;
+		display.clearDisplay();
+		display.invertDisplay(OLED_INVERT_SCREEN);
+		display.setRotation(rotate);
+		drawNotification("Winderoo");
 	}
 
-	display.setCursor(0, 16);
+	display.setCursor(0, 20);
 	display.print("connecting to");
-	display.setCursor(0, 32);     // Start at top-left corner
+	display.setCursor(0, 36);     // Start at top-left corner
 	display.print("saved network...");
 	display.display();
 
@@ -603,10 +664,7 @@ void setup()
 			Serial.println("[STATUS] - Failed to start mDNS");
 			if (OLED_ENABLED)
 			{
-				display.clearDisplay();
-				display.setCursor(0, 0);
-				display.print("Failed to start mDNS");
-				display.display();
+				drawNotification("Failed to start mDNS");
 			}
 		}
 		MDNS.addService("_winderoo", "_tcp", 80);
@@ -614,15 +672,14 @@ void setup()
 		if (OLED_ENABLED)
 		{
 			display.clearDisplay();
-			display.setCursor(0, 0);
-			display.print("Connected to Wifi!");
-			display.display();
+			drawStaticGUI();
+			drawNotification("Connected to WiFi");
 		}
-
 
 		getTime();
 		startWebserver();
 
+		drawNotification("Winderoo");
 		if (strcmp(userDefinedSettings.status.c_str(), "Winding") == 0)
 		{
 			beginWindingRoutine();
@@ -630,6 +687,7 @@ void setup()
 	}
 	else
 	{
+		configPortalRunning = true;
 		Serial.println("[STATUS] - WiFi Config Portal running");
 		ledcWrite(LED.getChannel(), 255);
 		if (OLED_ENABLED)
@@ -639,7 +697,7 @@ void setup()
 			display.print("Connect to");
 			display.setCursor(0, 16);
 			display.print("'Winderoo Setup'");
-			display.setCursor(0, 32);     // Start at top-left corner
+			display.setCursor(0, 32);
 			display.print("wifi to begin");
 			display.display();
 		}
@@ -648,15 +706,20 @@ void setup()
 
 void loop()
 {
+	if (configPortalRunning)
+	{
+		wm.process();
+		return;
+	}
+
+	drawDynamicGUI();
 
 	if (reset)
 	{
 		if (OLED_ENABLED)
 		{
 			display.clearDisplay();
-			display.setCursor(0, 0);
-			display.println("Winderoo Resetting");
-			display.display();
+			drawNotification("Resetting");
 		}
 		// fast blink
 		triggerLEDCondition(2);
@@ -685,10 +748,7 @@ void loop()
 			beginWindingRoutine();
 			if (OLED_ENABLED)
 			{
-				display.clearDisplay();
-				display.setCursor(0, 0);
-				display.println("Winding!");
-				display.display();
+				drawNotification("Winding Started");
 			}
 		}
 	}
@@ -696,14 +756,6 @@ void loop()
 	if (routineRunning)
 	{
 		unsigned long currentTime = rtc.getEpoch();
-
-			if (OLED_ENABLED)
-			{
-				display.clearDisplay();
-				display.setCursor(0, 0);
-				display.println("Winding!");
-				display.display();
-			}
 
 		if (rtc.getEpoch() < estimatedRoutineFinishEpoch)
 		{
@@ -745,10 +797,7 @@ void loop()
 			motor.stop();
 			if (OLED_ENABLED)
 			{
-				display.clearDisplay();
-				display.setCursor(0, 0);
-				display.println("Winding Complete!");
-				display.display();
+				drawNotification("Winding Complete");
 			}
 
 			bool writeSuccess = writeConfigVarsToFile(settingsFile, userDefinedSettings);
