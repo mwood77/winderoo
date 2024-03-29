@@ -38,6 +38,7 @@ int directionalPinA = 25;
 int directionalPinB = 26;
 int ledPin = 0;
 int externalButton = 13;
+
 bool OLED_ENABLED = true;
 bool OLED_INVERT_SCREEN = false;
 bool OLED_ROTATE_SCREEN_180 = true;
@@ -45,7 +46,7 @@ bool OLED_ROTATE_SCREEN_180 = true;
 // OLED CONFIG
 int SCREEN_WIDTH = 128; // OLED display width, in pixels
 int SCREEN_HEIGHT = 64; // OLED display height, in pixels
-int OLED_RESET = -1; // Reset pin # (or -1 if sharing Arduino reset pin)
+int OLED_RESET = -1; // Reset pin number (or -1 if sharing Arduino reset pin)
 /*
  * *************************************************************************************
  * ******************************* END CONFIGURABLES ***********************************
@@ -748,6 +749,12 @@ void loop()
 				display.setCursor(0, 0);
 				display.println("Winding Complete!");
 				display.display();
+			}
+
+			bool writeSuccess = writeConfigVarsToFile(settingsFile, userDefinedSettings);
+			if ( !writeSuccess )
+			{
+				Serial.println("[ERROR] - Failed to write updated configuration to file");
 			}
 		}
 	}
