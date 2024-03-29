@@ -6,10 +6,12 @@
 #include <ESPmDNS.h>
 #include <ESP32Time.h>
 
-#include <SPI.h>
-#include <Wire.h>
-#include <Adafruit_GFX.h>
-#include <Adafruit_SSD1306.h>
+#ifdef OLED_ENABLED
+	#include <SPI.h>
+	#include <Wire.h>
+	#include <Adafruit_GFX.h>
+	#include <Adafruit_SSD1306.h>
+#endif
 
 #include "./utils/LedControl.h"
 #include "./utils/MotorControl.h"
@@ -39,11 +41,9 @@ int directionalPinB = 26;
 int ledPin = 0;
 int externalButton = 13;
 
-bool OLED_ENABLED = true;
+// OLED CONFIG
 bool OLED_INVERT_SCREEN = false;
 bool OLED_ROTATE_SCREEN_180 = true;
-
-// OLED CONFIG
 int SCREEN_WIDTH = 128; // OLED display width, in pixels
 int SCREEN_HEIGHT = 64; // OLED display height, in pixels
 int OLED_RESET = -1; // Reset pin number (or -1 if sharing Arduino reset pin)
@@ -88,10 +88,13 @@ AsyncWebServer server(80);
 HTTPClient http;
 WiFiClient client;
 ESP32Time rtc;
-Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
+
+#ifdef OLED_ENABLED
+	Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
+#endif
 
 
-void drawCentreString(const char *buf, int x, int y)
+void drawCentreString(const String &buf, int x, int y)
 {
     int16_t x1, y1;
     uint16_t w, h;
@@ -101,51 +104,77 @@ void drawCentreString(const char *buf, int x, int y)
 }
 
 static void drawStaticGUI() {
-	display.clearDisplay();
+	if (OLED_ENABLED) {
+		display.clearDisplay();
 
-	display.setTextSize(1);
-	display.setTextColor(WHITE);
+		display.setTextSize(1);
+		display.setTextColor(WHITE);
 
-	display.drawLine(0, 14, display.width(), 14, WHITE);
-	display.drawLine(64, 14, 64, display.height(), WHITE);
+		display.drawLine(0, 14, display.width(), 14, WHITE);
+		display.drawLine(64, 14, 64, display.height(), WHITE);
 
-	display.setCursor(30, 54);
-	display.println(F("TPD"));
+		display.setCursor(30, 54);
+		display.println(F("TPD"));
 
-	display.setCursor(103, 54);
-	display.println(F("DIR"));
+		display.setCursor(103, 54);
+		display.println(F("DIR"));
+	}
 }
 
 static void drawDynamicGUI() {
-	display.setTextSize(2);
-	
-	display.fillRect(8, 25, 54, 25, BLACK);
-    display.setCursor(8, 30);
-	display.print(userDefinedSettings.rotationsPerDay);
+	if (OLED_ENABLED) {
+		display.setTextSize(2);
 
-	display.fillRect(66, 20, 62, 25, BLACK);
-	display.setCursor(74, 30);
-	display.print(userDefinedSettings.direction);
+		display.fillRect(8, 25, 54, 25, BLACK);
+		display.setCursor(8, 30);
+		display.print(userDefinedSettings.rotationsPerDay);
 
-	display.display();
-	display.setTextSize(1);
+		display.fillRect(66, 20, 62, 25, BLACK);
+		display.setCursor(74, 30);
+		display.print(userDefinedSettings.direction);
+
+		display.display();
+		display.setTextSize(1);
+	}
 }
 
 static void drawNotification(String message) {
-	display.setCursor(0, 0);
-	display.drawRect(0, 0, 128, 14, WHITE);
-	display.fillRect(0, 0, 128, 14, WHITE);
-	display.setTextColor(BLACK);
-	drawCentreString(message.c_str(), 64, 3);
-	display.display();
-	display.setTextColor(WHITE);
-	delay(200);
-	display.setCursor(0, 0);
-	display.drawRect(0, 0, 128, 14, BLACK);
-	display.fillRect(0, 0, 128, 14, BLACK);
-	display.setTextColor(WHITE);
-	drawCentreString(message.c_str(), 64, 3);
-	display.display();
+	if (OLED_ENABLED) {
+		display.setCursor(0, 0);
+		display.drawRect(0, 0, 128, 14, WHITE);
+		display.fillRect(0, 0, 128, 14, WHITE);
+		display.setTextColor(BLACK);
+		drawCentreString(message.c_str(), 64, 3);
+		display.display();
+		display.setTextColor(WHITE);
+		delay(200);
+		display.setCursor(0, 0);
+		display.drawRect(0, 0, 128, 14, BLACK);
+		display.fillRect(0, 0, 128, 14, BLACK);
+		display.setTextColor(WHITE);
+		drawCentreString(message.c_str(), 64, 3);
+		display.display();
+	}
+}
+
+template <int N> static void drawMultiLineText(const String (&message)[N]) {
+	if (OLED_ENABLED) {
+		int yInitial = 20;
+		int yOffset = 16;
+
+		display.fillRect(0, 18, 128, 64, BLACK);
+
+		for (int i = 0; i < N; i++) {
+			if (i == 0) {
+				display.setCursor(0, yInitial);
+				display.print(message[i].c_str());
+			} else {
+				display.setCursor(0, yInitial + (yOffset * i));
+				display.print(message[i].c_str());
+			}
+		}
+		display.display();
+	}
 }
 
 /**
@@ -590,16 +619,29 @@ void awaitWhileListening(int pauseInSeconds)
 /**
  * Callback triggered from WifiManager when successfully connected to new WiFi network
  */
+void saveParamsCallback()
+{
+	if (OLED_ENABLED) {
+		display.clearDisplay();
+		display.display();
+		drawNotification("Connecting...");
+	}
+}
+
+/**
+ * Callback triggered from WifiManager when successfully connected to new WiFi network
+ */
 void saveWifiCallback()
 {
+	if (OLED_ENABLED) {
+		display.clearDisplay();
+		display.display();
+		drawNotification("Connected to WiFi");
+	}
+	
 	// slow blink to confirm connection success
 	triggerLEDCondition(1);
 
-	if (OLED_ENABLED)
-	{
-		display.clearDisplay();
-		drawNotification("Connected to WiFi");
-	}
 	ESP.restart();
 	delay(1500);
 }
@@ -623,6 +665,7 @@ void setup()
 	wm.setConfigPortalBlocking(false);
 	wm.setHostname("Winderoo");
 	wm.setSaveConfigCallback(saveWifiCallback);
+	wm.setSaveParamsCallback(saveParamsCallback);
 
 	userDefinedSettings.winderEnabled = true;
 
@@ -643,11 +686,8 @@ void setup()
 		drawNotification("Winderoo");
 	}
 
-	display.setCursor(0, 20);
-	display.print("connecting to");
-	display.setCursor(0, 36);     // Start at top-left corner
-	display.print("saved network...");
-	display.display();
+	String savedNetworkMessage[2] = {"Connecting to", "saved network..."};
+	drawMultiLineText(savedNetworkMessage);
 
 	// Connect using saved credentials, if they exist
 	// If connection fails, start setup Access Point
@@ -662,10 +702,7 @@ void setup()
 		if (!MDNS.begin("winderoo"))
 		{
 			Serial.println("[STATUS] - Failed to start mDNS");
-			if (OLED_ENABLED)
-			{
-				drawNotification("Failed to start mDNS");
-			}
+			drawNotification("Failed to start mDNS");
 		}
 		MDNS.addService("_winderoo", "_tcp", 80);
 		Serial.println("[STATUS] - mDNS started");
@@ -679,10 +716,13 @@ void setup()
 		getTime();
 		startWebserver();
 
-		drawNotification("Winderoo");
 		if (strcmp(userDefinedSettings.status.c_str(), "Winding") == 0)
 		{
 			beginWindingRoutine();
+		} 
+		else 
+		{
+			drawNotification("Winderoo");
 		}
 	}
 	else
@@ -690,17 +730,9 @@ void setup()
 		configPortalRunning = true;
 		Serial.println("[STATUS] - WiFi Config Portal running");
 		ledcWrite(LED.getChannel(), 255);
-		if (OLED_ENABLED)
-		{
-			display.clearDisplay();
-			display.setCursor(0, 0);
-			display.print("Connect to");
-			display.setCursor(0, 16);
-			display.print("'Winderoo Setup'");
-			display.setCursor(0, 32);
-			display.print("wifi to begin");
-			display.display();
-		}
+
+		String setupNetworkMessage[3] = {"Connect to", "\"Winderoo Setup\"", "wifi to begin"};
+		drawMultiLineText(setupNetworkMessage);
 	};
 }
 
@@ -746,10 +778,7 @@ void loop()
 			userDefinedSettings.winderEnabled == "1")
 		{
 			beginWindingRoutine();
-			if (OLED_ENABLED)
-			{
-				drawNotification("Winding Started");
-			}
+			drawNotification("Winding Started");
 		}
 	}
 
@@ -814,11 +843,8 @@ void loop()
 	if (userDefinedSettings.winderEnabled == "0")
 	{
 		triggerLEDCondition(3);
-			if (OLED_ENABLED)
-			{
-				display.clearDisplay();
-				display.display();
-			}
+		display.clearDisplay();
+		display.display();
 	}
 
 	wm.process();
