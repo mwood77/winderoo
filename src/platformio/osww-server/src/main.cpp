@@ -161,7 +161,8 @@ static void drawNotification(String message) {
 }
 
 template <int N> static void drawMultiLineText(const String (&message)[N]) {
-	if (OLED_ENABLED) {
+	if (OLED_ENABLED) 
+	{
 		int yInitial = 20;
 		int yOffset = 16;
 
