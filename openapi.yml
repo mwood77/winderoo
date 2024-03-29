@@ -15,7 +15,7 @@ paths:
     post:
       tags:
         - Modify
-      summary: Change the state of Winderoo
+      summary: Change the timer state of Winderoo
       parameters:
         - in: query
           name: timerEnabled

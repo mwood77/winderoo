@@ -6,6 +6,11 @@
 #include <ESPmDNS.h>
 #include <ESP32Time.h>
 
+#include <SPI.h>
+#include <Wire.h>
+#include <Adafruit_GFX.h>
+#include <Adafruit_SSD1306.h>
+
 #include "./utils/LedControl.h"
 #include "./utils/MotorControl.h"
 
@@ -33,6 +38,14 @@ int directionalPinA = 25;
 int directionalPinB = 26;
 int ledPin = 0;
 int externalButton = 13;
+bool OLED_ENABLED = true;
+bool OLED_INVERT_SCREEN = false;
+bool OLED_ROTATE_SCREEN_180 = true;
+
+// OLED CONFIG
+int SCREEN_WIDTH = 128; // OLED display width, in pixels
+int SCREEN_HEIGHT = 64; // OLED display height, in pixels
+int OLED_RESET = -1; // Reset pin # (or -1 if sharing Arduino reset pin)
 /*
  * *************************************************************************************
  * ******************************* END CONFIGURABLES ***********************************
@@ -73,6 +86,7 @@ AsyncWebServer server(80);
 HTTPClient http;
 WiFiClient client;
 ESP32Time rtc;
+Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
 
 /**
  * Calclates the duration and estimated finish time of the winding routine
@@ -263,23 +277,23 @@ void startWebserver()
 	{
 		int params = request->params();
 
-		for ( int i = 0; i < params; i++ ) 
+		for ( int i = 0; i < params; i++ )
 		{
 			AsyncWebParameter* p = request->getParam(i);
 
-			if( strcmp(p->name().c_str(), "timerEnabled") == 0 ) 
+			if( strcmp(p->name().c_str(), "timerEnabled") == 0 )
 			{
 				userDefinedSettings.timerEnabled = p->value().c_str();
 			}
 		}
 
 		bool writeSuccess = writeConfigVarsToFile(settingsFile, userDefinedSettings);
-		if ( !writeSuccess ) 
+		if ( !writeSuccess )
 		{
 			Serial.println("[ERROR] - Failed to write [timer] endpoint data to file");
 			request->send(500, "text/plain", "Failed to write new configuration to file");
 		}
-		
+
 		request->send(204);
 	});
 
@@ -304,7 +318,7 @@ void startWebserver()
 			}
 
 			userDefinedSettings.winderEnabled = json["winderEnabled"].as<String>();
-			
+
 			if (userDefinedSettings.winderEnabled == "0")
 			{
 				Serial.println("[STATUS] - Switched off!");
@@ -312,7 +326,7 @@ void startWebserver()
 				routineRunning = false;
 				motor.stop();
 			}
-			
+
 			request->send(204);
 		}
 
@@ -367,7 +381,7 @@ void startWebserver()
 				}
 
 				Serial.println("[STATUS] - direction set: " + userDefinedSettings.direction);
-			} 
+			}
 			else
 			{
 				userDefinedSettings.direction = requestRotationDirection;
@@ -400,7 +414,7 @@ void startWebserver()
 
 			// Write new parameters to file
 			bool writeSuccess = writeConfigVarsToFile(settingsFile, userDefinedSettings);
-			if ( !writeSuccess ) 
+			if ( !writeSuccess )
 			{
 				Serial.println("[ERROR] - Failed to write [update] endpoint data to file");
 				request->send(500, "text/plain", "Failed to write new configuration to file");
@@ -514,6 +528,14 @@ void saveWifiCallback()
 {
 	// slow blink to confirm connection success
 	triggerLEDCondition(1);
+	if (OLED_ENABLED)
+	{
+		display.clearDisplay();
+		display.setCursor(0, 0);
+		display.print("Connected to WiFi!");
+		display.display();
+	}
+
 	ESP.restart();
 	delay(2000);
 }
@@ -540,6 +562,31 @@ void setup()
 
 	userDefinedSettings.winderEnabled = true;
 
+	if(OLED_ENABLED)
+	{
+		display.begin(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
+		if (!display.begin(SSD1306_SWITCHCAPVCC, 0x3C))
+		{
+			Serial.println(F("SSD1306 allocation failed"));
+			for(;;); // Don't proceed, loop forever
+		}
+			int rotate = OLED_ROTATE_SCREEN_180 ? 2 : 1;
+			display.clearDisplay();
+			display.invertDisplay(OLED_INVERT_SCREEN);
+			display.setRotation(rotate);
+			display.setTextSize(1);
+			display.setTextColor(WHITE);
+			display.setCursor(0, 0);
+			display.write("Winderoo");
+			display.display();
+	}
+
+	display.setCursor(0, 16);
+	display.print("connecting to");
+	display.setCursor(0, 32);     // Start at top-left corner
+	display.print("saved network...");
+	display.display();
+
 	// Connect using saved credentials, if they exist
 	// If connection fails, start setup Access Point
 	if (wm.autoConnect("Winderoo Setup"))
@@ -553,9 +600,24 @@ void setup()
 		if (!MDNS.begin("winderoo"))
 		{
 			Serial.println("[STATUS] - Failed to start mDNS");
+			if (OLED_ENABLED)
+			{
+				display.clearDisplay();
+				display.setCursor(0, 0);
+				display.print("Failed to start mDNS");
+				display.display();
+			}
 		}
 		MDNS.addService("_winderoo", "_tcp", 80);
 		Serial.println("[STATUS] - mDNS started");
+		if (OLED_ENABLED)
+		{
+			display.clearDisplay();
+			display.setCursor(0, 0);
+			display.print("Connected to Wifi!");
+			display.display();
+		}
+
 
 		getTime();
 		startWebserver();
@@ -569,6 +631,17 @@ void setup()
 	{
 		Serial.println("[STATUS] - WiFi Config Portal running");
 		ledcWrite(LED.getChannel(), 255);
+		if (OLED_ENABLED)
+		{
+			display.clearDisplay();
+			display.setCursor(0, 0);
+			display.print("Connect to");
+			display.setCursor(0, 16);
+			display.print("'Winderoo Setup'");
+			display.setCursor(0, 32);     // Start at top-left corner
+			display.print("wifi to begin");
+			display.display();
+		}
 	};
 }
 
@@ -577,6 +650,13 @@ void loop()
 
 	if (reset)
 	{
+		if (OLED_ENABLED)
+		{
+			display.clearDisplay();
+			display.setCursor(0, 0);
+			display.println("Winderoo Resetting");
+			display.display();
+		}
 		// fast blink
 		triggerLEDCondition(2);
 
@@ -602,12 +682,27 @@ void loop()
 			userDefinedSettings.winderEnabled == "1")
 		{
 			beginWindingRoutine();
+			if (OLED_ENABLED)
+			{
+				display.clearDisplay();
+				display.setCursor(0, 0);
+				display.println("Winding!");
+				display.display();
+			}
 		}
 	}
 
 	if (routineRunning)
 	{
 		unsigned long currentTime = rtc.getEpoch();
+
+			if (OLED_ENABLED)
+			{
+				display.clearDisplay();
+				display.setCursor(0, 0);
+				display.println("Winding!");
+				display.display();
+			}
 
 		if (rtc.getEpoch() < estimatedRoutineFinishEpoch)
 		{
@@ -647,6 +742,13 @@ void loop()
 			userDefinedSettings.status = "Stopped";
 			routineRunning = false;
 			motor.stop();
+			if (OLED_ENABLED)
+			{
+				display.clearDisplay();
+				display.setCursor(0, 0);
+				display.println("Winding Complete!");
+				display.display();
+			}
 		}
 	}
 
@@ -656,6 +758,11 @@ void loop()
 	if (userDefinedSettings.winderEnabled == "0")
 	{
 		triggerLEDCondition(3);
+			if (OLED_ENABLED)
+			{
+				display.clearDisplay();
+				display.display();
+			}
 	}
 
 	wm.process();
