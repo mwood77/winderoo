@@ -21,6 +21,16 @@
     - If you downloaded the repository as a zip, uzip it before proceeding to step 2.
     <div align="center"><img src="images/download_directory.png" alt="how to download"></div>
 1. Open the extracted folder (or cloned repository if using git) in Visual Studio Code
+1. **IMPORTANT** -> if you're building Winderoo with an OLED screen attached, you must enable a build flag to tell PlatformIO to include additional libraries. To do this:
+    - Navigate to the file `platformio.ini`
+            <div align="center"><img src="images/platformio-ini.png" alt="how to download"></div>
+    - In this file, you'll see the following block of code:
+        ```yml
+        build_flags =
+	        -D OLED_ENABLED=false
+        ```
+    - Change `-D OLED_ENABLED=false` to `-D OLED_ENABLED=true`
+    - PlatformIO will now compile Winderoo with OLED screen support
 1. Select 'PlatformIO' (alien/insect looking button) on the workspace menu and wait for visual studio code to finish initializing the project
     <div align="center"><img src="images/platformIO.png" alt="platformIO button"></div>
 1. Expand the main heading: **"esp32doit-devkit-v1"**:

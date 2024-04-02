@@ -16,7 +16,7 @@
   <br>
   <br>
   <p>
-    Winderoo is open source firmware which adds "smart" functionality, and a GUI, to your <a href="https://github.com/mwood77/osww" target="_blank">OSWW</a> or other microcontroller equipped watch winder.
+    Winderoo is open source firmware which adds <i>smart functionality</i> to your <a href="https://github.com/mwood77/osww" target="_blank">OSWW build</a> or microcontroller equipped watch winder. <i>Smart functionality</i> includes a Web UI (fully-translated in 5 languages!), OLED screen support, start timer, and more!
   </p>
 </div>
 
@@ -32,13 +32,15 @@
 * Estimated cycle duration (how long it'll take to wind your watch).
 * Cycle progress display (how far along the current winding routine is).
 * Software or optional physical button to trigger ON/OFF state, so you can disable the winder completely.
+* OLED screen support
 * Simple setup. Flash the firmware and File System with a few clicks, then connect your phone (or other device) to the winder's setup wifi network & add it to your home network.
-* There's no app required! You control it from a web browser. 
+* There's no app required! You control it from a web browser.
 * Minimal electronics / programming experience required
+* Web UI is fully tranlated into 5 langauges (more are welcome!)
 
 
 ### Winderoo Requires a Different Microcontroller
-* **You must replace the Pi Pico, as spec'd in the OSWW build guide, with an ESP32. This project will not run on the Pi Pico!**
+* **You must replace the Pi Pico, as spec'd in the OSWW build guide, with an ESP32. This project will not run on a Pi Pico!**
 
 # User Manual
 * [Click Here to see the user manual](./docs/user-manual.md)
