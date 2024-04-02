@@ -6,7 +6,7 @@
         "DIALOG": {
             "TITLE": "Reset takes 20 seconds",
             "SUBTITLE": "This screen will not close during the reset process",
-            "CANCEL": "cancel",
+            "CANCEL": "Cancel",
             "POINT_1": "Reset is complete when the second LED stops fast blinking, then turns solid.",
             "POINT_2": "Connect your mobile device to the new WiFi network called",
             "POINT_3": "Add Winderoo to an existing WiFi network. If the LED starts to slow blink, Winderoo has successfully joined that network.",
