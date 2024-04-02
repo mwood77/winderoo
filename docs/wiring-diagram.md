@@ -6,7 +6,7 @@
 
 
 ## Winderoo
-![fritzing wiring diagram](./images/winderoo.png)
+![fritzing wiring diagram](./images/winderoo-wiring-diagram.png)
 
 <div align="center">
     <a href="./winderoo-wiring-diagram-fritzing.pdf">Is the image hard to view? Open the PDF instead</a>
@@ -30,10 +30,10 @@
 > This wiring diagram assumes you've purchased an I2C 4-wire OLED (SSD1306 driver compatible). Complex LCDs are currently not supported.
 
 <!-- @todo - update diagram -->
-![fritzing wiring diagram](./images/winderoo.png)
+![fritzing wiring diagram](./images/winderoo-with-oled-wiring-diagram.png)
 
 <div align="center">
-    <a href="./winderoo-wiring-diagram-fritzing.pdf">Is the image hard to view? Open the PDF instead</a>
+    <a href="./winderoo-with-oled-wiring-diagram.pdf">Is the image hard to view? Open the PDF instead</a>
 </div>
 <br />
 
