@@ -29,7 +29,6 @@
 > [!IMPORTANT]
 > This wiring diagram assumes you've purchased an I2C 4-wire OLED (SSD1306 driver compatible). Complex LCDs are currently not supported.
 
-<!-- @todo - update diagram -->
 ![fritzing wiring diagram](./images/winderoo-with-oled-wiring-diagram.png)
 
 <div align="center">

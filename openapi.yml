@@ -134,6 +134,7 @@ components:
             timerEnabled: "0"
             action: "START"
             rotationDirection: "BOTH"
+            screenSleep: false
     PowerBody:
       description: a JSON object containing winderoo power information
       required: true
@@ -243,6 +244,14 @@ components:
           type: number
           examples:
             - -67
+        screenSleep:
+          type: boolean
+          examples:
+            - false
+        screenEquipped:
+          type: boolean
+          examples:
+            - false
     Resetting:
       type: object
       properties:
