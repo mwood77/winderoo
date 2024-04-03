@@ -94,12 +94,12 @@ ESP32Time rtc;
 #endif
 
 
-void drawCentreString(const String &buf, int x, int y)
+void drawCentreStringToMemory(const char *buf, int x, int y)
 {
     int16_t x1, y1;
     uint16_t w, h;
-    display.getTextBounds(buf, x, y, &x1, &y1, &w, &h); //calc width of new string
-    display.setCursor(x - w / 2, y);
+    display.getTextBounds(buf, 0, y, &x1, &y1, &w, &h); //calc width of new string
+    display.setCursor(x - (w / 2), y);
     display.print(buf);
 }
 
@@ -147,7 +147,7 @@ static void drawNotification(String message) {
 		display.drawRect(0, 0, 128, 14, WHITE);
 		display.fillRect(0, 0, 128, 14, WHITE);
 		display.setTextColor(BLACK);
-		drawCentreString(message.c_str(), 64, 3);
+		drawCentreStringToMemory(message.c_str(), 64, 3);
 		display.display();
 		display.setTextColor(WHITE);
 		delay(200);
@@ -155,7 +155,10 @@ static void drawNotification(String message) {
 		display.drawRect(0, 0, 128, 14, BLACK);
 		display.fillRect(0, 0, 128, 14, BLACK);
 		display.setTextColor(WHITE);
-		drawCentreString(message.c_str(), 64, 3);
+		drawCentreStringToMemory(message.c_str(), 64, 3);
+
+		// Underline notification, which is shared with Static GUI
+		display.drawLine(0, 14, display.width(), 14, WHITE);
 		display.display();
 	}
 }
@@ -172,16 +175,14 @@ template <int N> static void drawMultiLineText(const String (&message)[N]) {
 		{
 			if (i == 0) 
 			{
-				display.setCursor(0, yInitial);
-				display.print(message[i].c_str());
+				drawCentreStringToMemory(message[i].c_str(), 64, yInitial);
 			}
 			else
 			{
-				display.setCursor(0, yInitial + (yOffset * i));
-				display.print(message[i].c_str());
+				drawCentreStringToMemory(message[i].c_str(), 64, yInitial + (yOffset * i));
 			}
 		}
-		display.display();
+	display.display();
 	}
 }
 
@@ -607,10 +608,11 @@ void awaitWhileListening(int pauseInSeconds)
 	{
 		if (userDefinedSettings.winderEnabled == "0")
 		{
-			Serial.println("[STATUS] - Switched off!");
-			userDefinedSettings.status = "Stopped";
-			routineRunning = false;
 			motor.stop();
+			routineRunning = false;
+			userDefinedSettings.status = "Stopped";
+			Serial.println("[STATUS] - Switched off!");
+			drawNotification("Stopped");
 		}
 	}
 	else
