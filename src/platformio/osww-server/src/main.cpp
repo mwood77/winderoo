@@ -66,6 +66,8 @@ unsigned long startTimeEpoch;
 bool reset = false;
 bool routineRunning = false;
 bool configPortalRunning = false;
+bool screenSleep = false;
+bool screenEquipped = OLED_ENABLED;
 struct RUNTIME_VARS
 {
 	String status = "";
@@ -189,7 +191,7 @@ static void drawWifiStatus() {
 }
 
 static void drawDynamicGUI() {
-	if (OLED_ENABLED) 
+	if (OLED_ENABLED && !screenSleep) 
 	{
 
 		display.fillRect(8, 25, 54, 25, BLACK);
@@ -210,7 +212,7 @@ static void drawDynamicGUI() {
 }
 
 static void drawNotification(String message) {
-	if (OLED_ENABLED) 
+	if (OLED_ENABLED && !screenSleep) 
 	{
 		display.setCursor(0, 0);
 		display.drawRect(0, 0, 128, 14, WHITE);
@@ -233,7 +235,7 @@ static void drawNotification(String message) {
 }
 
 template <int N> static void drawMultiLineText(const String (&message)[N]) {
-	if (OLED_ENABLED) 
+	if (OLED_ENABLED && !screenSleep) 
 	{
 		int yInitial = 20;
 		int yOffset = 16;
@@ -328,7 +330,6 @@ void getTime()
 		int minutes = time.substring(3, 5).toInt();
 
 		rtc.setTime(seconds, minutes, hours, day, month, year);
-		Serial.println("[STATUS] - Time: " + datetime);
 	}
 	else
 	{
@@ -447,6 +448,8 @@ void startWebserver()
 		json["winderEnabled"] = userDefinedSettings.winderEnabled;
 		json["timerEnabled"] = userDefinedSettings.timerEnabled;
 		json["db"] = WiFi.RSSI();
+		json["screenSleep"] = screenSleep;
+		json["screenEquipped"] = screenEquipped;
 		serializeJson(json, *response);
 
 		request->send(response);
@@ -521,8 +524,8 @@ void startWebserver()
 		{
 			JsonDocument json;
 			DeserializationError error = deserializeJson(json, data);
-			int arraySize = 6;
-			String requiredKeys[arraySize] = {"rotationDirection", "tpd", "action", "hour", "minutes", "timerEnabled"};
+			int arraySize = 7;
+			String requiredKeys[arraySize] = {"rotationDirection", "tpd", "action", "hour", "minutes", "timerEnabled", "screenSleep"};
 
 			if (error)
 			{
@@ -549,6 +552,7 @@ void startWebserver()
 			String requestRotationDirection = json["rotationDirection"].as<String>();
 			String requestTPD = json["tpd"].as<String>();
 			String requestAction = json["action"].as<String>();
+			screenSleep = json["screenSleep"].as<bool>();
 
 			// Update motor direction
 			if (strcmp(requestRotationDirection.c_str(), userDefinedSettings.direction.c_str()) != 0)
@@ -598,6 +602,22 @@ void startWebserver()
 				routineRunning = false;
 				userDefinedSettings.status = "Stopped";
 				drawNotification("Stopped");
+			}
+
+			// Update screen sleep state
+			if (screenSleep && OLED_ENABLED)
+			{
+				display.clearDisplay();
+				display.display();
+			}
+			else
+			{
+				if (OLED_ENABLED) 
+				{
+					// Draw gui with updated values from _this_ update request
+					drawStaticGUI(true, userDefinedSettings.status);
+					drawDynamicGUI();
+				}
 			}
 
 			// Write new parameters to file
@@ -922,7 +942,7 @@ void loop()
 			userDefinedSettings.status = "Stopped";
 			routineRunning = false;
 			motor.stop();
-			if (OLED_ENABLED)
+			if (OLED_ENABLED && !screenSleep)
 			{
 				drawNotification("Winding Complete");
 			}
