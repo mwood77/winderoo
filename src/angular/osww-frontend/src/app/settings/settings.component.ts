@@ -299,8 +299,6 @@ export class SettingsComponent implements OnInit, AfterViewChecked {
 
   updateScreenSleepState($state: boolean) {
     this.upload.screenSleep = $state;
-    console.log("current:" + this.upload.screenSleep);
-    console.log("$state:" + $state);
     this.uploadSettings();
   };
 
