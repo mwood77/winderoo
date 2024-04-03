@@ -52,7 +52,7 @@ export class SettingsComponent implements OnInit, AfterViewChecked {
   ];
 
   wifiSignalIcon = ''
-  
+
   upload = {
     activityState: '',
     statusMessage: '',

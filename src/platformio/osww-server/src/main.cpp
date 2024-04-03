@@ -106,7 +106,7 @@ void drawCentreStringToMemory(const char *buf, int x, int y)
 }
 
 static void drawStaticGUI(bool drawHeaderTitle = false, String title = "Winderoo") {
-	if (OLED_ENABLED) 
+	if (OLED_ENABLED)
 	{
 		display.clearDisplay();
 
@@ -135,7 +135,7 @@ static void drawStaticGUI(bool drawHeaderTitle = false, String title = "Winderoo
 }
 
 static void drawTimerStatus() {
-	if (OLED_ENABLED) 
+	if (OLED_ENABLED)
 	{
 		if (userDefinedSettings.timerEnabled == "1")
 		{
@@ -152,7 +152,7 @@ static void drawTimerStatus() {
 }
 
 static void drawWifiStatus() {
-	if (OLED_ENABLED) 
+	if (OLED_ENABLED)
 	{
 		// left aligned cell reception icon
 		display.drawTriangle(4, 54, 10, 54, 7, 58, WHITE);
@@ -191,7 +191,7 @@ static void drawWifiStatus() {
 }
 
 static void drawDynamicGUI() {
-	if (OLED_ENABLED && !screenSleep) 
+	if (OLED_ENABLED && !screenSleep)
 	{
 
 		display.fillRect(8, 25, 54, 25, BLACK);
@@ -212,7 +212,7 @@ static void drawDynamicGUI() {
 }
 
 static void drawNotification(String message) {
-	if (OLED_ENABLED && !screenSleep) 
+	if (OLED_ENABLED && !screenSleep)
 	{
 		display.setCursor(0, 0);
 		display.drawRect(0, 0, 128, 14, WHITE);
@@ -235,16 +235,16 @@ static void drawNotification(String message) {
 }
 
 template <int N> static void drawMultiLineText(const String (&message)[N]) {
-	if (OLED_ENABLED && !screenSleep) 
+	if (OLED_ENABLED && !screenSleep)
 	{
 		int yInitial = 20;
 		int yOffset = 16;
 
 		display.fillRect(0, 18, 128, 64, BLACK);
 
-		for (int i = 0; i < N; i++) 
+		for (int i = 0; i < N; i++)
 		{
-			if (i == 0) 
+			if (i == 0)
 			{
 				drawCentreStringToMemory(message[i].c_str(), 64, yInitial);
 			}
@@ -323,7 +323,7 @@ void getTime()
 		int day = date.substring(8, 10).toInt();
 		int month = date.substring(5, 7).toInt();
 		int year = date.substring(0, 4).toInt();
-		
+
 		String time = datetime.substring(datetime.indexOf("T") + 1);
 		int seconds = time.substring(6, 8).toInt();
 		int hours = time.substring(0, 2).toInt();
@@ -612,7 +612,7 @@ void startWebserver()
 			}
 			else
 			{
-				if (OLED_ENABLED) 
+				if (OLED_ENABLED)
 				{
 					// Draw gui with updated values from _this_ update request
 					drawStaticGUI(true, userDefinedSettings.status);
@@ -734,7 +734,7 @@ void awaitWhileListening(int pauseInSeconds)
  */
 void saveParamsCallback()
 {
-	if (OLED_ENABLED) 
+	if (OLED_ENABLED)
 	{
 		display.clearDisplay();
 		display.display();
@@ -747,7 +747,7 @@ void saveParamsCallback()
  */
 void saveWifiCallback()
 {
-	if (OLED_ENABLED) 
+	if (OLED_ENABLED)
 	{
 		display.clearDisplay();
 		display.display();
@@ -755,7 +755,7 @@ void saveWifiCallback()
 		String rebootingMessage[2] = {"Device is", "rebooting..."};
 		drawMultiLineText(rebootingMessage);
 	}
-	
+
 	// slow blink to confirm connection success
 	triggerLEDCondition(1);
 
@@ -836,8 +836,8 @@ void setup()
 		if (strcmp(userDefinedSettings.status.c_str(), "Winding") == 0)
 		{
 			beginWindingRoutine();
-		} 
-		else 
+		}
+		else
 		{
 			drawNotification("Winderoo");
 		}
@@ -867,7 +867,7 @@ void loop()
 		{
 			display.clearDisplay();
 			drawNotification("Resetting");
-			
+
 			String rebootingMessage[2] = {"Device is", "rebooting..."};
 			drawMultiLineText(rebootingMessage);
 		}
@@ -961,11 +961,11 @@ void loop()
 	if (userDefinedSettings.winderEnabled == "0")
 	{
 		triggerLEDCondition(3);
-	} 
+	}
 	else
 	{
 		drawDynamicGUI();
 	}
-	
+
 	wm.process();
 }

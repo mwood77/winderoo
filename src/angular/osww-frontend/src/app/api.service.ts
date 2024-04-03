@@ -72,12 +72,12 @@ export class ApiService {
     let powerStateToNum;
     const baseURL = ApiService.constructURL() + 'power';
 
-    if (powerState) { 
+    if (powerState) {
       powerStateToNum = 1;
     } else {
       powerStateToNum = 0;
     }
-    
+
     const powerBody = {
       winderEnabled: powerStateToNum
     }
