@@ -90,7 +90,7 @@
             </div>
         </div>
     </mat-card>
-
+    
     <mat-card class="mat-elevation-z1">
         <div class="individual-setting">
             <div>{{ "SETTINGS.CYCLE_START" | translate }}</div>
@@ -140,6 +140,25 @@
                     </mat-form-field>
                 </div>
 
+            </div>
+        </div>
+    </mat-card>
+
+    <mat-card class="mat-elevation-z1" *ngIf="this.screenEquipped">
+        <div class="individual-setting">
+            <div>{{ "SETTINGS.SCREEN" | translate }}</div>
+            
+            <div style="display: flex; justify-content: center;">
+                <mat-slide-toggle [(ngModel)]="!this.upload.screenSleep" (ngModelChange)="updateScreenSleepState(!$event)">
+                    <span *ngIf="this.upload.screenSleep; else elseBlock">
+                        {{ "SETTINGS.DISABLED" | translate | uppercase }}
+                    </span>
+                    <ng-template #elseBlock>
+                        <span>
+                        {{ "SETTINGS.ENABLED" | translate | uppercase }}
+                    </span>
+                </ng-template>
+                </mat-slide-toggle>
             </div>
         </div>
     </mat-card>

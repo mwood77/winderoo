@@ -64,7 +64,8 @@ export class SettingsComponent implements OnInit, AfterViewChecked {
     durationInSecondsToCompleteOneRevolution: 0,
     startTimeEpoch: 0,
     estimatedRoutineFinishEpoch: 0,
-    isTimerEnabledNum: 0
+    isTimerEnabledNum: 0,
+    screenSleep: false
   }
 
   selectedHour: any;
@@ -76,6 +77,7 @@ export class SettingsComponent implements OnInit, AfterViewChecked {
   progressPercentageComplete: number =  0;
   isWinderEnabled: number;
   isTimerEnabled: boolean;
+  screenEquipped: boolean = false;
 
   watchWindingParametersURL = 'https://watch-winder.store/watch-winding-table/';
 
@@ -118,6 +120,8 @@ export class SettingsComponent implements OnInit, AfterViewChecked {
       this.upload.startTimeEpoch = data.startTimeEpoch;
       this.upload.estimatedRoutineFinishEpoch = data.estimatedRoutineFinishEpoch;
       this.upload.isTimerEnabledNum = data.timerEnabled;
+      this.upload.screenSleep = data.screenSleep;
+      this.screenEquipped = data.screenEquipped;
 
       this.apiService.isWinderEnabled$.next(data.winderEnabled);
 
@@ -211,6 +215,7 @@ export class SettingsComponent implements OnInit, AfterViewChecked {
       hour: this.selectedHour == null ? this.upload.hour : this.selectedHour,
       minutes: this.selectedMinutes == null ? this.upload.minutes : this.selectedMinutes,
       timerEnabled: this.upload.isTimerEnabledNum,
+      screenSleep: this.upload.screenSleep,
     }
 
     this.apiService.updateState(body).subscribe((response) => {
@@ -290,6 +295,13 @@ export class SettingsComponent implements OnInit, AfterViewChecked {
           this.mapTimerEnabledState(this.upload.isTimerEnabledNum)
         }
       });
+  };
+
+  updateScreenSleepState($state: boolean) {
+    this.upload.screenSleep = $state;
+    console.log("current:" + this.upload.screenSleep);
+    console.log("$state:" + $state);
+    this.uploadSettings();
   };
 
 }

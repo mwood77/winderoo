@@ -11,6 +11,7 @@ export interface Update {
   hour: string;
   minutes: string;
   timerEnabled: number;
+  screenSleep: boolean;
 }
 
 export interface Status {
@@ -27,6 +28,8 @@ export interface Status {
   estimatedRoutineFinishEpoch: number;
   winderEnabled: number;
   timerEnabled: number;
+  screenSleep: boolean;
+  screenEquipped: boolean;
 }
 
 @Injectable({
