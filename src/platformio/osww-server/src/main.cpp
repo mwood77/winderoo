@@ -132,11 +132,20 @@ void getTime()
 	{
 		JsonDocument json;
 		deserializeJson(json, http.getStream());
-		const unsigned long epoch = json["unixtime"];
-		const unsigned long offset = json["raw_offset"];
+		const String datetime = json["datetime"];
 
-		rtc.offset = offset;
-		rtc.setTime(epoch);
+		String date = datetime.substring(0, datetime.indexOf("T") - 1);
+		int day = date.substring(8, 10).toInt();
+		int month = date.substring(5, 7).toInt();
+		int year = date.substring(0, 4).toInt();
+		
+		String time = datetime.substring(datetime.indexOf("T") + 1);
+		int seconds = time.substring(6, 8).toInt();
+		int hours = time.substring(0, 2).toInt();
+		int minutes = time.substring(3, 5).toInt();
+
+		rtc.setTime(seconds, minutes, hours, day, month, year);
+		Serial.println("[STATUS] - Time: " + datetime);
 	}
 
 	http.end();
