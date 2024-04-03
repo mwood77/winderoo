@@ -115,17 +115,76 @@ static void drawStaticGUI(bool drawHeaderTitle = false, String title = "Winderoo
 		{
 			drawCentreStringToMemory(title.c_str(), 64, 3);
 		}
+		// top horizontal line
 		display.drawLine(0, 14, display.width(), 14, WHITE);
+		// vertical line
+		display.drawLine(64, 14, 64, 50, WHITE);
+		// bottom horizontal line
+		display.drawLine(0, 50, display.width(), 50, WHITE);
 
-		display.drawLine(64, 14, 64, display.height(), WHITE);
-
-		display.setCursor(30, 54);
+		display.setCursor(4, 18);
 		display.println(F("TPD"));
 
-		display.setCursor(103, 54);
+		display.setCursor(71, 18);
 		display.println(F("DIR"));
 
 		display.display();
+	}
+}
+
+static void drawTimerStatus() {
+	if (OLED_ENABLED) 
+	{
+		if (userDefinedSettings.timerEnabled == "1")
+		{
+			// right aligned timer
+			display.fillRect(60, 51, 64, 13, BLACK);
+			display.setCursor(60, 56);
+			display.print("TIMER " + userDefinedSettings.hour + ":" + userDefinedSettings.minutes);
+		}
+		else
+		{
+			display.fillRect(60, 51, 68, 13, BLACK);
+		}
+	}
+}
+
+static void drawWifiStatus() {
+	if (OLED_ENABLED) 
+	{
+		// left aligned cell reception icon
+		display.drawTriangle(4, 54, 10, 54, 7, 58, WHITE);
+		display.drawLine(7, 58, 7, 62, WHITE);
+
+		// Clear reception bars
+		display.fillRect(12, 54, 58, 10, BLACK);
+
+		if (WiFi.RSSI() > -50)
+		{
+			// Excelent reception - 4 bars
+			display.fillRect(14, 55+8, 2, 2, WHITE);
+			display.fillRect(18, 55+6, 2, 4, WHITE);
+			display.fillRect(22, 55+4, 2, 6, WHITE);
+			display.fillRect(26, 55+2, 2, 8, WHITE);
+		}
+		else if (WiFi.RSSI() > -60)
+		{
+			// Good reception - 3 bars
+			display.fillRect(14, 55+8, 2, 2, WHITE);
+			display.fillRect(18, 55+6, 2, 4, WHITE);
+			display.fillRect(22, 55+4, 2, 6, WHITE);
+		}
+		else if (WiFi.RSSI() > -70)
+		{
+			// Fair reception - 2 bars
+			display.fillRect(14, 55+8, 2, 2, WHITE);
+			display.fillRect(18, 55+6, 2, 4, WHITE);
+		}
+		else
+		{
+			// Terrible reception - 1 bar
+			display.fillRect(14, 55+8, 2, 2, WHITE);
+		}
 	}
 }
 
@@ -138,10 +197,13 @@ static void drawDynamicGUI() {
 		display.setTextSize(2);
 		display.print(userDefinedSettings.rotationsPerDay);
 
-		display.fillRect(66, 20, 62, 25, BLACK);
+		display.fillRect(66, 25, 62, 25, BLACK);
 		display.setCursor(74, 30);
 		display.print(userDefinedSettings.direction);
 		display.setTextSize(1);
+
+		drawWifiStatus();
+		drawTimerStatus();
 
 		display.display();
 	}
