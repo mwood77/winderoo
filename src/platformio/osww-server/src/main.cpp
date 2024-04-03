@@ -103,7 +103,7 @@ void drawCentreStringToMemory(const char *buf, int x, int y)
     display.print(buf);
 }
 
-static void drawStaticGUI() {
+static void drawStaticGUI(bool drawHeaderTitle = false, String title = "Winderoo") {
 	if (OLED_ENABLED) 
 	{
 		display.clearDisplay();
@@ -111,7 +111,12 @@ static void drawStaticGUI() {
 		display.setTextSize(1);
 		display.setTextColor(WHITE);
 
+		if (drawHeaderTitle)
+		{
+			drawCentreStringToMemory(title.c_str(), 64, 3);
+		}
 		display.drawLine(0, 14, display.width(), 14, WHITE);
+
 		display.drawLine(64, 14, 64, display.height(), WHITE);
 
 		display.setCursor(30, 54);
@@ -119,24 +124,26 @@ static void drawStaticGUI() {
 
 		display.setCursor(103, 54);
 		display.println(F("DIR"));
+
+		display.display();
 	}
 }
 
 static void drawDynamicGUI() {
 	if (OLED_ENABLED) 
 	{
-		display.setTextSize(2);
 
 		display.fillRect(8, 25, 54, 25, BLACK);
 		display.setCursor(8, 30);
+		display.setTextSize(2);
 		display.print(userDefinedSettings.rotationsPerDay);
 
 		display.fillRect(66, 20, 62, 25, BLACK);
 		display.setCursor(74, 30);
 		display.print(userDefinedSettings.direction);
+		display.setTextSize(1);
 
 		display.display();
-		display.setTextSize(1);
 	}
 }
 
@@ -251,6 +258,10 @@ void getTime()
 
 		rtc.offset = offset;
 		rtc.setTime(epoch);
+	}
+	else
+	{
+		Serial.println("[ERROR] - Failed to get time from Worldtime API");
 	}
 
 	http.end();
@@ -425,6 +436,11 @@ void startWebserver()
 				userDefinedSettings.status = "Stopped";
 				routineRunning = false;
 				motor.stop();
+				display.clearDisplay();
+				display.display();
+			} else {
+				drawStaticGUI(true);
+				drawDynamicGUI();
 			}
 
 			request->send(204);
@@ -612,7 +628,6 @@ void awaitWhileListening(int pauseInSeconds)
 			routineRunning = false;
 			userDefinedSettings.status = "Stopped";
 			Serial.println("[STATUS] - Switched off!");
-			drawNotification("Stopped");
 		}
 	}
 	else
@@ -646,6 +661,8 @@ void saveWifiCallback()
 		display.clearDisplay();
 		display.display();
 		drawNotification("Connected to WiFi");
+		String rebootingMessage[2] = {"Device is", "rebooting..."};
+		drawMultiLineText(rebootingMessage);
 	}
 	
 	// slow blink to confirm connection success
@@ -753,14 +770,15 @@ void loop()
 		return;
 	}
 
-	drawDynamicGUI();
-
 	if (reset)
 	{
 		if (OLED_ENABLED)
 		{
 			display.clearDisplay();
 			drawNotification("Resetting");
+			
+			String rebootingMessage[2] = {"Device is", "rebooting..."};
+			drawMultiLineText(rebootingMessage);
 		}
 		// fast blink
 		triggerLEDCondition(2);
@@ -852,9 +870,11 @@ void loop()
 	if (userDefinedSettings.winderEnabled == "0")
 	{
 		triggerLEDCondition(3);
-		display.clearDisplay();
-		display.display();
+	} 
+	else
+	{
+		drawDynamicGUI();
 	}
-
+	
 	wm.process();
 }
