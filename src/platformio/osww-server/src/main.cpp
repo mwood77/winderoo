@@ -43,7 +43,7 @@ int externalButton = 13;
 
 // OLED CONFIG
 bool OLED_INVERT_SCREEN = false;
-bool OLED_ROTATE_SCREEN_180 = true;
+bool OLED_ROTATE_SCREEN_180 = false;
 int SCREEN_WIDTH = 128; // OLED display width, in pixels
 int SCREEN_HEIGHT = 64; // OLED display height, in pixels
 int OLED_RESET = -1; // Reset pin number (or -1 if sharing Arduino reset pin)
@@ -796,7 +796,7 @@ void setup()
 		}
 		drawStaticGUI();
 
-		int rotate = OLED_ROTATE_SCREEN_180 ? 2 : 1;
+		int rotate = OLED_ROTATE_SCREEN_180 ? 2 : 4;
 		display.clearDisplay();
 		display.invertDisplay(OLED_INVERT_SCREEN);
 		display.setRotation(rotate);
