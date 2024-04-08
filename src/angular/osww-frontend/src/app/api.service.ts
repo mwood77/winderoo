@@ -11,6 +11,7 @@ export interface Update {
   hour: string;
   minutes: string;
   timerEnabled: number;
+  screenSleep: boolean;
 }
 
 export interface Status {
@@ -27,6 +28,8 @@ export interface Status {
   estimatedRoutineFinishEpoch: number;
   winderEnabled: number;
   timerEnabled: number;
+  screenSleep: boolean;
+  screenEquipped: boolean;
 }
 
 @Injectable({
@@ -69,12 +72,12 @@ export class ApiService {
     let powerStateToNum;
     const baseURL = ApiService.constructURL() + 'power';
 
-    if (powerState) { 
+    if (powerState) {
       powerStateToNum = 1;
     } else {
       powerStateToNum = 0;
     }
-    
+
     const powerBody = {
       winderEnabled: powerStateToNum
     }

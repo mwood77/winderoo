@@ -6,6 +6,13 @@
 #include <ESPmDNS.h>
 #include <ESP32Time.h>
 
+#ifdef OLED_ENABLED
+	#include <SPI.h>
+	#include <Wire.h>
+	#include <Adafruit_GFX.h>
+	#include <Adafruit_SSD1306.h>
+#endif
+
 #include "./utils/LedControl.h"
 #include "./utils/MotorControl.h"
 
@@ -33,6 +40,13 @@ int directionalPinA = 25;
 int directionalPinB = 26;
 int ledPin = 0;
 int externalButton = 13;
+
+// OLED CONFIG
+bool OLED_INVERT_SCREEN = false;
+bool OLED_ROTATE_SCREEN_180 = false;
+int SCREEN_WIDTH = 128; // OLED display width, in pixels
+int SCREEN_HEIGHT = 64; // OLED display height, in pixels
+int OLED_RESET = -1; // Reset pin number (or -1 if sharing Arduino reset pin)
 /*
  * *************************************************************************************
  * ******************************* END CONFIGURABLES ***********************************
@@ -51,6 +65,9 @@ unsigned long previousEpoch;
 unsigned long startTimeEpoch;
 bool reset = false;
 bool routineRunning = false;
+bool configPortalRunning = false;
+bool screenSleep = false;
+bool screenEquipped = OLED_ENABLED;
 struct RUNTIME_VARS
 {
 	String status = "";
@@ -73,6 +90,172 @@ AsyncWebServer server(80);
 HTTPClient http;
 WiFiClient client;
 ESP32Time rtc;
+
+#ifdef OLED_ENABLED
+	Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
+#endif
+
+
+void drawCentreStringToMemory(const char *buf, int x, int y)
+{
+    int16_t x1, y1;
+    uint16_t w, h;
+    display.getTextBounds(buf, 0, y, &x1, &y1, &w, &h); //calc width of new string
+    display.setCursor(x - (w / 2), y);
+    display.print(buf);
+}
+
+static void drawStaticGUI(bool drawHeaderTitle = false, String title = "Winderoo") {
+	if (OLED_ENABLED)
+	{
+		display.clearDisplay();
+
+		display.setTextSize(1);
+		display.setTextColor(WHITE);
+
+		if (drawHeaderTitle)
+		{
+			drawCentreStringToMemory(title.c_str(), 64, 3);
+		}
+		// top horizontal line
+		display.drawLine(0, 14, display.width(), 14, WHITE);
+		// vertical line
+		display.drawLine(64, 14, 64, 50, WHITE);
+		// bottom horizontal line
+		display.drawLine(0, 50, display.width(), 50, WHITE);
+
+		display.setCursor(4, 18);
+		display.println(F("TPD"));
+
+		display.setCursor(71, 18);
+		display.println(F("DIR"));
+
+		display.display();
+	}
+}
+
+static void drawTimerStatus() {
+	if (OLED_ENABLED)
+	{
+		if (userDefinedSettings.timerEnabled == "1")
+		{
+			// right aligned timer
+			display.fillRect(60, 51, 64, 13, BLACK);
+			display.setCursor(60, 56);
+			display.print("TIMER " + userDefinedSettings.hour + ":" + userDefinedSettings.minutes);
+		}
+		else
+		{
+			display.fillRect(60, 51, 68, 13, BLACK);
+		}
+	}
+}
+
+static void drawWifiStatus() {
+	if (OLED_ENABLED)
+	{
+		// left aligned cell reception icon
+		display.drawTriangle(4, 54, 10, 54, 7, 58, WHITE);
+		display.drawLine(7, 58, 7, 62, WHITE);
+
+		// Clear reception bars
+		display.fillRect(12, 54, 58, 10, BLACK);
+
+		if (WiFi.RSSI() > -50)
+		{
+			// Excelent reception - 4 bars
+			display.fillRect(14, 55+8, 2, 2, WHITE);
+			display.fillRect(18, 55+6, 2, 4, WHITE);
+			display.fillRect(22, 55+4, 2, 6, WHITE);
+			display.fillRect(26, 55+2, 2, 8, WHITE);
+		}
+		else if (WiFi.RSSI() > -60)
+		{
+			// Good reception - 3 bars
+			display.fillRect(14, 55+8, 2, 2, WHITE);
+			display.fillRect(18, 55+6, 2, 4, WHITE);
+			display.fillRect(22, 55+4, 2, 6, WHITE);
+		}
+		else if (WiFi.RSSI() > -70)
+		{
+			// Fair reception - 2 bars
+			display.fillRect(14, 55+8, 2, 2, WHITE);
+			display.fillRect(18, 55+6, 2, 4, WHITE);
+		}
+		else
+		{
+			// Terrible reception - 1 bar
+			display.fillRect(14, 55+8, 2, 2, WHITE);
+		}
+	}
+}
+
+static void drawDynamicGUI() {
+	if (OLED_ENABLED && !screenSleep)
+	{
+
+		display.fillRect(8, 25, 54, 25, BLACK);
+		display.setCursor(8, 30);
+		display.setTextSize(2);
+		display.print(userDefinedSettings.rotationsPerDay);
+
+		display.fillRect(66, 25, 62, 25, BLACK);
+		display.setCursor(74, 30);
+		display.print(userDefinedSettings.direction);
+		display.setTextSize(1);
+
+		drawWifiStatus();
+		drawTimerStatus();
+
+		display.display();
+	}
+}
+
+static void drawNotification(String message) {
+	if (OLED_ENABLED && !screenSleep)
+	{
+		display.setCursor(0, 0);
+		display.drawRect(0, 0, 128, 14, WHITE);
+		display.fillRect(0, 0, 128, 14, WHITE);
+		display.setTextColor(BLACK);
+		drawCentreStringToMemory(message.c_str(), 64, 3);
+		display.display();
+		display.setTextColor(WHITE);
+		delay(200);
+		display.setCursor(0, 0);
+		display.drawRect(0, 0, 128, 14, BLACK);
+		display.fillRect(0, 0, 128, 14, BLACK);
+		display.setTextColor(WHITE);
+		drawCentreStringToMemory(message.c_str(), 64, 3);
+
+		// Underline notification, which is shared with Static GUI
+		display.drawLine(0, 14, display.width(), 14, WHITE);
+		display.display();
+	}
+}
+
+template <int N> static void drawMultiLineText(const String (&message)[N]) {
+	if (OLED_ENABLED && !screenSleep)
+	{
+		int yInitial = 20;
+		int yOffset = 16;
+
+		display.fillRect(0, 18, 128, 64, BLACK);
+
+		for (int i = 0; i < N; i++)
+		{
+			if (i == 0)
+			{
+				drawCentreStringToMemory(message[i].c_str(), 64, yInitial);
+			}
+			else
+			{
+				drawCentreStringToMemory(message[i].c_str(), 64, yInitial + (yOffset * i));
+			}
+		}
+	display.display();
+	}
+}
 
 /**
  * Calclates the duration and estimated finish time of the winding routine
@@ -118,6 +301,8 @@ void beginWindingRoutine()
 
 	Serial.print("[STATUS] - Estimated finish time: ");
 	Serial.println(finishTime);
+
+	drawNotification("Winding");
 }
 
 /**
@@ -138,14 +323,17 @@ void getTime()
 		int day = date.substring(8, 10).toInt();
 		int month = date.substring(5, 7).toInt();
 		int year = date.substring(0, 4).toInt();
-		
+
 		String time = datetime.substring(datetime.indexOf("T") + 1);
 		int seconds = time.substring(6, 8).toInt();
 		int hours = time.substring(0, 2).toInt();
 		int minutes = time.substring(3, 5).toInt();
 
 		rtc.setTime(seconds, minutes, hours, day, month, year);
-		Serial.println("[STATUS] - Time: " + datetime);
+	}
+	else
+	{
+		Serial.println("[ERROR] - Failed to get time from Worldtime API");
 	}
 
 	http.end();
@@ -260,6 +448,8 @@ void startWebserver()
 		json["winderEnabled"] = userDefinedSettings.winderEnabled;
 		json["timerEnabled"] = userDefinedSettings.timerEnabled;
 		json["db"] = WiFi.RSSI();
+		json["screenSleep"] = screenSleep;
+		json["screenEquipped"] = screenEquipped;
 		serializeJson(json, *response);
 
 		request->send(response);
@@ -320,6 +510,11 @@ void startWebserver()
 				userDefinedSettings.status = "Stopped";
 				routineRunning = false;
 				motor.stop();
+				display.clearDisplay();
+				display.display();
+			} else {
+				drawStaticGUI(true);
+				drawDynamicGUI();
 			}
 
 			request->send(204);
@@ -329,8 +524,8 @@ void startWebserver()
 		{
 			JsonDocument json;
 			DeserializationError error = deserializeJson(json, data);
-			int arraySize = 6;
-			String requiredKeys[arraySize] = {"rotationDirection", "tpd", "action", "hour", "minutes", "timerEnabled"};
+			int arraySize = 7;
+			String requiredKeys[arraySize] = {"rotationDirection", "tpd", "action", "hour", "minutes", "timerEnabled", "screenSleep"};
 
 			if (error)
 			{
@@ -357,6 +552,7 @@ void startWebserver()
 			String requestRotationDirection = json["rotationDirection"].as<String>();
 			String requestTPD = json["tpd"].as<String>();
 			String requestAction = json["action"].as<String>();
+			screenSleep = json["screenSleep"].as<bool>();
 
 			// Update motor direction
 			if (strcmp(requestRotationDirection.c_str(), userDefinedSettings.direction.c_str()) != 0)
@@ -405,6 +601,23 @@ void startWebserver()
 				motor.stop();
 				routineRunning = false;
 				userDefinedSettings.status = "Stopped";
+				drawNotification("Stopped");
+			}
+
+			// Update screen sleep state
+			if (screenSleep && OLED_ENABLED)
+			{
+				display.clearDisplay();
+				display.display();
+			}
+			else
+			{
+				if (OLED_ENABLED)
+				{
+					// Draw gui with updated values from _this_ update request
+					drawStaticGUI(true, userDefinedSettings.status);
+					drawDynamicGUI();
+				}
 			}
 
 			// Write new parameters to file
@@ -469,18 +682,18 @@ void triggerLEDCondition(int blinkState)
 
 	switch (blinkState)
 	{
-	case 1:
-		LED.slowBlink();
-		break;
-	case 2:
-		LED.fastBlink();
-		break;
-	case 3:
-		LED.pwm();
-		break;
-	default:
-		Serial.println("[WARN] - blinkState not recognized");
-		break;
+		case 1:
+			LED.slowBlink();
+			break;
+		case 2:
+			LED.fastBlink();
+			break;
+		case 3:
+			LED.pwm();
+			break;
+		default:
+			Serial.println("[WARN] - blinkState not recognized");
+			break;
 	}
 }
 
@@ -502,10 +715,10 @@ void awaitWhileListening(int pauseInSeconds)
 	{
 		if (userDefinedSettings.winderEnabled == "0")
 		{
-			Serial.println("[STATUS] - Switched off!");
-			userDefinedSettings.status = "Stopped";
-			routineRunning = false;
 			motor.stop();
+			routineRunning = false;
+			userDefinedSettings.status = "Stopped";
+			Serial.println("[STATUS] - Switched off!");
 		}
 	}
 	else
@@ -519,12 +732,35 @@ void awaitWhileListening(int pauseInSeconds)
 /**
  * Callback triggered from WifiManager when successfully connected to new WiFi network
  */
+void saveParamsCallback()
+{
+	if (OLED_ENABLED)
+	{
+		display.clearDisplay();
+		display.display();
+		drawNotification("Connecting...");
+	}
+}
+
+/**
+ * Callback triggered from WifiManager when successfully connected to new WiFi network
+ */
 void saveWifiCallback()
 {
+	if (OLED_ENABLED)
+	{
+		display.clearDisplay();
+		display.display();
+		drawNotification("Connected to WiFi");
+		String rebootingMessage[2] = {"Device is", "rebooting..."};
+		drawMultiLineText(rebootingMessage);
+	}
+
 	// slow blink to confirm connection success
 	triggerLEDCondition(1);
+
 	ESP.restart();
-	delay(2000);
+	delay(1500);
 }
 
 void setup()
@@ -546,8 +782,29 @@ void setup()
 	wm.setConfigPortalBlocking(false);
 	wm.setHostname("Winderoo");
 	wm.setSaveConfigCallback(saveWifiCallback);
+	wm.setSaveParamsCallback(saveParamsCallback);
 
 	userDefinedSettings.winderEnabled = true;
+
+	if(OLED_ENABLED)
+	{
+		display.begin(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
+		if (!display.begin(SSD1306_SWITCHCAPVCC, 0x3C))
+		{
+			Serial.println(F("SSD1306 allocation failed"));
+			for(;;); // Don't proceed, loop forever
+		}
+		drawStaticGUI();
+
+		int rotate = OLED_ROTATE_SCREEN_180 ? 2 : 4;
+		display.clearDisplay();
+		display.invertDisplay(OLED_INVERT_SCREEN);
+		display.setRotation(rotate);
+		drawNotification("Winderoo");
+	}
+
+	String savedNetworkMessage[2] = {"Connecting to", "saved network..."};
+	drawMultiLineText(savedNetworkMessage);
 
 	// Connect using saved credentials, if they exist
 	// If connection fails, start setup Access Point
@@ -562,9 +819,16 @@ void setup()
 		if (!MDNS.begin("winderoo"))
 		{
 			Serial.println("[STATUS] - Failed to start mDNS");
+			drawNotification("Failed to start mDNS");
 		}
 		MDNS.addService("_winderoo", "_tcp", 80);
 		Serial.println("[STATUS] - mDNS started");
+		if (OLED_ENABLED)
+		{
+			display.clearDisplay();
+			drawStaticGUI();
+			drawNotification("Connected to WiFi");
+		}
 
 		getTime();
 		startWebserver();
@@ -573,19 +837,40 @@ void setup()
 		{
 			beginWindingRoutine();
 		}
+		else
+		{
+			drawNotification("Winderoo");
+		}
 	}
 	else
 	{
+		configPortalRunning = true;
 		Serial.println("[STATUS] - WiFi Config Portal running");
 		ledcWrite(LED.getChannel(), 255);
+
+		String setupNetworkMessage[3] = {"Connect to", "\"Winderoo Setup\"", "wifi to begin"};
+		drawMultiLineText(setupNetworkMessage);
 	};
 }
 
 void loop()
 {
+	if (configPortalRunning)
+	{
+		wm.process();
+		return;
+	}
 
 	if (reset)
 	{
+		if (OLED_ENABLED)
+		{
+			display.clearDisplay();
+			drawNotification("Resetting");
+
+			String rebootingMessage[2] = {"Device is", "rebooting..."};
+			drawMultiLineText(rebootingMessage);
+		}
 		// fast blink
 		triggerLEDCondition(2);
 
@@ -611,6 +896,7 @@ void loop()
 			userDefinedSettings.winderEnabled == "1")
 		{
 			beginWindingRoutine();
+			drawNotification("Winding Started");
 		}
 	}
 
@@ -656,6 +942,10 @@ void loop()
 			userDefinedSettings.status = "Stopped";
 			routineRunning = false;
 			motor.stop();
+			if (OLED_ENABLED && !screenSleep)
+			{
+				drawNotification("Winding Complete");
+			}
 
 			bool writeSuccess = writeConfigVarsToFile(settingsFile, userDefinedSettings);
 			if ( !writeSuccess )
@@ -671,6 +961,10 @@ void loop()
 	if (userDefinedSettings.winderEnabled == "0")
 	{
 		triggerLEDCondition(3);
+	}
+	else
+	{
+		drawDynamicGUI();
 	}
 
 	wm.process();

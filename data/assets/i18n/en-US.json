@@ -34,6 +34,7 @@
         "COUNTER_CLOCKWISE": "Counter Clockwise",
         "BOTH": "Both",
         "PLEASE_WAIT": "Getting cycle progress, please wait",
-        "PROGRESS": "Cycle Progress"
+        "PROGRESS": "Cycle Progress",
+        "SCREEN": "OLED Screen"
     }
 }

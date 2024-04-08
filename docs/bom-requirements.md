@@ -21,6 +21,15 @@
 | 🔲 | 1               | [ESP32 Dev Kit](https://s.click.aliexpress.com/e/_Derbd5r)                        | Select `Color: ESP32`                                           | $8.00 |
 
 
+### Optional parts
+The following parts list will allow you to add:
+- 1x SSD1306 compatible OLED screen (0.96" size)
+
+
+|     |  Quantity per Order | Link / Part Name                                                             |  Comments                                              |  Cost Incl. Shipping |
+| :-: | :------------: | :-------------------------------------------------------------------------------: | :-------------------------------------------------------------------: |:-----:
+| 🔲  | 1              | [0.96" SSD1306 OLED](https://s.click.aliexpress.com/e/_DFywAW1)                         | Select: whichever colour you'd like! | $2.00 |
+
 ## Next Steps
 > [Proceed to software installation 👉](./install-software.md)
 

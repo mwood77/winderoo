@@ -34,6 +34,7 @@
         "COUNTER_CLOCKWISE": "En sentido anti-horario",
         "BOTH": "Ambos",
         "PLEASE_WAIT": "Obteniendo el progreso del ciclo, espere",
-        "PROGRESS": "Progreso del ciclo"
+        "PROGRESS": "Progreso del ciclo",
+        "SCREEN": "Pantalla OLED"
     }
 }
