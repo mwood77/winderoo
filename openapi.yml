@@ -154,18 +154,20 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Resetting'
-  /winder/discover:
-    get:
+  /winder:
+    put:
       tags:
-        - Network Operations
-      summary: Puts leader winderoo into network discovery mode, to find and add new winderoos to the mesh network
+        - Modify
+      summary: Add a child winderoo node to network
+      requestBody:
+        $ref: '#/components/requestBodies/AddNetworkWinderBody'
       responses:
         '200':
-          description: State toggled succesfully
+          description: mac address saved
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Resetting'
+                $ref: '#/components/schemas/Discovery'
 components:
   requestBodies:
     UpdateBody:
@@ -192,6 +194,15 @@ components:
             $ref: '#/components/schemas/Power'
           example:
             winderEnabled: "1"
+    AddNetworkWinderBody:
+      description: a JSON object containing the mac address of the winder to add
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/AddWinder'
+          example:
+            localNode: "AD-87-00-3C-EB-EC"
     UpdateNetworkWinderBody:
       description: a JSON object containing winderoo information
       required: true
@@ -218,6 +229,15 @@ components:
           examples:
             - 0
             - 1
+    AddWinder:
+      type: object
+      propertries:
+        localNode:
+          type: string
+          description:
+            The mac address of the local node
+          examples:
+            - AD-87-00-3C-EB-EC
     Update:
       type: object
       propertries:
@@ -372,7 +392,7 @@ components:
     Discovery:
       type: object
       properties:
-        status:
+        rootNode:
           type: string
           examples:
-            - Entering discovery mode, waiting for new winderoos to join
+            - AD-87-00-3C-EB-EC

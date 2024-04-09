@@ -5,6 +5,7 @@
 #include <HTTPClient.h>
 #include <ESPmDNS.h>
 #include <ESP32Time.h>
+#include <QuickEspNow.h>
 
 #ifdef OLED_ENABLED
 	#include <SPI.h>
@@ -18,7 +19,6 @@
 
 #include "FS.h"
 #include "ESPAsyncWebServer.h"
-
 /*
  * *************************************************************************************
  * ********************************* CONFIGURABLES *************************************
@@ -68,6 +68,7 @@ bool routineRunning = false;
 bool configPortalRunning = false;
 bool screenSleep = false;
 bool screenEquipped = OLED_ENABLED;
+byte rootMac[6];
 struct RUNTIME_VARS
 {
 	String status = "";
@@ -630,6 +631,42 @@ void startWebserver()
 
 			request->send(204);
 		}
+	
+		if (request->url() == "/api/winder")
+		{
+			Serial.println("[STATUS] - Received add winder command");
+
+			JsonDocument json;
+			DeserializationError error = deserializeJson(json, data);
+			String requiredKeys[1] = {"localNode"};
+
+			if (error)
+			{
+				Serial.println("[ERROR] - Failed to deserialize [winder] request body");
+				request->send(500, "text/plain", "Failed to deserialize request body");
+				return;
+			}
+		
+			String childNode = json["localNode"].as<String>();
+			if (childNode == "")
+			{
+				request->send(400, "text/plain", "Missing required field: 'localNode'");
+			} 
+			else 
+			{
+				Serial.println("[STATUS] - Adding child node: " + childNode);
+
+				// @todo: save child node mac esp_now
+				// rootMac = byte(childNode);
+				
+				AsyncResponseStream *response = request->beginResponseStream("application/json");
+				JsonDocument json;
+				json["rootNode"] = WiFi.macAddress();
+				serializeJson(json, *response);
+				request->send(response);
+			}
+		}
+	
 	});
 
 	server.on("/api/reset", HTTP_GET, [](AsyncWebServerRequest *request)
@@ -763,6 +800,15 @@ void saveWifiCallback()
 	delay(1500);
 }
 
+// @todo - implement mesh data received
+void meshDataReceived (uint8_t* address, uint8_t* data, uint8_t len, signed int rssi, bool broadcast) {
+    Serial.print ("Received: ");
+    Serial.printf ("%.*s\n", len, data);
+    Serial.printf ("RSSI: %d dBm\n", rssi);
+    Serial.printf ("From: " MACSTR "\n", MAC2STR (address));
+    Serial.printf ("%s\n", broadcast ? "Broadcast" : "Unicast");
+}
+
 void setup()
 {
 	WiFi.mode(WIFI_STA);
@@ -815,14 +861,59 @@ void setup()
 
 		// retrieve & read saved settings
 		loadConfigVarsFromFile(settingsFile);
+		
+		String searchingForNodesMessage[3] = {"Looking for", "winderoo nodes on", "your network..."};
+		drawNotification("Searching");
+		drawMultiLineText(searchingForNodesMessage);
 
-		if (!MDNS.begin("winderoo"))
-		{
-			Serial.println("[STATUS] - Failed to start mDNS");
-			drawNotification("Failed to start mDNS");
+		IPAddress winderooIP;
+		byte localMac[6];
+		WiFi.hostByName("winderoo.local", winderooIP);
+
+		if (winderooIP == IPAddress(0, 0, 0, 0)) {
+			Serial.println("[STATUS] - winderoo node has not been found on network");
+			if (!MDNS.begin("winderoo"))
+			{
+				Serial.println("[STATUS] - Failed to start mDNS");
+				drawNotification("Failed to start mDNS");
+			}
+			MDNS.addService("_winderoo", "_tcp", 80);
+			drawNotification("mdns started");
+			Serial.println("[STATUS] - mDNS started");
+		} else {
+			WiFi.macAddress(localMac);
+			Serial.println("[STATUS] - winderoo node found on network at IP: " + winderooIP.toString());
+			char localMacString[18];
+			sprintf(localMacString, "%02x:%02x:%02x:%02x:%02x:%02x", localMac[0], localMac[1], localMac[2], localMac[3], localMac[4], localMac[5]);
+			http.begin(client, "http://winderoo.local/api/winder");
+			http.addHeader("Content-Type", "application/json");
+			
+			JsonDocument jsonPut;
+			jsonPut["localNode"] = localMacString;
+			int httpCode = http.POST("{\"localNode\":\"" + (String)localMacString + "\"}");
+
+			if (httpCode == 200)
+			{
+				JsonDocument json;
+				deserializeJson(json, http.getStream());
+				const char* rootNode = json["rootNode"];
+				Serial.println("[STATUS] - received root node mac: " + (String)rootNode);
+				
+				// @todo: save root node mac esp_now
+				// rootMac = byte(rootNode);
+			}
+			else
+			{
+				Serial.println("[ERROR] - Failed to add local node mac to root node");
+			}
+
+			http.end();
 		}
-		MDNS.addService("_winderoo", "_tcp", 80);
-		Serial.println("[STATUS] - mDNS started");
+
+		// Initialize ESP-NOW
+		quickEspNow.begin();
+		quickEspNow.onDataRcvd(meshDataReceived);
+
 		if (OLED_ENABLED)
 		{
 			display.clearDisplay();
