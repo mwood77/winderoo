@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: Winderoo API
-  version: 2.0.0
+  version: 1.0.0
 servers:
   - url: http://winderoo.local/api/
     description: local development and deployed devices
@@ -10,7 +10,40 @@ tags:
     description: Retrieve the current state of Winderoo
   - name: Modify
     description: Modify the state of Winderoo
+  - name: Network Operations
+    description: Modify the mesh network of Winderoo
 paths:
+  /timer:
+    post:
+      tags:
+        - Modify
+      summary: Change the timer state of Winderoo
+      parameters:
+        - in: query
+          name: timerEnabled
+          schema:
+            type: integer
+          description: Whether Winderoo should enable alarm-start winding; number represents a boolean where 0 == off and 1 == on.
+          example: 1
+      responses:
+        '204':
+          description: Successful opeation
+        '400':
+          description: Missing required field in request body
+          content:
+            text/plain:
+              schema:
+                type: string
+                examples: 
+                  - "Missing required field: 'tpd'"
+        '500':
+          description: Something went wrong when writing to memory or during deserialization
+          content:
+            text/plain:
+              schema:
+                type: string
+                examples:
+                  - Failed to deserialize request body
   /update:
     post:
       tags:
@@ -21,8 +54,56 @@ paths:
       responses:
         '204':
           description: Successful opeation
+        '400':
+          description: Missing required field in request body
+          content:
+            text/plain:
+              schema:
+                type: string
+                examples: 
+                  - "Missing required field: 'tpd'"
         '500':
-          description: Something went wrong when writing to memory
+          description: Something went wrong when writing to memory or during deserialization
+          content:
+            text/plain:
+              schema:
+                type: string
+                examples:
+                  - Failed to deserialize request body
+  /winder/{address}/update:
+    put:
+      tags:
+        - Modify
+      summary: Change the state of a networked Winderoo
+      parameters:
+        - in: path
+          name: address
+          schema:
+            type: string
+          description: The address of the networked Winderoo
+          example: DA-CE-5C-63-BD-D2
+          required: true
+      requestBody:
+        $ref: '#/components/requestBodies/UpdateNetworkWinderBody'
+      responses:
+        '204':
+          description: Successful opeation
+        '400':
+          description: Missing required field in request body
+          content:
+            text/plain:
+              schema:
+                type: string
+                examples: 
+                  - "Missing required field: 'tpd'"
+        '500':
+          description: Something went wrong when writing to memory or during deserialization
+          content:
+            text/plain:
+              schema:
+                type: string
+                examples:
+                  - Failed to deserialize request body
   /status:
     get:
       tags:
@@ -40,14 +121,44 @@ paths:
       tags:
         - Modify
       summary: Toggle whether Winderoo is on or off (hard off state)
+      requestBody:
+        $ref: '#/components/requestBodies/PowerBody'
       responses:
         '204':
           description: State toggled succesfully
+        '400':
+          description: Missing required field in request body
+          content:
+            text/plain:
+              schema:
+                type: string
+                examples: 
+                  - "Missing required field: 'winderEnabled'"
+        '500':
+          description: Something went wrong when writing to memory or during deserialization
+          content:
+            text/plain:
+              schema:
+                type: string
+                examples: 
+                  - Failed to deserialize request body
   /reset:
     get:
       tags:
         - Modify
       summary: Resets Winderoo's network settings; re-initializes winderoo with setup access point
+      responses:
+        '200':
+          description: State toggled succesfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Resetting'
+  /winder/discover:
+    get:
+      tags:
+        - Network Operations
+      summary: Puts leader winderoo into network discovery mode, to find and add new winderoos to the mesh network
       responses:
         '200':
           description: State toggled succesfully
@@ -71,7 +182,42 @@ components:
             timerEnabled: "0"
             action: "START"
             rotationDirection: "BOTH"
+            screenSleep: false
+    PowerBody:
+      description: a JSON object containing winderoo power information
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Power'
+          example:
+            winderEnabled: "1"
+    UpdateNetworkWinderBody:
+      description: a JSON object containing winderoo information
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Update'
+          example:
+            tpd: "600"
+            hour: "10"
+            minutes: "10"
+            timerEnabled: "0"
+            action: "START"
+            rotationDirection: "BOTH"
+            screenSleep: true
   schemas:
+    Power:
+      type: object
+      propertries:
+        winderEnabled:
+          type: string
+          description:
+            Whether Winderoo should enable alarm-start winding; number represents a boolean where 0 == off and 1 == on.
+          examples:
+            - 0
+            - 1
     Update:
       type: object
       propertries:
@@ -161,6 +307,14 @@ components:
           type: number
           examples:
             - -67
+        screenSleep:
+          type: boolean
+          examples:
+            - false
+        screenEquipped:
+          type: boolean
+          examples:
+            - false
         networkedUnits:
           type: array
           items:
@@ -168,10 +322,10 @@ components:
     NetworkWinder:
       type: object
       properties:
-        id:
+        address:
           type: string
           examples:
-            - 35c967d3-60a2-46b0-8674-2fdf7b675151
+            - DA-CE-5C-63-BD-D2
         status:
           type: string
           examples: 
@@ -184,10 +338,30 @@ components:
           type: string
           examples:
             - 300
-        meshStrength:
+        hour:
+          type: string
+          examples:
+            - 12
+        minutes:
+          type: string
+          examples:
+            - 50
+        timerEnabled:
+          type: string
+          examples:
+            - 1
+        screenSleep:
+          type: boolean
+          examples:
+            - false
+        screenEquipped:
+          type: boolean
+          examples:
+            - true
+        db:
           type: number
           examples:
-            - -67
+            - -80
     Resetting:
       type: object
       properties:
@@ -195,3 +369,10 @@ components:
           type: string
           examples:
             - Resetting
+    Discovery:
+      type: object
+      properties:
+        status:
+          type: string
+          examples:
+            - Entering discovery mode, waiting for new winderoos to join
