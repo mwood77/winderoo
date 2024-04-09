@@ -28,7 +28,7 @@ void LedControl::slowBlink()
     // Slow blink to confirm success & restart
     Serial.println("[STATUS] - slow blink");
 
-    for (int dutyCycle = 0; dutyCycle <= 4; dutyCycle++)
+    for (int dutyCycle = 0; dutyCycle <= 3; dutyCycle++)
     {
         for (int dutyCycle = 0; dutyCycle <= 255; dutyCycle++)
         {

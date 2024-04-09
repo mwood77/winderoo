@@ -1,0 +1,40 @@
+{
+    "HEADER": {
+        "RESET": "Reiniciar",
+        "ON": "ligar",
+        "OFF": "desligar",
+        "DIALOG": {
+            "TITLE": "A reinicialização leva 20 segundos",
+            "SUBTITLE": "Esta tela não fechará durante o processo de redefinição",
+            "CANCEL": "Cancelar",
+            "POINT_1": "A reinicialização estará concluída quando o segundo LED parar de piscar rapidamente e depois ficar sólido.",
+            "POINT_2": "Conecte seu dispositivo móvel à nova rede WiFi chamada",
+            "POINT_3": "Adicione Windaroo a uma rede WiFi existente. Se o LED começar a piscar lentamente, o Windaroo ingressou com sucesso nessa rede.",
+            "POINT_4": "Aguarde até que seu dispositivo se reconecte à rede WiFi existente.",
+            "NOW_AVAILABLE": "Winderoo já está disponível em:",
+            "CONFIRM_RESET": "Confirmar redefinição"
+        }
+    },
+    "SETTINGS": {
+        "STATUS": "Status",
+        "STOPPED": "Parar",
+        "WINDING": "Enrolamento",
+        "ESTIMATED_DURATION": "Duração estimada do ciclo",
+        "DIRECTION": "Direção",
+        "ROTATIONS_PER_DAY": "Rotações por dia",
+        "FIND_WINDING_PARAMETERS": "Encontre os parâmetros de corda do seu relógio",
+        "CYCLE_START": "Hora de início do ciclo",
+        "ENABLED": "Permitir",
+        "DISABLED": "Incapacitar",
+        "HOURS": "Hora",
+        "MINUTES": "Minutos",
+        "SAVE": "Salvar configurações",
+        "SAVE_IN_PROGRESS": "Carregamento em andamento",
+        "CLOCKWISE": "Sentido horário",
+        "COUNTER_CLOCKWISE": "Sentido anti-horário",
+        "BOTH": "Ambos",
+        "PLEASE_WAIT": "Obtendo o progresso do ciclo, aguarde",
+        "PROGRESS": "Progresso do Ciclo",
+        "SCREEN": "Ecrã OLED"
+    }
+}

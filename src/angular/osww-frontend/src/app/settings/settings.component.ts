@@ -52,7 +52,7 @@ export class SettingsComponent implements OnInit, AfterViewChecked {
   ];
 
   wifiSignalIcon = ''
-  
+
   upload = {
     activityState: '',
     statusMessage: '',
@@ -64,7 +64,8 @@ export class SettingsComponent implements OnInit, AfterViewChecked {
     durationInSecondsToCompleteOneRevolution: 0,
     startTimeEpoch: 0,
     estimatedRoutineFinishEpoch: 0,
-    isTimerEnabledNum: 0
+    isTimerEnabledNum: 0,
+    screenSleep: false
   }
 
   selectedHour: any;
@@ -76,6 +77,7 @@ export class SettingsComponent implements OnInit, AfterViewChecked {
   progressPercentageComplete: number =  0;
   isWinderEnabled: number;
   isTimerEnabled: boolean;
+  screenEquipped: boolean = false;
 
   watchWindingParametersURL = 'https://watch-winder.store/watch-winding-table/';
 
@@ -118,6 +120,8 @@ export class SettingsComponent implements OnInit, AfterViewChecked {
       this.upload.startTimeEpoch = data.startTimeEpoch;
       this.upload.estimatedRoutineFinishEpoch = data.estimatedRoutineFinishEpoch;
       this.upload.isTimerEnabledNum = data.timerEnabled;
+      this.upload.screenSleep = data.screenSleep;
+      this.screenEquipped = data.screenEquipped;
 
       this.apiService.isWinderEnabled$.next(data.winderEnabled);
 
@@ -211,6 +215,7 @@ export class SettingsComponent implements OnInit, AfterViewChecked {
       hour: this.selectedHour == null ? this.upload.hour : this.selectedHour,
       minutes: this.selectedMinutes == null ? this.upload.minutes : this.selectedMinutes,
       timerEnabled: this.upload.isTimerEnabledNum,
+      screenSleep: this.upload.screenSleep,
     }
 
     this.apiService.updateState(body).subscribe((response) => {
@@ -231,8 +236,8 @@ export class SettingsComponent implements OnInit, AfterViewChecked {
     this.uploadSettings('STOP');
   }
 
-  mapTimerEnabledState($event: number): void {
-    if ($event == 1) {
+  mapTimerEnabledState(enabledState: number): void {
+    if (enabledState == 1) {
       this.isTimerEnabled = true;
     } else {
       this.isTimerEnabled = false;
@@ -261,22 +266,40 @@ export class SettingsComponent implements OnInit, AfterViewChecked {
       const difference = (currentTimeEpoch - startTimeEpoch) / (estimatedRoutineFinishEpoch - startTimeEpoch);
       const percentage = difference * 100;
 
-      // When 'Start" button pressed
+      // When "Start" button pressed
       if (percentage <= 0.05) {
         this.progressMode = 'indeterminate';
-        setTimeout(() => this.getData(), 5000);
+        setTimeout(() => this.getData(), 2500);
       }
 
-      this.progressPercentageComplete = percentage;
+      // Add 2 percent to make the progress bar look more full at lower percentages
+      if (percentage < 10)  {
+        this.progressPercentageComplete = percentage + 2;
+      } else {
+        this.progressPercentageComplete = percentage;
+      }
     }
   }
 
-  updateTimerEnabledState($state: any) {
-    this.upload.isTimerEnabledNum = $state;
-    this.apiService.updateTimerState($state).subscribe(
-      (data) => {
-        this.mapTimerEnabledState($state)
+  updateTimerEnabledState($state: boolean) {
+    let timerStateToNum;
+    if ($state) {
+      timerStateToNum = 1;
+    } else {
+      timerStateToNum = 0;
+    }
+    this.upload.isTimerEnabledNum = timerStateToNum;
+    this.apiService.updateTimerState(this.upload.isTimerEnabledNum).subscribe(
+      (response) => {
+        if (response.status == 204) {
+          this.mapTimerEnabledState(this.upload.isTimerEnabledNum)
+        }
       });
+  };
+
+  updateScreenSleepState($state: boolean) {
+    this.upload.screenSleep = $state;
+    this.uploadSettings();
   };
 
 }

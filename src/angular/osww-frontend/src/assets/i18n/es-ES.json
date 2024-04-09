@@ -6,7 +6,7 @@
         "DIALOG": {
             "TITLE": "El reinicio tarda 20 segundos",
             "SUBTITLE": "Esta pantalla no se cerrará durante el proceso de reinicio.",
-            "CANCEL": "cancelar",
+            "CANCEL": "Cancelar",
             "POINT_1": "El reinicio se completa cuando el segundo LED deja de parpadear rápidamente y luego se vuelve fijo.",
             "POINT_2": "Conecta tu dispositivo móvil a la nueva red WiFi llamada",
             "POINT_3": "Agregue Winderoo a una red WiFi existente. Si el LED comienza a parpadear lentamente, Winderoo se ha unido exitosamente a esa red.",
@@ -34,6 +34,7 @@
         "COUNTER_CLOCKWISE": "En sentido anti-horario",
         "BOTH": "Ambos",
         "PLEASE_WAIT": "Obteniendo el progreso del ciclo, espere",
-        "PROGRESS": "Progreso del ciclo"
+        "PROGRESS": "Progreso del ciclo",
+        "SCREEN": "Pantalla OLED"
     }
 }

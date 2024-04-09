@@ -6,7 +6,7 @@
         "DIALOG": {
             "TITLE": "Das Zurücksetzen dauert 20 Sekunden",
             "SUBTITLE": "Dieser Bildschirm wird während des Reset-Vorgangs nicht geschlossen",
-            "CANCEL": "abbrechen",
+            "CANCEL": "Abbrechen",
             "POINT_1": "Das Zurücksetzen ist abgeschlossen, wenn die zweite LED nicht mehr schnell blinkt, sondern dauerhaft leuchtet.",
             "POINT_2": "Verbinde dein Mobilgerät mit dem neuen WLAN namens",
             "POINT_3": "Füge Winderoo zu einem vorhandenen WLAN hinzu. Wenn die LED langsam zu blinken beginnt, hat sich Winderoo erfolgreich mit diesem Netzwerk verbunden.",
@@ -34,6 +34,7 @@
         "COUNTER_CLOCKWISE": "Gegen den Uhrzeigersinn",
         "BOTH": "Beide Richtungen",
         "PLEASE_WAIT": "Zyklusfortschritt wird angezeigt, bitte warten",
-        "PROGRESS": "Zyklusfortschritt"
+        "PROGRESS": "Zyklusfortschritt",
+        "SCREEN": "OLED Bildschirm"
     }
 }
