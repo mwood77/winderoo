@@ -6,6 +6,7 @@
 #include <ESPmDNS.h>
 #include <ESP32Time.h>
 #include <QuickEspNow.h>
+#include "soc/rtc_wdt.h"
 
 #ifdef OLED_ENABLED
 	#include <SPI.h>
@@ -69,6 +70,9 @@ bool configPortalRunning = false;
 bool screenSleep = false;
 bool screenEquipped = OLED_ENABLED;
 byte rootMac[6];
+bool meshEnabled = false;
+static String knownMacs[6] = {"", "", "", "", "", ""};
+bool meshMessageReady = false;
 struct RUNTIME_VARS
 {
 	String status = "";
@@ -79,11 +83,25 @@ struct RUNTIME_VARS
 	String winderEnabled = "1";
 	String timerEnabled = "0";
 };
+struct MESH_MESSAGE
+{
+	String destinationMacAddress = "";
+	String rootMessage = "";
+	bool forRoot = false;
+	String status = "";
+	String rotationsPerDay = "";
+	String direction = "";
+	String hour = "00";
+	String minutes = "00";
+	String screenEnabled = "1";
+	String timerEnabled = "0";
+};
 
 /*
  * DO NOT CHANGE THESE VARIABLES!
  */
 RUNTIME_VARS userDefinedSettings;
+MESH_MESSAGE meshMessage;
 LedControl LED(ledPin);
 MotorControl motor(directionalPinA, directionalPinB);
 WiFiManager wm;
@@ -152,6 +170,33 @@ static void drawTimerStatus() {
 	}
 }
 
+static void drawMeshStatus() {
+	if (OLED_ENABLED)
+	{
+		if (meshEnabled)
+		{
+
+			int count = 0;
+			for ( String item : knownMacs )
+			{
+			if ( item != "" ) // This is a filter
+				++count;
+			}
+
+			display.fillRect(30, 51, 12, 13, BLACK);
+			display.drawCircle(38, 56, 1, WHITE);
+			display.drawCircle(34, 59, 1, WHITE);
+			display.drawCircle(38, 62, 1, WHITE);
+			display.setCursor(43, 56);
+			display.print(count);
+		}
+		else
+		{
+			display.fillRect(30, 51, 12, 13, BLACK);
+		}
+	}
+}
+
 static void drawWifiStatus() {
 	if (OLED_ENABLED)
 	{
@@ -207,6 +252,7 @@ static void drawDynamicGUI() {
 
 		drawWifiStatus();
 		drawTimerStatus();
+		drawMeshStatus();
 
 		display.display();
 	}
@@ -425,6 +471,36 @@ void notFound(AsyncWebServerRequest *request)
 	{
 		request->send(404, "text/plain", "Winderoo\n\n404 - Resource Not found");
 	}
+}
+/**
+ * Handle mesh messages
+ */
+// @todo - implement mesh data received
+void meshDataReceived(uint8_t* address, uint8_t* data, uint8_t len, signed int rssi, bool broadcast) {
+ 	Serial.printf("Received message: %.*s\n", len, data);
+}
+
+void meshBroadcastData(String message) {
+	Serial.println("[STATUS] - Broadcasting message: " + message);
+	quickEspNow.send(ESPNOW_BROADCAST_ADDRESS, (uint8_t*)message.c_str(), message.length());
+}
+
+void meshRootMessage(String message) {
+	Serial.println("[STATUS] - Sending message to root node");
+	quickEspNow.send(rootMac, (uint8_t*)&message, sizeof(message));
+}
+
+void meshResetMessageBody() {
+	meshMessage.destinationMacAddress = "";
+	meshMessage.rootMessage = "";
+	meshMessage.forRoot = false;
+	meshMessage.status = "";
+	meshMessage.rotationsPerDay = "";
+	meshMessage.direction = "";
+	meshMessage.hour = "00";
+	meshMessage.minutes = "00";
+	meshMessage.screenEnabled = "1";
+	meshMessage.timerEnabled = "0";
 }
 
 /**
@@ -654,11 +730,30 @@ void startWebserver()
 			} 
 			else 
 			{
-				Serial.println("[STATUS] - Adding child node: " + childNode);
-
 				// @todo: save child node mac esp_now
-				// rootMac = byte(childNode);
+				Serial.println("[STATUS] - Adding child node: " + childNode);
+				meshEnabled = true;
 				
+				Serial.println("[STATUS] - child node added to mesh");
+				Serial.print("[STATUS] - known macs: ");
+				for (int i = 0; i < sizeof(knownMacs); i++)
+				{
+					if (knownMacs[i] == childNode)
+					{
+						Serial.println(knownMacs[i] + ",");
+						break;
+					}
+					else if (knownMacs[i] == "")
+					{
+						knownMacs[i] = childNode;
+						Serial.println(knownMacs[i] + ",");
+						break;
+					}
+					else {
+						Serial.println(knownMacs[i] + ",");
+					}
+				}
+
 				AsyncResponseStream *response = request->beginResponseStream("application/json");
 				JsonDocument json;
 				json["rootNode"] = WiFi.macAddress();
@@ -800,14 +895,6 @@ void saveWifiCallback()
 	delay(1500);
 }
 
-// @todo - implement mesh data received
-void meshDataReceived (uint8_t* address, uint8_t* data, uint8_t len, signed int rssi, bool broadcast) {
-    Serial.print ("Received: ");
-    Serial.printf ("%.*s\n", len, data);
-    Serial.printf ("RSSI: %d dBm\n", rssi);
-    Serial.printf ("From: " MACSTR "\n", MAC2STR (address));
-    Serial.printf ("%s\n", broadcast ? "Broadcast" : "Unicast");
-}
 
 void setup()
 {
@@ -900,7 +987,16 @@ void setup()
 				Serial.println("[STATUS] - received root node mac: " + (String)rootNode);
 				
 				// @todo: save root node mac esp_now
-				// rootMac = byte(rootNode);
+				for (int i = 0; i < 6; i++)
+				{
+					rootMac[i] = (byte)rootNode[i];
+				}
+				Serial.println("[STATUS] - root node mac saved");
+
+				// set mesh message body and set Message Readyt flag true
+				meshMessage.rootMessage = "loud and clear!";
+				meshMessage.forRoot = true;
+				meshMessageReady = true;
 			}
 			else
 			{
@@ -909,10 +1005,6 @@ void setup()
 
 			http.end();
 		}
-
-		// Initialize ESP-NOW
-		quickEspNow.begin();
-		quickEspNow.onDataRcvd(meshDataReceived);
 
 		if (OLED_ENABLED)
 		{
@@ -942,6 +1034,11 @@ void setup()
 		String setupNetworkMessage[3] = {"Connect to", "\"Winderoo Setup\"", "wifi to begin"};
 		drawMultiLineText(setupNetworkMessage);
 	};
+	
+	rtc_wdt_protect_off();
+	// Initialize ESP-NOW
+	quickEspNow.onDataRcvd(meshDataReceived);
+	quickEspNow.begin();
 }
 
 void loop()
@@ -1058,5 +1155,36 @@ void loop()
 		drawDynamicGUI();
 	}
 
+	if (meshMessageReady)
+	{
+		JsonDocument doc;
+		doc["destinationMacAddress"] = meshMessage.destinationMacAddress;
+		doc["rootMessage"] = meshMessage.rootMessage;
+		doc["forRoot"] = meshMessage.forRoot;
+		doc["status"] = meshMessage.status;
+		doc["rotationsPerDay"] = meshMessage.rotationsPerDay;
+		doc["direction"] = meshMessage.direction;
+		doc["hour"] = meshMessage.hour;
+		doc["minutes"] = meshMessage.minutes;
+		doc["screenEnabled"] = meshMessage.screenEnabled;
+		doc["timerEnabled"] = meshMessage.timerEnabled;
+		doc.shrinkToFit();
+		
+		String output;
+		serializeJson(doc, output);
+		
+		if (meshMessage.forRoot)
+		{
+			meshRootMessage(output);
+		}
+		else
+		{
+			meshBroadcastData(output);
+		}
+		
+		meshResetMessageBody();
+		meshMessageReady = false;
+	}
+	
 	wm.process();
 }
