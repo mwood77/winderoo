@@ -69,7 +69,7 @@ bool routineRunning = false;
 bool configPortalRunning = false;
 bool screenSleep = false;
 bool screenEquipped = OLED_ENABLED;
-byte rootMac[6];
+String rootMac;
 bool meshEnabled = false;
 static String knownMacs[6] = {"", "", "", "", "", ""};
 bool meshMessageReady = false;
@@ -93,7 +93,7 @@ struct MESH_MESSAGE
 	String direction = "";
 	String hour = "00";
 	String minutes = "00";
-	String screenEnabled = "1";
+	String screenSleep = "1";
 	String timerEnabled = "0";
 };
 
@@ -475,20 +475,6 @@ void notFound(AsyncWebServerRequest *request)
 /**
  * Handle mesh messages
  */
-// @todo - implement mesh data received
-void meshDataReceived(uint8_t* address, uint8_t* data, uint8_t len, signed int rssi, bool broadcast) {
- 	Serial.printf("Received message: %.*s\n", len, data);
-}
-
-void meshBroadcastData(String message) {
-	Serial.println("[STATUS] - Broadcasting message: " + message);
-	quickEspNow.send(ESPNOW_BROADCAST_ADDRESS, (uint8_t*)message.c_str(), message.length());
-}
-
-void meshRootMessage(String message) {
-	Serial.println("[STATUS] - Sending message to root node");
-	quickEspNow.send(rootMac, (uint8_t*)&message, sizeof(message));
-}
 
 void meshResetMessageBody() {
 	meshMessage.destinationMacAddress = "";
@@ -499,8 +485,97 @@ void meshResetMessageBody() {
 	meshMessage.direction = "";
 	meshMessage.hour = "00";
 	meshMessage.minutes = "00";
-	meshMessage.screenEnabled = "1";
+	meshMessage.screenSleep = "1";
 	meshMessage.timerEnabled = "0";
+}
+
+byte* getMacAddress(String macAddress) {
+	byte* nodeMac = new byte[6];
+	String hexByte;
+	int j = 0;
+	for (int i = 0; i < macAddress.length(); i++) {
+		if (macAddress.charAt(i) != ':') {
+			hexByte += macAddress.charAt(i);
+			if (hexByte.length() == 2) {
+				nodeMac[j] = strtol(hexByte.c_str(), NULL, 16);
+				hexByte = "";
+				j++;
+			}
+		}
+	}
+	
+	return nodeMac;
+}
+
+// @todo - implement mesh data received
+void meshDataReceived(uint8_t* address, uint8_t* data, uint8_t len, signed int rssi, bool broadcast) {
+    Serial.print ("Received: ");
+    Serial.printf ("%.*s\n", len, data);
+    Serial.printf ("RSSI: %d dBm\n", rssi);
+    Serial.printf ("From: " MACSTR "\n", MAC2STR (address));
+    Serial.printf ("%s\n", broadcast ? "Broadcast" : "Unicast");
+}
+
+void meshBroadcastMessage(String message) {
+	Serial.println("[STATUS] - Broadcasting message: " + message);
+	quickEspNow.send(ESPNOW_BROADCAST_ADDRESS, (uint8_t*)message.c_str(), message.length());
+	meshResetMessageBody();
+}
+
+void meshMessageRoot(String message) {
+	Serial.println("[STATUS] - Sending message to root node");
+	byte* nodeMac = new byte[6];
+	String hexByte;
+	int j = 0;
+	for (int i = 0; i < rootMac.length(); i++) {
+		if (rootMac.charAt(i) != ':') {
+			hexByte += rootMac.charAt(i);
+			if (hexByte.length() == 2) {
+				nodeMac[j] = strtol(hexByte.c_str(), NULL, 16);
+				hexByte = "";
+				j++;
+			}
+		}
+	}
+
+    if (!quickEspNow.send(nodeMac, (uint8_t*)message.c_str(), message.length())) 
+	{
+        Serial.println(">>>>>>>>>> Root message sent");
+    }
+	else
+	{
+        Serial.println(">>>>>>>>>> Root message not sent");
+    }
+
+	meshResetMessageBody();
+}
+
+void requestNodeStatus(String macAddress, String message) {
+	Serial.println("[STATUS] - Requesting status of node: " + macAddress);
+	byte* nodeMac = new byte[6];
+	String hexByte;
+	int j = 0;
+	for (int i = 0; i < macAddress.length(); i++) {
+		if (macAddress.charAt(i) != ':') {
+			hexByte += macAddress.charAt(i);
+			if (hexByte.length() == 2) {
+				nodeMac[j] = strtol(hexByte.c_str(), NULL, 16);
+				hexByte = "";
+				j++;
+			}
+		}
+	}
+
+	if (!quickEspNow.send(nodeMac, (uint8_t*)message.c_str(), message.length()))
+	{
+        Serial.println(">>>>>>>>>> Message sent");
+    }
+	else
+	{
+        Serial.println(">>>>>>>>>> Message not sent");
+    }
+
+	meshResetMessageBody();
 }
 
 /**
@@ -732,25 +807,18 @@ void startWebserver()
 			{
 				// @todo: save child node mac esp_now
 				Serial.println("[STATUS] - Adding child node: " + childNode);
-				meshEnabled = true;
-				
-				Serial.println("[STATUS] - child node added to mesh");
 				Serial.print("[STATUS] - known macs: ");
 				for (int i = 0; i < sizeof(knownMacs); i++)
 				{
 					if (knownMacs[i] == childNode)
 					{
-						Serial.println(knownMacs[i] + ",");
 						break;
 					}
-					else if (knownMacs[i] == "")
+					
+					if (knownMacs[i] == "")
 					{
 						knownMacs[i] = childNode;
-						Serial.println(knownMacs[i] + ",");
 						break;
-					}
-					else {
-						Serial.println(knownMacs[i] + ",");
 					}
 				}
 
@@ -759,6 +827,14 @@ void startWebserver()
 				json["rootNode"] = WiFi.macAddress();
 				serializeJson(json, *response);
 				request->send(response);
+
+				// set mesh message body and set meshMessageReady flag for loop execution
+				meshMessage.forRoot = false;
+				meshMessage.rootMessage = "tx_status";
+				meshMessage.destinationMacAddress = childNode;
+
+				meshEnabled = true;
+				meshMessageReady = true;
 			}
 		}
 	
@@ -967,11 +1043,21 @@ void setup()
 			MDNS.addService("_winderoo", "_tcp", 80);
 			drawNotification("mdns started");
 			Serial.println("[STATUS] - mDNS started");
+
+			// Initialize ESP-NOW
+			quickEspNow.begin();
+			quickEspNow.onDataRcvd(meshDataReceived);
+
 		} else {
 			WiFi.macAddress(localMac);
 			Serial.println("[STATUS] - winderoo node found on network at IP: " + winderooIP.toString());
 			char localMacString[18];
 			sprintf(localMacString, "%02x:%02x:%02x:%02x:%02x:%02x", localMac[0], localMac[1], localMac[2], localMac[3], localMac[4], localMac[5]);
+
+			// Initialize ESP-NOW
+			quickEspNow.begin();
+			quickEspNow.onDataRcvd(meshDataReceived);
+
 			http.begin(client, "http://winderoo.local/api/winder");
 			http.addHeader("Content-Type", "application/json");
 			
@@ -985,25 +1071,31 @@ void setup()
 				deserializeJson(json, http.getStream());
 				const char* rootNode = json["rootNode"];
 				Serial.println("[STATUS] - received root node mac: " + (String)rootNode);
-				
-				// @todo: save root node mac esp_now
-				for (int i = 0; i < 6; i++)
-				{
-					rootMac[i] = (byte)rootNode[i];
-				}
+				rootMac = rootNode;
+
+				http.end();
 				Serial.println("[STATUS] - root node mac saved");
 
-				// set mesh message body and set Message Readyt flag true
-				meshMessage.rootMessage = "loud and clear!";
+				// set mesh message body with winder body and set Message Ready flag true
+				meshMessage.rootMessage = "node_status";
 				meshMessage.forRoot = true;
+				meshMessage.direction = userDefinedSettings.direction;
+				meshMessage.rotationsPerDay = userDefinedSettings.rotationsPerDay;
+				meshMessage.status = userDefinedSettings.status;
+				meshMessage.hour = userDefinedSettings.hour;
+				meshMessage.minutes = userDefinedSettings.minutes;
+				meshMessage.screenSleep = screenSleep;
+				meshMessage.timerEnabled = userDefinedSettings.timerEnabled;
+				meshMessage.rotationsPerDay = userDefinedSettings.rotationsPerDay;
+				
 				meshMessageReady = true;
 			}
 			else
 			{
+				http.end();
 				Serial.println("[ERROR] - Failed to add local node mac to root node");
 			}
 
-			http.end();
 		}
 
 		if (OLED_ENABLED)
@@ -1034,11 +1126,6 @@ void setup()
 		String setupNetworkMessage[3] = {"Connect to", "\"Winderoo Setup\"", "wifi to begin"};
 		drawMultiLineText(setupNetworkMessage);
 	};
-	
-	rtc_wdt_protect_off();
-	// Initialize ESP-NOW
-	quickEspNow.onDataRcvd(meshDataReceived);
-	quickEspNow.begin();
 }
 
 void loop()
@@ -1166,23 +1253,28 @@ void loop()
 		doc["direction"] = meshMessage.direction;
 		doc["hour"] = meshMessage.hour;
 		doc["minutes"] = meshMessage.minutes;
-		doc["screenEnabled"] = meshMessage.screenEnabled;
+		doc["screenSleep"] = meshMessage.screenSleep;
 		doc["timerEnabled"] = meshMessage.timerEnabled;
 		doc.shrinkToFit();
 		
 		String output;
 		serializeJson(doc, output);
+
+		Serial.println("[STATUS] - Mesh message ready: " + output);
 		
 		if (meshMessage.forRoot)
 		{
-			meshRootMessage(output);
+			meshMessageRoot(output);
+		}
+		else if (meshMessage.destinationMacAddress != "")
+		{
+			requestNodeStatus(meshMessage.destinationMacAddress, output);
 		}
 		else
 		{
-			meshBroadcastData(output);
+			meshBroadcastMessage(output);
 		}
 		
-		meshResetMessageBody();
 		meshMessageReady = false;
 	}
 	
