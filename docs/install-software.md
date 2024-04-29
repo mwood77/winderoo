@@ -21,16 +21,21 @@
     - If you downloaded the repository as a zip, uzip it before proceeding to step 2.
     <div align="center"><img src="images/download_directory.png" alt="how to download"></div>
 1. Open the extracted folder (or cloned repository if using git) in Visual Studio Code
-1. **IMPORTANT** -> if you're building Winderoo with an OLED screen attached, you must enable a build flag to tell PlatformIO to include additional libraries. To do this:
-    - Navigate to the file `platformio.ini`
+1. **Build Options - IMPORTANT**
+    -  if you're building Winderoo with an OLED screen or you desire fine-grained motor control (pulse width modulation), you must enable one (or two) build flags to tell PlatformIO to include additional libraries. 
+    - To toggle these build flags, navigate to the file called `platformio.ini`:
             <div align="center"><img src="images/platformio-ini.png" alt="how to download"></div>
-    - In this file, you'll see the following block of code:
-        ```yml
-        build_flags =
-	        -D OLED_ENABLED=false
-        ```
-    - Change `-D OLED_ENABLED=false` to `-D OLED_ENABLED=true`
-    - PlatformIO will now compile Winderoo with OLED screen support
+        - In this file, you'll see the following block of code:
+            ```yml
+            build_flags = 
+                -D OLED_ENABLED=false
+                -D PWM_MOTOR_CONTROL=false
+            ```
+            - Change `-D OLED_ENABLED=false` to `-D OLED_ENABLED=true` to enable OLED screen support
+            - > ![WARNING]
+              > PWM_MOTOR_CONTROL is an experimental flag. You will encounter incorrect cycle time estimation and other possible bugs unless you align the motor speed to **40RPM** (see [Troubleshooting](#troubleshooting)). Use at your own risk.
+                - Change `-D PWM_MOTOR_CONTROL=false` to `-D PWM_MOTOR_CONTROL=true` to enable PWM motor control
+    - PlatformIO will now compile Winderoo with OLED screen and or PWM motor support
 1. Select 'PlatformIO' (alien/insect looking button) on the workspace menu and wait for visual studio code to finish initializing the project
     <div align="center"><img src="images/platformIO.png" alt="platformIO button"></div>
 1. Expand the main heading: **"esp32doit-devkit-v1"**:
@@ -59,3 +64,15 @@ Ok, you've got 2 LEDs illuminated on your board. Great! Let's make sure the code
     - [http://winderoo.local/](http://winderoo.local/)
 1. If you see Winderoo's user interface, you're all done!
     - [Here is an overview of Winderoo's user interface](./user-manual.md)
+
+## Troubleshooting:
+### Motor Turns too fast when using PWM
+> [!WARNING]
+> PWM_MOTOR_CONTROL is an experimental flag. You will encounter incorrect cycle time estimation and other possible bugs unless you align the motor speed to **40RPM**.
+
+The default speed is `200` (8-bit resolution), where `0` is the slowest and `255` is the fastest.
+
+You can modify this value here:
+- [`MotorControl.cpp`](../src/platformio/osww-server/src/utils/MotorControl.cpp#L7)
+    - Change the value for the variable `motorSpeed` to any value between `0` and `255`
+    - After changing that value, you must recompile the software and upload it to your ESP32

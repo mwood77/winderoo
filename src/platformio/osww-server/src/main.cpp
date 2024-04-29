@@ -84,17 +84,21 @@ struct RUNTIME_VARS
  */
 RUNTIME_VARS userDefinedSettings;
 LedControl LED(ledPin);
-MotorControl motor(directionalPinA, directionalPinB);
 WiFiManager wm;
 AsyncWebServer server(80);
 HTTPClient http;
 WiFiClient client;
 ESP32Time rtc;
 
+#if PWM_MOTOR_CONTROL
+	MotorControl motor(directionalPinA, directionalPinB, true);
+#else
+	MotorControl motor(directionalPinA, directionalPinB);
+#endif
+
 #ifdef OLED_ENABLED
 	Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
 #endif
-
 
 void drawCentreStringToMemory(const char *buf, int x, int y)
 {
