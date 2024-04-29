@@ -3,7 +3,7 @@
 # Software Installtion & Flashing your ESP32
 
 > [!IMPORTANT]
-> This project is an add-on to your already built [Open Source Watch Winder (OSWW)](https://github.com/mwood77/osww). 
+> This project is an add-on to your already built [Open Source Watch Winder (OSWW)](https://github.com/mwood77/osww).
 
 - This project requires a microncontroller which replaces the Pi Pico used in the OSWW.
 - The Raspberry Pi Pico is incompatible with this project and must be swapped.
@@ -22,12 +22,12 @@
     <div align="center"><img src="images/download_directory.png" alt="how to download"></div>
 1. Open the extracted folder (or cloned repository if using git) in Visual Studio Code
 1. **Build Options - IMPORTANT**
-    -  if you're building Winderoo with an OLED screen or you desire fine-grained motor control (pulse width modulation), you must enable one (or two) build flags to tell PlatformIO to include additional libraries. 
+    -  if you're building Winderoo with an OLED screen or you desire fine-grained motor control (pulse width modulation), you must enable one (or two) build flags to tell PlatformIO to include additional libraries.
     - To toggle these build flags, navigate to the file called `platformio.ini`:
             <div align="center"><img src="images/platformio-ini.png" alt="how to download"></div>
         - In this file, you'll see the following block of code:
             ```yml
-            build_flags = 
+            build_flags =
                 -D OLED_ENABLED=false
                 -D PWM_MOTOR_CONTROL=false
             ```
@@ -45,7 +45,7 @@
     <div align="center"><img src="images/code_uploaded.png" alt="upload filesystem button"></div>
 1. All done! Your microcontroller should now have 2 LEDs illuminated (see beneath). If it does, proceed to [Next steps](#next-steps). If not, try to upload the code & file system again.
     <div align="center"><img src="images/led_states/blue_on.png" alt="upload filesystem button" height="300"></div>
-1. If you have a different LED state, compare it with this table: 
+1. If you have a different LED state, compare it with this table:
     - [Understanding Winderoo's LED Blink Status](user-manual.md#understanding-winderoos-led-blink-status)
 
 ## Next steps:
@@ -64,7 +64,7 @@ Ok, you've got 2 LEDs illuminated on your board. Great! Let's make sure the code
 1. If you see Winderoo's user interface, you're all done!
     - [Here is an overview of Winderoo's user interface](./user-manual.md)
 
-## Troubleshooting:
+## Troubleshooting
 ### Motor Turns too fast when using PWM
 > [!WARNING]
 > PWM_MOTOR_CONTROL is an experimental flag. You will encounter incorrect cycle time estimation and other possible bugs unless you align the motor speed to **40RPM**.
