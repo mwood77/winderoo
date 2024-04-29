@@ -2,8 +2,8 @@
 
 #if PWM_MOTOR_CONTROL
 	#include <ESP32MX1508.h>
-	#define CH1 0
-	#define CH2 1
+	#define CH1 1
+	#define CH2 2
     int motorSpeed = 200;
 #endif
 
@@ -53,7 +53,8 @@ void MotorControl::stop()
 
 void MotorControl::determineMotorDirectionAndBegin()
 {
-    stop();
+    // @todo - investigate if this is still needed
+    // stop();
 
     if (_motorDirection)
     {
