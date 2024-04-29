@@ -1,10 +1,10 @@
 #include <Arduino.h>
-#include <WiFiManager.h>
 #include <LittleFS.h>
 #include <ArduinoJson.h>
 #include <HTTPClient.h>
 #include <ESPmDNS.h>
 #include <ESP32Time.h>
+#include <WiFiManager.h>
 #include <QuickEspNow.h>
 #include "soc/rtc_wdt.h"
 
@@ -70,8 +70,9 @@ bool configPortalRunning = false;
 bool screenSleep = false;
 bool screenEquipped = OLED_ENABLED;
 String rootMac;
+bool selfIsChildNode = false;
 bool meshEnabled = false;
-static String knownMacs[6] = {"", "", "", "", "", ""};
+String knownMacs[6] = {"", "", "", "", "", ""};
 bool meshMessageReady = false;
 struct RUNTIME_VARS
 {
@@ -179,8 +180,8 @@ static void drawMeshStatus() {
 			int count = 0;
 			for ( String item : knownMacs )
 			{
-			if ( item != "" ) // This is a filter
-				++count;
+				if ( item != "" ) // This is a filter
+					++count;
 			}
 
 			display.fillRect(30, 51, 12, 13, BLACK);
@@ -472,10 +473,53 @@ void notFound(AsyncWebServerRequest *request)
 		request->send(404, "text/plain", "Winderoo\n\n404 - Resource Not found");
 	}
 }
+
+void registerSelfAsChildNode(char* localMacString) {
+	http.begin(client, "http://winderoo.local/api/winder");
+	http.addHeader("Content-Type", "application/json");
+
+	JsonDocument jsonPut;
+	jsonPut["localNode"] = localMacString;
+	int httpCode = http.POST("{\"localNode\":\"" + (String)localMacString + "\"}");
+
+	if (httpCode == 200)
+	{
+		JsonDocument json;
+		deserializeJson(json, http.getStream());
+		const char* rootNode = json["rootNode"];
+		Serial.println("[STATUS] - received root node mac: " + (String)rootNode);
+		rootMac = rootNode;
+
+		http.end();
+		Serial.println("[STATUS] - root node mac saved");
+
+		// set mesh message body with winder body and set Message Ready flag true
+		meshMessage.rootMessage = "node_status";
+		meshMessage.forRoot = true;
+		meshMessage.direction = userDefinedSettings.direction;
+		meshMessage.rotationsPerDay = userDefinedSettings.rotationsPerDay;
+		meshMessage.status = userDefinedSettings.status;
+		meshMessage.hour = userDefinedSettings.hour;
+		meshMessage.minutes = userDefinedSettings.minutes;
+		meshMessage.screenSleep = screenSleep;
+		meshMessage.timerEnabled = userDefinedSettings.timerEnabled;
+		meshMessage.rotationsPerDay = userDefinedSettings.rotationsPerDay;
+
+		meshMessageReady = true;
+	}
+	else
+	{
+		http.end();
+		Serial.println("[ERROR] - Failed to add local node mac to root node");
+		Serial.println("[ERROR] - Retrying in 2 seconds...");
+		delay(2000);
+		registerSelfAsChildNode(localMacString);
+	}
+}
+
 /**
  * Handle mesh messages
  */
-
 void meshResetMessageBody() {
 	meshMessage.destinationMacAddress = "";
 	meshMessage.rootMessage = "";
@@ -503,17 +547,19 @@ byte* getMacAddress(String macAddress) {
 			}
 		}
 	}
-	
+
 	return nodeMac;
 }
 
 // @todo - implement mesh data received
 void meshDataReceived(uint8_t* address, uint8_t* data, uint8_t len, signed int rssi, bool broadcast) {
+	Serial.println();
     Serial.print ("Received: ");
     Serial.printf ("%.*s\n", len, data);
     Serial.printf ("RSSI: %d dBm\n", rssi);
     Serial.printf ("From: " MACSTR "\n", MAC2STR (address));
     Serial.printf ("%s\n", broadcast ? "Broadcast" : "Unicast");
+	Serial.println();
 }
 
 void meshBroadcastMessage(String message) {
@@ -537,14 +583,20 @@ void meshMessageRoot(String message) {
 			}
 		}
 	}
-
-    if (!quickEspNow.send(nodeMac, (uint8_t*)message.c_str(), message.length())) 
+	// @todo - retry logic only sometimes dispatches a message
+	// investiate .readyToSendData() to fix dropouts
+	//  ->  https://github.com/gmag11/QuickESPNow/blob/main/examples/advancedespnow/advancedespnow.cpp
+    if (!quickEspNow.send(nodeMac, (uint8_t*)message.c_str(), message.length()))
 	{
-        Serial.println(">>>>>>>>>> Root message sent");
+        Serial.println("[STATUS] - >>>>>>>>>> Sent message to Root node: " + rootMac);
     }
 	else
 	{
-        Serial.println(">>>>>>>>>> Root message not sent");
+        Serial.println("[WARN] - >>>>>>>>>> Failed to send message to root node: " + rootMac);
+        Serial.println("[WARN] - Retrying in 1 second...");
+		delay(1000);
+		Serial.println("[STATUS] - message: " + message);
+		meshMessageRoot(message);
     }
 
 	meshResetMessageBody();
@@ -568,11 +620,14 @@ void requestNodeStatus(String macAddress, String message) {
 
 	if (!quickEspNow.send(nodeMac, (uint8_t*)message.c_str(), message.length()))
 	{
-        Serial.println(">>>>>>>>>> Message sent");
+        Serial.println("[STATUS] - >>>>>>>>>> Message sent to node: " + macAddress);
     }
 	else
 	{
-        Serial.println(">>>>>>>>>> Message not sent");
+        Serial.println("[WARN] - >>>>>>>>>> Message failed to send to node: " + macAddress);
+		Serial.println("[WARN] - Retrying in 230ms...");
+		delay(320);
+		requestNodeStatus(macAddress, message);
     }
 
 	meshResetMessageBody();
@@ -782,10 +837,10 @@ void startWebserver()
 
 			request->send(204);
 		}
-	
+
 		if (request->url() == "/api/winder")
 		{
-			Serial.println("[STATUS] - Received add winder command");
+			Serial.println("[STATUS] - Received add winder POST request");
 
 			JsonDocument json;
 			DeserializationError error = deserializeJson(json, data);
@@ -797,13 +852,13 @@ void startWebserver()
 				request->send(500, "text/plain", "Failed to deserialize request body");
 				return;
 			}
-		
+
 			String childNode = json["localNode"].as<String>();
 			if (childNode == "")
 			{
 				request->send(400, "text/plain", "Missing required field: 'localNode'");
-			} 
-			else 
+			}
+			else
 			{
 				// @todo: save child node mac esp_now
 				Serial.println("[STATUS] - Adding child node: " + childNode);
@@ -820,7 +875,9 @@ void startWebserver()
 						knownMacs[i] = childNode;
 						break;
 					}
+					Serial.print(knownMacs[i] + ", ");
 				}
+				Serial.println();
 
 				AsyncResponseStream *response = request->beginResponseStream("application/json");
 				JsonDocument json;
@@ -837,7 +894,7 @@ void startWebserver()
 				meshMessageReady = true;
 			}
 		}
-	
+
 	});
 
 	server.on("/api/reset", HTTP_GET, [](AsyncWebServerRequest *request)
@@ -1024,7 +1081,7 @@ void setup()
 
 		// retrieve & read saved settings
 		loadConfigVarsFromFile(settingsFile);
-		
+
 		String searchingForNodesMessage[3] = {"Looking for", "winderoo nodes on", "your network..."};
 		drawNotification("Searching");
 		drawMultiLineText(searchingForNodesMessage);
@@ -1053,49 +1110,13 @@ void setup()
 			Serial.println("[STATUS] - winderoo node found on network at IP: " + winderooIP.toString());
 			char localMacString[18];
 			sprintf(localMacString, "%02x:%02x:%02x:%02x:%02x:%02x", localMac[0], localMac[1], localMac[2], localMac[3], localMac[4], localMac[5]);
+			selfIsChildNode = true;
 
 			// Initialize ESP-NOW
 			quickEspNow.begin();
 			quickEspNow.onDataRcvd(meshDataReceived);
 
-			http.begin(client, "http://winderoo.local/api/winder");
-			http.addHeader("Content-Type", "application/json");
-			
-			JsonDocument jsonPut;
-			jsonPut["localNode"] = localMacString;
-			int httpCode = http.POST("{\"localNode\":\"" + (String)localMacString + "\"}");
-
-			if (httpCode == 200)
-			{
-				JsonDocument json;
-				deserializeJson(json, http.getStream());
-				const char* rootNode = json["rootNode"];
-				Serial.println("[STATUS] - received root node mac: " + (String)rootNode);
-				rootMac = rootNode;
-
-				http.end();
-				Serial.println("[STATUS] - root node mac saved");
-
-				// set mesh message body with winder body and set Message Ready flag true
-				meshMessage.rootMessage = "node_status";
-				meshMessage.forRoot = true;
-				meshMessage.direction = userDefinedSettings.direction;
-				meshMessage.rotationsPerDay = userDefinedSettings.rotationsPerDay;
-				meshMessage.status = userDefinedSettings.status;
-				meshMessage.hour = userDefinedSettings.hour;
-				meshMessage.minutes = userDefinedSettings.minutes;
-				meshMessage.screenSleep = screenSleep;
-				meshMessage.timerEnabled = userDefinedSettings.timerEnabled;
-				meshMessage.rotationsPerDay = userDefinedSettings.rotationsPerDay;
-				
-				meshMessageReady = true;
-			}
-			else
-			{
-				http.end();
-				Serial.println("[ERROR] - Failed to add local node mac to root node");
-			}
-
+			registerSelfAsChildNode(localMacString);
 		}
 
 		if (OLED_ENABLED)
@@ -1256,12 +1277,12 @@ void loop()
 		doc["screenSleep"] = meshMessage.screenSleep;
 		doc["timerEnabled"] = meshMessage.timerEnabled;
 		doc.shrinkToFit();
-		
+
 		String output;
 		serializeJson(doc, output);
 
 		Serial.println("[STATUS] - Mesh message ready: " + output);
-		
+
 		if (meshMessage.forRoot)
 		{
 			meshMessageRoot(output);
@@ -1274,9 +1295,12 @@ void loop()
 		{
 			meshBroadcastMessage(output);
 		}
-		
+		delay(100);
+
 		meshMessageReady = false;
 	}
-	
-	wm.process();
+
+	if (!selfIsChildNode) {
+		wm.process();
+	}
 }
