@@ -7,6 +7,7 @@
 #include <WiFiManager.h>
 #include <QuickEspNow.h>
 #include "soc/rtc_wdt.h"
+#include <list>
 
 #ifdef OLED_ENABLED
 	#include <SPI.h>
@@ -20,6 +21,7 @@
 
 #include "FS.h"
 #include "ESPAsyncWebServer.h"
+using namespace std;
 /*
  * *************************************************************************************
  * ********************************* CONFIGURABLES *************************************
@@ -75,6 +77,7 @@ bool meshEnabled = false;
 String knownMacs[6] = {"", "", "", "", "", ""};
 bool meshMessageReady = false;
 bool meshMessageSent = true;
+
 struct RUNTIME_VARS
 {
 	String status = "";
@@ -97,6 +100,23 @@ struct MESH_MESSAGE
 	String minutes = "00";
 	String screenSleep = "1";
 	String timerEnabled = "0";
+	String screenEquipped;
+	int db = 0;
+};
+
+struct NODE
+{
+	String nodeMac = "";
+	String nodeStatus = "";
+	String nodeTPD = "";
+	String nodeDirection = "";
+	String nodeHour = "";
+	String nodeMinutes = "";
+	String nodeScreenSleep = "";
+	String nodeTimerEnabled = "";
+	String nodeScreenEquipped = "";
+	int nodeDb = 0;
+
 };
 
 /*
@@ -111,6 +131,7 @@ AsyncWebServer server(80);
 HTTPClient http;
 WiFiClient client;
 ESP32Time rtc;
+list<NODE> nodes;
 
 #ifdef OLED_ENABLED
 	Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
@@ -505,6 +526,8 @@ void registerSelfAsChildNode(char* localMacString) {
 		meshMessage.screenSleep = screenSleep;
 		meshMessage.timerEnabled = userDefinedSettings.timerEnabled;
 		meshMessage.rotationsPerDay = userDefinedSettings.rotationsPerDay;
+		meshMessage.screenEquipped = screenEquipped;
+		meshMessage.db = WiFi.RSSI();
 
 		meshMessageReady = true;
 	}
@@ -552,7 +575,52 @@ byte* getMacAddress(String macAddress) {
 	return nodeMac;
 }
 
-// @todo - implement mesh data received
+
+void parseReceivedMessageBody(String address, uint8_t* data, uint8_t len) 
+{
+    JsonDocument doc;
+    deserializeJson(doc, data);
+	DeserializationError error = deserializeJson(doc, data);
+	if (error)
+	{
+		Serial.println("[ERROR] - Failed to deserialize [mesh] received body");
+		return;
+	}
+
+	// We assume the message is an child update message
+	if (doc["forRoot"].as<bool>()) 
+	{
+		Serial.println("[STATUS] - Adding child state to nodes list");
+		NODE node;
+		node.nodeMac = address;
+		node.nodeStatus = doc["status"].as<String>();
+		node.nodeTPD = doc["rotationsPerDay"].as<String>();
+		node.nodeDirection = doc["direction"].as<String>();
+		node.nodeHour = doc["hour"].as<String>();
+		node.nodeMinutes = doc["minutes"].as<String>();
+		node.nodeScreenSleep = doc["screenSleep"].as<String>();
+		node.nodeTimerEnabled = doc["timerEnabled"].as<String>();
+		node.nodeScreenEquipped = doc["screenEquipped"].as<String>();
+		node.nodeDb = doc["db"].as<int>();
+		nodes.push_back(node);
+		return;
+	}
+
+	// tx_status = root node requesting winder state
+	if (doc["rootMessage"].as<String>() != "tx_status")
+	{
+		Serial.println("[STATUS] - Updating local state with received message");
+		userDefinedSettings.status = doc["status"].as<String>();
+		userDefinedSettings.rotationsPerDay = doc["rotationsPerDay"].as<String>();
+		userDefinedSettings.direction = doc["direction"].as<String>();
+		userDefinedSettings.hour = doc["hour"].as<String>();
+		userDefinedSettings.minutes = doc["minutes"].as<String>();
+		screenSleep = doc["screenSleep"].as<String>();
+		userDefinedSettings.timerEnabled = doc["timerEnabled"].as<String>();
+		return;
+	}
+}
+
 void meshDataReceived(uint8_t* address, uint8_t* data, uint8_t len, signed int rssi, bool broadcast) {
 	Serial.println();
     Serial.print ("Received: ");
@@ -561,6 +629,18 @@ void meshDataReceived(uint8_t* address, uint8_t* data, uint8_t len, signed int r
     Serial.printf ("From: " MACSTR "\n", MAC2STR (address));
     Serial.printf ("%s\n", broadcast ? "Broadcast" : "Unicast");
 	Serial.println();
+
+	String macAddress;
+	for (byte i = 0; i < 6; ++i)
+	{
+		char buf[3];
+		sprintf(buf, "%2X", address[i]);
+		macAddress += buf;
+		if (i < 5) macAddress += ':';
+	}
+
+	parseReceivedMessageBody(macAddress, data, len);
+
 }
 
 void meshBroadcastMessage(String message) {
@@ -690,6 +770,26 @@ void startWebserver()
 		json["db"] = WiFi.RSSI();
 		json["screenSleep"] = screenSleep;
 		json["screenEquipped"] = screenEquipped;
+		
+		// Add known nodes to response
+		JsonArray meshNodes = json["networkedUnits"].to<JsonArray>();
+		for (NODE node : nodes)
+		{
+			JsonObject nodeData;
+			nodeData["address"] = node.nodeMac;
+			nodeData["status"] = node.nodeStatus;
+			nodeData["nodeDirection"] = node.nodeDirection;
+			nodeData["rotationsPerDay"] = node.nodeTPD;
+			nodeData["hour"] = node.nodeHour;
+			nodeData["minutes"] = node.nodeMinutes;
+			nodeData["timerEnabled"] = node.nodeTimerEnabled;
+			nodeData["screenSleep"] = node.nodeScreenSleep;
+			nodeData["screenEquipped"] = node.nodeScreenEquipped;
+			nodeData["db"] = node.nodeDb;
+			meshNodes.add(meshNodes);
+		}
+		
+		// @todo - gitting hit by watchdog here
 		serializeJson(json, *response);
 
 		request->send(response);
@@ -1319,6 +1419,8 @@ void loop()
 		doc["minutes"] = meshMessage.minutes;
 		doc["screenSleep"] = meshMessage.screenSleep;
 		doc["timerEnabled"] = meshMessage.timerEnabled;
+		doc["screenEquipped"] = meshMessage.screenEquipped;
+		doc["db"] = meshMessage.db;
 		doc.shrinkToFit();
 
 		String output;
