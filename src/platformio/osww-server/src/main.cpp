@@ -74,6 +74,7 @@ bool selfIsChildNode = false;
 bool meshEnabled = false;
 String knownMacs[6] = {"", "", "", "", "", ""};
 bool meshMessageReady = false;
+bool meshMessageSent = true;
 struct RUNTIME_VARS
 {
 	String status = "";
@@ -563,13 +564,33 @@ void meshDataReceived(uint8_t* address, uint8_t* data, uint8_t len, signed int r
 }
 
 void meshBroadcastMessage(String message) {
+	int retries = 0;
 	Serial.println("[STATUS] - Broadcasting message: " + message);
-	quickEspNow.send(ESPNOW_BROADCAST_ADDRESS, (uint8_t*)message.c_str(), message.length());
-	meshResetMessageBody();
+	if (!quickEspNow.send(ESPNOW_BROADCAST_ADDRESS, (uint8_t*)message.c_str(), message.length()))
+	{
+		Serial.println("[STATUS] - >>>>>>>>>> Broadcast message sent");
+		meshMessageSent = true;
+		meshResetMessageBody();
+	}
+	else if (retries < 3)
+	{
+		Serial.println("[WARN] - >>>>>>>>>> Broadcast message failed to send");
+		Serial.println("[WARN] - Retrying...: " + retries);
+		delay(500);
+		retries++;
+		meshBroadcastMessage(message);
+	}
+	else
+	{
+		retries = 0;
+		meshMessageSent = true;
+		Serial.println("[ERROR] - meshBroadcastMessage - Failed to broadcast message");
+	}
 }
 
 void meshMessageRoot(String message) {
-	Serial.println("[STATUS] - Sending message to root node");
+	Serial.println("[STATUS] - Sending message to root node:" + message);
+	int retries = 0;
 	byte* nodeMac = new byte[6];
 	String hexByte;
 	int j = 0;
@@ -583,26 +604,31 @@ void meshMessageRoot(String message) {
 			}
 		}
 	}
-	// @todo - retry logic only sometimes dispatches a message
-	// investiate .readyToSendData() to fix dropouts
-	//  ->  https://github.com/gmag11/QuickESPNow/blob/main/examples/advancedespnow/advancedespnow.cpp
+
     if (!quickEspNow.send(nodeMac, (uint8_t*)message.c_str(), message.length()))
 	{
         Serial.println("[STATUS] - >>>>>>>>>> Sent message to Root node: " + rootMac);
+		meshMessageSent = true;
+		meshResetMessageBody();
     }
-	else
+	else if (retries < 3)
 	{
         Serial.println("[WARN] - >>>>>>>>>> Failed to send message to root node: " + rootMac);
-        Serial.println("[WARN] - Retrying in 1 second...");
-		delay(1000);
-		Serial.println("[STATUS] - message: " + message);
+        Serial.println("[WARN] - Retrying...: " + retries);
+		delay(127);
+		retries++;
 		meshMessageRoot(message);
     }
-
-	meshResetMessageBody();
+	else 
+	{
+		retries = 0;
+		meshMessageSent = true;
+		Serial.println("[ERROR] - meshMessageRoot - Failed to send message to node: " + rootMac);
+	}
 }
 
 void requestNodeStatus(String macAddress, String message) {
+	int retries = 0;
 	Serial.println("[STATUS] - Requesting status of node: " + macAddress);
 	byte* nodeMac = new byte[6];
 	String hexByte;
@@ -621,16 +647,23 @@ void requestNodeStatus(String macAddress, String message) {
 	if (!quickEspNow.send(nodeMac, (uint8_t*)message.c_str(), message.length()))
 	{
         Serial.println("[STATUS] - >>>>>>>>>> Message sent to node: " + macAddress);
+		meshMessageSent = true;
+		meshResetMessageBody();
     }
-	else
+	else if (retries < 3)
 	{
         Serial.println("[WARN] - >>>>>>>>>> Message failed to send to node: " + macAddress);
-		Serial.println("[WARN] - Retrying in 230ms...");
+		Serial.println("[WARN] - Retrying...: " + retries);
 		delay(320);
+		retries++;
 		requestNodeStatus(macAddress, message);
     }
-
-	meshResetMessageBody();
+	else 
+	{
+		retries = 0;
+		meshMessageSent = true;
+		Serial.println("[ERROR] - requestNodeStatus - Failed to send message to node: " + macAddress);
+	}
 }
 
 /**
@@ -860,10 +893,9 @@ void startWebserver()
 			}
 			else
 			{
-				// @todo: save child node mac esp_now
 				Serial.println("[STATUS] - Adding child node: " + childNode);
-				Serial.print("[STATUS] - known macs: ");
-				for (int i = 0; i < sizeof(knownMacs); i++)
+				// Macs array has a max size of 6; add to array if not already present
+				for (int i = 0; i < 6; i++)
 				{
 					if (knownMacs[i] == childNode)
 					{
@@ -875,6 +907,12 @@ void startWebserver()
 						knownMacs[i] = childNode;
 						break;
 					}
+					Serial.print(knownMacs[i] + ", ");
+				}
+
+				Serial.print("[STATUS] - known macs: ");
+				for (int i = 0; i < 6; i++)
+				{
 					Serial.print(knownMacs[i] + ", ");
 				}
 				Serial.println();
@@ -1102,7 +1140,7 @@ void setup()
 			Serial.println("[STATUS] - mDNS started");
 
 			// Initialize ESP-NOW
-			quickEspNow.begin();
+			quickEspNow.begin(1, 0, false);
 			quickEspNow.onDataRcvd(meshDataReceived);
 
 		} else {
@@ -1263,8 +1301,13 @@ void loop()
 		drawDynamicGUI();
 	}
 
-	if (meshMessageReady)
+	static time_t lastMessageSendTime = 0;
+
+	if (meshMessageReady && quickEspNow.readyToSendData() && meshMessageSent && ((millis () - lastMessageSendTime) > 2000))
 	{
+		lastMessageSendTime = millis();
+		meshMessageSent = false;
+		
 		JsonDocument doc;
 		doc["destinationMacAddress"] = meshMessage.destinationMacAddress;
 		doc["rootMessage"] = meshMessage.rootMessage;
@@ -1280,8 +1323,6 @@ void loop()
 
 		String output;
 		serializeJson(doc, output);
-
-		Serial.println("[STATUS] - Mesh message ready: " + output);
 
 		if (meshMessage.forRoot)
 		{
