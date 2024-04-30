@@ -1,10 +1,13 @@
 #include <Arduino.h>
-#include <WiFiManager.h>
 #include <LittleFS.h>
 #include <ArduinoJson.h>
 #include <HTTPClient.h>
 #include <ESPmDNS.h>
 #include <ESP32Time.h>
+#include <WiFiManager.h>
+#include <QuickEspNow.h>
+#include "soc/rtc_wdt.h"
+#include <list>
 
 #ifdef OLED_ENABLED
 	#include <SPI.h>
@@ -18,7 +21,7 @@
 
 #include "FS.h"
 #include "ESPAsyncWebServer.h"
-
+using namespace std;
 /*
  * *************************************************************************************
  * ********************************* CONFIGURABLES *************************************
@@ -68,6 +71,13 @@ bool routineRunning = false;
 bool configPortalRunning = false;
 bool screenSleep = false;
 bool screenEquipped = OLED_ENABLED;
+String rootMac;
+bool selfIsChildNode = false;
+bool meshEnabled = false;
+String knownMacs[6] = {"", "", "", "", "", ""};
+bool meshMessageReady = false;
+bool meshMessageSent = true;
+
 struct RUNTIME_VARS
 {
 	String status = "";
@@ -78,11 +88,42 @@ struct RUNTIME_VARS
 	String winderEnabled = "1";
 	String timerEnabled = "0";
 };
+struct MESH_MESSAGE
+{
+	String destinationMacAddress = "";
+	String rootMessage = "";
+	bool forRoot = false;
+	String status = "";
+	String rotationsPerDay = "";
+	String direction = "";
+	String hour = "00";
+	String minutes = "00";
+	String screenSleep = "1";
+	String timerEnabled = "0";
+	String screenEquipped;
+	int db = 0;
+};
+
+struct NODE
+{
+	String nodeMac = "";
+	String nodeStatus = "";
+	String nodeTPD = "";
+	String nodeDirection = "";
+	String nodeHour = "";
+	String nodeMinutes = "";
+	String nodeScreenSleep = "";
+	String nodeTimerEnabled = "";
+	String nodeScreenEquipped = "";
+	int nodeDb = 0;
+
+};
 
 /*
  * DO NOT CHANGE THESE VARIABLES!
  */
 RUNTIME_VARS userDefinedSettings;
+MESH_MESSAGE meshMessage;
 LedControl LED(ledPin);
 MotorControl motor(directionalPinA, directionalPinB);
 WiFiManager wm;
@@ -90,6 +131,7 @@ AsyncWebServer server(80);
 HTTPClient http;
 WiFiClient client;
 ESP32Time rtc;
+list<NODE> nodes;
 
 #ifdef OLED_ENABLED
 	Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
@@ -151,6 +193,33 @@ static void drawTimerStatus() {
 	}
 }
 
+static void drawMeshStatus() {
+	if (OLED_ENABLED)
+	{
+		if (meshEnabled)
+		{
+
+			int count = 0;
+			for ( String item : knownMacs )
+			{
+				if ( item != "" ) // This is a filter
+					++count;
+			}
+
+			display.fillRect(30, 51, 12, 13, BLACK);
+			display.drawCircle(38, 56, 1, WHITE);
+			display.drawCircle(34, 59, 1, WHITE);
+			display.drawCircle(38, 62, 1, WHITE);
+			display.setCursor(43, 56);
+			display.print(count);
+		}
+		else
+		{
+			display.fillRect(30, 51, 12, 13, BLACK);
+		}
+	}
+}
+
 static void drawWifiStatus() {
 	if (OLED_ENABLED)
 	{
@@ -206,6 +275,7 @@ static void drawDynamicGUI() {
 
 		drawWifiStatus();
 		drawTimerStatus();
+		drawMeshStatus();
 
 		display.display();
 	}
@@ -426,6 +496,278 @@ void notFound(AsyncWebServerRequest *request)
 	}
 }
 
+void registerSelfAsChildNode(char* localMacString) {
+	http.begin(client, "http://winderoo.local/api/winder");
+	http.addHeader("Content-Type", "application/json");
+
+	JsonDocument jsonPut;
+	jsonPut["localNode"] = localMacString;
+	int httpCode = http.POST("{\"localNode\":\"" + (String)localMacString + "\"}");
+
+	if (httpCode == 200)
+	{
+		JsonDocument json;
+		deserializeJson(json, http.getStream());
+		const char* rootNode = json["rootNode"];
+		Serial.println("[STATUS] - received root node mac: " + (String)rootNode);
+		rootMac = rootNode;
+
+		http.end();
+		Serial.println("[STATUS] - root node mac saved");
+
+		// set mesh message body with winder body and set Message Ready flag true
+		meshMessage.rootMessage = "node_status";
+		meshMessage.forRoot = true;
+		meshMessage.direction = userDefinedSettings.direction;
+		meshMessage.rotationsPerDay = userDefinedSettings.rotationsPerDay;
+		meshMessage.status = userDefinedSettings.status;
+		meshMessage.hour = userDefinedSettings.hour;
+		meshMessage.minutes = userDefinedSettings.minutes;
+		meshMessage.screenSleep = screenSleep;
+		meshMessage.timerEnabled = userDefinedSettings.timerEnabled;
+		meshMessage.rotationsPerDay = userDefinedSettings.rotationsPerDay;
+		meshMessage.screenEquipped = screenEquipped;
+		meshMessage.db = WiFi.RSSI();
+
+		meshMessageReady = true;
+	}
+	else
+	{
+		http.end();
+		Serial.println("[ERROR] - Failed to add local node mac to root node");
+		Serial.println("[ERROR] - Retrying in 2 seconds...");
+		delay(2000);
+		registerSelfAsChildNode(localMacString);
+	}
+}
+
+/**
+ * Handle mesh messages
+ */
+void meshResetMessageBody() {
+	meshMessage.destinationMacAddress = "";
+	meshMessage.rootMessage = "";
+	meshMessage.forRoot = false;
+	meshMessage.status = "";
+	meshMessage.rotationsPerDay = "";
+	meshMessage.direction = "";
+	meshMessage.hour = "00";
+	meshMessage.minutes = "00";
+	meshMessage.screenSleep = "1";
+	meshMessage.timerEnabled = "0";
+}
+
+byte* getMacAddress(String macAddress) {
+	byte* nodeMac = new byte[6];
+	String hexByte;
+	int j = 0;
+	for (int i = 0; i < macAddress.length(); i++) {
+		if (macAddress.charAt(i) != ':') {
+			hexByte += macAddress.charAt(i);
+			if (hexByte.length() == 2) {
+				nodeMac[j] = strtol(hexByte.c_str(), NULL, 16);
+				hexByte = "";
+				j++;
+			}
+		}
+	}
+
+	return nodeMac;
+}
+
+
+void parseReceivedMessageBody(String address, uint8_t* data, uint8_t len) 
+{
+    JsonDocument doc;
+    deserializeJson(doc, data);
+	DeserializationError error = deserializeJson(doc, data);
+	if (error)
+	{
+		Serial.println("[ERROR] - Failed to deserialize [mesh] received body");
+		return;
+	}
+
+	// We assume the message is an child update message
+	if (doc["forRoot"].as<bool>())
+	{
+		Serial.println("[STATUS] - Received child update message");
+
+		// Check if node already exists, and update the known state if it does
+		for (auto& node : nodes)
+		{
+			if (node.nodeMac == address)
+			{
+				Serial.println("[STATUS] - Node already exists in list");
+				Serial.println("[STATUS] - Updating state for node: " + address);
+				node.nodeStatus = doc["status"].as<String>();
+				node.nodeTPD = doc["rotationsPerDay"].as<String>();
+				node.nodeDirection = doc["direction"].as<String>();
+				node.nodeHour = doc["hour"].as<String>();
+				node.nodeMinutes = doc["minutes"].as<String>();
+				node.nodeScreenSleep = doc["screenSleep"].as<String>();
+				node.nodeTimerEnabled = doc["timerEnabled"].as<String>();
+				node.nodeScreenEquipped = doc["screenEquipped"].as<String>();
+				node.nodeDb = doc["db"].as<int>();
+				return;
+			}
+		}
+
+		Serial.println("[STATUS] - Adding child state to nodes list");
+		NODE node;
+		node.nodeMac = address;
+		node.nodeStatus = doc["status"].as<String>();
+		node.nodeTPD = doc["rotationsPerDay"].as<String>();
+		node.nodeDirection = doc["direction"].as<String>();
+		node.nodeHour = doc["hour"].as<String>();
+		node.nodeMinutes = doc["minutes"].as<String>();
+		node.nodeScreenSleep = doc["screenSleep"].as<String>();
+		node.nodeTimerEnabled = doc["timerEnabled"].as<String>();
+		node.nodeScreenEquipped = doc["screenEquipped"].as<String>();
+		node.nodeDb = doc["db"].as<int>();
+		nodes.push_back(node);
+		return;
+	}
+
+	// tx_status = root node requesting winder state
+	if (doc["rootMessage"].as<String>() != "tx_status")
+	{
+		Serial.println("[STATUS] - Updating local state with received message");
+		userDefinedSettings.status = doc["status"].as<String>();
+		userDefinedSettings.rotationsPerDay = doc["rotationsPerDay"].as<String>();
+		userDefinedSettings.direction = doc["direction"].as<String>();
+		userDefinedSettings.hour = doc["hour"].as<String>();
+		userDefinedSettings.minutes = doc["minutes"].as<String>();
+		screenSleep = doc["screenSleep"].as<String>();
+		userDefinedSettings.timerEnabled = doc["timerEnabled"].as<String>();
+		return;
+	}
+}
+
+void meshDataReceived(uint8_t* address, uint8_t* data, uint8_t len, signed int rssi, bool broadcast) {
+	Serial.println();
+    Serial.print ("Received: ");
+    Serial.printf ("%.*s\n", len, data);
+    Serial.printf ("RSSI: %d dBm\n", rssi);
+    Serial.printf ("From: " MACSTR "\n", MAC2STR (address));
+    Serial.printf ("%s\n", broadcast ? "Broadcast" : "Unicast");
+	Serial.println();
+
+	String macAddress;
+	for (byte i = 0; i < 6; ++i)
+	{
+		char buf[3];
+		sprintf(buf, "%2X", address[i]);
+		macAddress += buf;
+		if (i < 5) macAddress += ':';
+	}
+
+	parseReceivedMessageBody(macAddress, data, len);
+
+}
+
+void meshBroadcastMessage(String message) {
+	int retries = 0;
+	Serial.println("[STATUS] - Broadcasting message: " + message);
+	if (!quickEspNow.send(ESPNOW_BROADCAST_ADDRESS, (uint8_t*)message.c_str(), message.length()))
+	{
+		Serial.println("[STATUS] - >>>>>>>>>> Broadcast message sent");
+		meshMessageSent = true;
+		meshResetMessageBody();
+	}
+	else if (retries < 3)
+	{
+		Serial.println("[WARN] - >>>>>>>>>> Broadcast message failed to send");
+		Serial.println("[WARN] - Retrying...: " + retries);
+		delay(500);
+		retries++;
+		meshBroadcastMessage(message);
+	}
+	else
+	{
+		retries = 0;
+		meshMessageSent = true;
+		Serial.println("[ERROR] - meshBroadcastMessage - Failed to broadcast message");
+	}
+}
+
+void meshMessageRoot(String message) {
+	Serial.println("[STATUS] - Sending message to root node:" + message);
+	int retries = 0;
+	byte* nodeMac = new byte[6];
+	String hexByte;
+	int j = 0;
+	for (int i = 0; i < rootMac.length(); i++) {
+		if (rootMac.charAt(i) != ':') {
+			hexByte += rootMac.charAt(i);
+			if (hexByte.length() == 2) {
+				nodeMac[j] = strtol(hexByte.c_str(), NULL, 16);
+				hexByte = "";
+				j++;
+			}
+		}
+	}
+
+    if (!quickEspNow.send(nodeMac, (uint8_t*)message.c_str(), message.length()))
+	{
+        Serial.println("[STATUS] - >>>>>>>>>> Sent message to Root node: " + rootMac);
+		meshMessageSent = true;
+		meshResetMessageBody();
+    }
+	else if (retries < 3)
+	{
+        Serial.println("[WARN] - >>>>>>>>>> Failed to send message to root node: " + rootMac);
+        Serial.println("[WARN] - Retrying...: " + retries);
+		delay(127);
+		retries++;
+		meshMessageRoot(message);
+    }
+	else 
+	{
+		retries = 0;
+		meshMessageSent = true;
+		Serial.println("[ERROR] - meshMessageRoot - Failed to send message to node: " + rootMac);
+	}
+}
+
+void requestNodeStatus(String macAddress, String message) {
+	int retries = 0;
+	Serial.println("[STATUS] - Requesting status of node: " + macAddress);
+	byte* nodeMac = new byte[6];
+	String hexByte;
+	int j = 0;
+	for (int i = 0; i < macAddress.length(); i++) {
+		if (macAddress.charAt(i) != ':') {
+			hexByte += macAddress.charAt(i);
+			if (hexByte.length() == 2) {
+				nodeMac[j] = strtol(hexByte.c_str(), NULL, 16);
+				hexByte = "";
+				j++;
+			}
+		}
+	}
+
+	if (!quickEspNow.send(nodeMac, (uint8_t*)message.c_str(), message.length()))
+	{
+        Serial.println("[STATUS] - >>>>>>>>>> Message sent to node: " + macAddress);
+		meshMessageSent = true;
+		meshResetMessageBody();
+    }
+	else if (retries < 3)
+	{
+        Serial.println("[WARN] - >>>>>>>>>> Message failed to send to node: " + macAddress);
+		Serial.println("[WARN] - Retrying...: " + retries);
+		delay(320);
+		retries++;
+		requestNodeStatus(macAddress, message);
+    }
+	else 
+	{
+		retries = 0;
+		meshMessageSent = true;
+		Serial.println("[ERROR] - requestNodeStatus - Failed to send message to node: " + macAddress);
+	}
+}
+
 /**
  * API for front end
  */
@@ -450,6 +792,24 @@ void startWebserver()
 		json["db"] = WiFi.RSSI();
 		json["screenSleep"] = screenSleep;
 		json["screenEquipped"] = screenEquipped;
+		JsonArray networkedUnits = json["networkedUnits"].to<JsonArray>();
+		
+		// Add known nodes to response
+		for (const auto& unitData : nodes) {
+			JsonObject networkedUnit = networkedUnits.add<JsonObject>();
+			networkedUnit["address"] = unitData.nodeMac;
+			networkedUnit["status"] = unitData.nodeStatus;
+			networkedUnit["direction"] = unitData.nodeDirection;
+			networkedUnit["rotationsPerDay"] = unitData.nodeTPD;
+			networkedUnit["hour"] = unitData.nodeHour;
+			networkedUnit["minutes"] = unitData.nodeMinutes;
+			networkedUnit["timerEnabled"] = unitData.nodeTimerEnabled;
+			networkedUnit["screenSleep"] = unitData.nodeScreenSleep;
+			networkedUnit["screenEquipped"] = unitData.nodeScreenEquipped;
+			networkedUnit["db"] = unitData.nodeDb;
+		}
+		
+		json.shrinkToFit();
 		serializeJson(json, *response);
 
 		request->send(response);
@@ -630,6 +990,69 @@ void startWebserver()
 
 			request->send(204);
 		}
+
+		if (request->url() == "/api/winder")
+		{
+			Serial.println("[STATUS] - Received add winder POST request");
+
+			JsonDocument json;
+			DeserializationError error = deserializeJson(json, data);
+			String requiredKeys[1] = {"localNode"};
+
+			if (error)
+			{
+				Serial.println("[ERROR] - Failed to deserialize [winder] request body");
+				request->send(500, "text/plain", "Failed to deserialize request body");
+				return;
+			}
+
+			String childNode = json["localNode"].as<String>();
+			if (childNode == "")
+			{
+				request->send(400, "text/plain", "Missing required field: 'localNode'");
+			}
+			else
+			{
+				Serial.println("[STATUS] - Adding child node: " + childNode);
+				// Macs array has a max size of 6; add to array if not already present
+				for (int i = 0; i < 6; i++)
+				{
+					if (knownMacs[i] == childNode)
+					{
+						break;
+					}
+					
+					if (knownMacs[i] == "")
+					{
+						knownMacs[i] = childNode;
+						break;
+					}
+					Serial.print(knownMacs[i] + ", ");
+				}
+
+				Serial.print("[STATUS] - known macs: ");
+				for (int i = 0; i < 6; i++)
+				{
+					Serial.print(knownMacs[i] + ", ");
+				}
+				Serial.println();
+
+				AsyncResponseStream *response = request->beginResponseStream("application/json");
+				JsonDocument json;
+				json["rootNode"] = WiFi.macAddress();
+				serializeJson(json, *response);
+				request->send(response);
+
+				// set mesh message body and set meshMessageReady flag for loop execution
+				meshMessage.forRoot = false;
+				meshMessage.rootMessage = "tx_status";
+				meshMessage.destinationMacAddress = childNode;
+
+				meshEnabled = true;
+				meshMessageReady = true;
+			}
+		}
+
 	});
 
 	server.on("/api/reset", HTTP_GET, [](AsyncWebServerRequest *request)
@@ -763,6 +1186,7 @@ void saveWifiCallback()
 	delay(1500);
 }
 
+
 void setup()
 {
 	WiFi.mode(WIFI_STA);
@@ -816,13 +1240,43 @@ void setup()
 		// retrieve & read saved settings
 		loadConfigVarsFromFile(settingsFile);
 
-		if (!MDNS.begin("winderoo"))
-		{
-			Serial.println("[STATUS] - Failed to start mDNS");
-			drawNotification("Failed to start mDNS");
+		String searchingForNodesMessage[3] = {"Looking for", "winderoo nodes on", "your network..."};
+		drawNotification("Searching");
+		drawMultiLineText(searchingForNodesMessage);
+
+		IPAddress winderooIP;
+		byte localMac[6];
+		WiFi.hostByName("winderoo.local", winderooIP);
+
+		if (winderooIP == IPAddress(0, 0, 0, 0)) {
+			Serial.println("[STATUS] - winderoo node has not been found on network");
+			if (!MDNS.begin("winderoo"))
+			{
+				Serial.println("[STATUS] - Failed to start mDNS");
+				drawNotification("Failed to start mDNS");
+			}
+			MDNS.addService("_winderoo", "_tcp", 80);
+			drawNotification("mdns started");
+			Serial.println("[STATUS] - mDNS started");
+
+			// Initialize ESP-NOW
+			quickEspNow.begin(1, 0, false);
+			quickEspNow.onDataRcvd(meshDataReceived);
+
+		} else {
+			WiFi.macAddress(localMac);
+			Serial.println("[STATUS] - winderoo node found on network at IP: " + winderooIP.toString());
+			char localMacString[18];
+			sprintf(localMacString, "%02x:%02x:%02x:%02x:%02x:%02x", localMac[0], localMac[1], localMac[2], localMac[3], localMac[4], localMac[5]);
+			selfIsChildNode = true;
+
+			// Initialize ESP-NOW
+			quickEspNow.begin();
+			quickEspNow.onDataRcvd(meshDataReceived);
+
+			registerSelfAsChildNode(localMacString);
 		}
-		MDNS.addService("_winderoo", "_tcp", 80);
-		Serial.println("[STATUS] - mDNS started");
+
 		if (OLED_ENABLED)
 		{
 			display.clearDisplay();
@@ -967,5 +1421,48 @@ void loop()
 		drawDynamicGUI();
 	}
 
-	wm.process();
+	static time_t lastMessageSendTime = 0;
+
+	if (meshMessageReady && quickEspNow.readyToSendData() && meshMessageSent && ((millis () - lastMessageSendTime) > 2000))
+	{
+		lastMessageSendTime = millis();
+		meshMessageSent = false;
+		
+		JsonDocument doc;
+		doc["destinationMacAddress"] = meshMessage.destinationMacAddress;
+		doc["rootMessage"] = meshMessage.rootMessage;
+		doc["forRoot"] = meshMessage.forRoot;
+		doc["status"] = meshMessage.status;
+		doc["rotationsPerDay"] = meshMessage.rotationsPerDay;
+		doc["direction"] = meshMessage.direction;
+		doc["hour"] = meshMessage.hour;
+		doc["minutes"] = meshMessage.minutes;
+		doc["screenSleep"] = meshMessage.screenSleep;
+		doc["timerEnabled"] = meshMessage.timerEnabled;
+		doc["screenEquipped"] = meshMessage.screenEquipped;
+		doc["db"] = meshMessage.db;
+		doc.shrinkToFit();
+
+		String output;
+		serializeJson(doc, output);
+
+		if (meshMessage.forRoot)
+		{
+			meshMessageRoot(output);
+		}
+		else if (meshMessage.destinationMacAddress != "")
+		{
+			requestNodeStatus(meshMessage.destinationMacAddress, output);
+		}
+		else
+		{
+			meshBroadcastMessage(output);
+		}
+
+		meshMessageReady = false;
+	}
+
+	if (!selfIsChildNode) {
+		wm.process();
+	}
 }

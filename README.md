@@ -88,5 +88,5 @@ To add another language:
 
 ### API Specification
 
-The API has 4 endpoints. You can explore them in the attached Open API definition.
+The API has 6 endpoints. You can explore them in the attached Open API definition.
 - [Open API Definition](./openapi.yml)

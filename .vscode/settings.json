@@ -1,6 +1,7 @@
 {
     "C_Cpp.errorSquiggles": "disabled",
     "files.associations": {
+        "*.txt": "platformio-debug.asm",
         "bitset": "cpp",
         "memory": "cpp",
         "random": "cpp",
@@ -57,6 +58,7 @@
         "stdexcept": "cpp",
         "streambuf": "cpp",
         "thread": "cpp",
-        "cinttypes": "cpp"
+        "cinttypes": "cpp",
+        "list": "cpp"
     }
 }
