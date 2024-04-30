@@ -770,26 +770,24 @@ void startWebserver()
 		json["db"] = WiFi.RSSI();
 		json["screenSleep"] = screenSleep;
 		json["screenEquipped"] = screenEquipped;
+		JsonArray networkedUnits = json["networkedUnits"].to<JsonArray>();
 		
 		// Add known nodes to response
-		JsonArray meshNodes = json["networkedUnits"].to<JsonArray>();
-		for (NODE node : nodes)
-		{
-			JsonObject nodeData;
-			nodeData["address"] = node.nodeMac;
-			nodeData["status"] = node.nodeStatus;
-			nodeData["nodeDirection"] = node.nodeDirection;
-			nodeData["rotationsPerDay"] = node.nodeTPD;
-			nodeData["hour"] = node.nodeHour;
-			nodeData["minutes"] = node.nodeMinutes;
-			nodeData["timerEnabled"] = node.nodeTimerEnabled;
-			nodeData["screenSleep"] = node.nodeScreenSleep;
-			nodeData["screenEquipped"] = node.nodeScreenEquipped;
-			nodeData["db"] = node.nodeDb;
-			meshNodes.add(meshNodes);
+		for (const auto& unitData : nodes) {
+			JsonObject networkedUnit = networkedUnits.add<JsonObject>();
+			networkedUnit["address"] = unitData.nodeMac;
+			networkedUnit["status"] = unitData.nodeStatus;
+			networkedUnit["direction"] = unitData.nodeDirection;
+			networkedUnit["rotationsPerDay"] = unitData.nodeTPD;
+			networkedUnit["hour"] = unitData.nodeHour;
+			networkedUnit["minutes"] = unitData.nodeMinutes;
+			networkedUnit["timerEnabled"] = unitData.nodeTimerEnabled;
+			networkedUnit["screenSleep"] = unitData.nodeScreenSleep;
+			networkedUnit["screenEquipped"] = unitData.nodeScreenEquipped;
+			networkedUnit["db"] = unitData.nodeDb;
 		}
 		
-		// @todo - gitting hit by watchdog here
+		json.shrinkToFit();
 		serializeJson(json, *response);
 
 		request->send(response);
@@ -1438,7 +1436,6 @@ void loop()
 		{
 			meshBroadcastMessage(output);
 		}
-		delay(100);
 
 		meshMessageReady = false;
 	}
