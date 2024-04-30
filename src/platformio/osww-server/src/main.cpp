@@ -588,8 +588,30 @@ void parseReceivedMessageBody(String address, uint8_t* data, uint8_t len)
 	}
 
 	// We assume the message is an child update message
-	if (doc["forRoot"].as<bool>()) 
+	if (doc["forRoot"].as<bool>())
 	{
+		Serial.println("[STATUS] - Received child update message");
+
+		// Check if node already exists, and update the known state if it does
+		for (auto& node : nodes)
+		{
+			if (node.nodeMac == address)
+			{
+				Serial.println("[STATUS] - Node already exists in list");
+				Serial.println("[STATUS] - Updating state for node: " + address);
+				node.nodeStatus = doc["status"].as<String>();
+				node.nodeTPD = doc["rotationsPerDay"].as<String>();
+				node.nodeDirection = doc["direction"].as<String>();
+				node.nodeHour = doc["hour"].as<String>();
+				node.nodeMinutes = doc["minutes"].as<String>();
+				node.nodeScreenSleep = doc["screenSleep"].as<String>();
+				node.nodeTimerEnabled = doc["timerEnabled"].as<String>();
+				node.nodeScreenEquipped = doc["screenEquipped"].as<String>();
+				node.nodeDb = doc["db"].as<int>();
+				return;
+			}
+		}
+
 		Serial.println("[STATUS] - Adding child state to nodes list");
 		NODE node;
 		node.nodeMac = address;
