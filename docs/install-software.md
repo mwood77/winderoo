@@ -33,7 +33,7 @@
             ```
             - Change `-D OLED_ENABLED=false` to `-D OLED_ENABLED=true` to enable OLED screen support
             - Change `-D PWM_MOTOR_CONTROL=false` to `-D PWM_MOTOR_CONTROL=true` to enable PWM motor control
-                - > PWM_MOTOR_CONTROL is an experimental flag. You will encounter incorrect cycle time estimation and other possible bugs unless you align the motor speed to **40RPM** (see [Troubleshooting](#troubleshooting)). Use at your own risk.
+                - > PWM_MOTOR_CONTROL is an experimental flag. You will encounter incorrect cycle time estimation and other possible bugs unless you align the motor speed to **20 RPM** (see [Troubleshooting](#troubleshooting)). Use at your own risk.
     - PlatformIO will now compile Winderoo with OLED screen and or PWM motor support
 1. Select 'PlatformIO' (alien/insect looking button) on the workspace menu and wait for visual studio code to finish initializing the project
     <div align="center"><img src="images/platformIO.png" alt="platformIO button"></div>
@@ -67,9 +67,9 @@ Ok, you've got 2 LEDs illuminated on your board. Great! Let's make sure the code
 ## Troubleshooting
 ### Motor Turns too fast when using PWM
 > [!WARNING]
-> PWM_MOTOR_CONTROL is an experimental flag. You will encounter incorrect cycle time estimation and other possible bugs unless you align the motor speed to **40RPM**.
+> PWM_MOTOR_CONTROL is an experimental flag. You will encounter incorrect cycle time estimation and other possible bugs unless you align the motor speed to **20 RPM**.
 
-The default speed is `200` (8-bit resolution), where `0` is the slowest and `255` is the fastest.
+The default speed is `145` (8-bit resolution), where `0` is the slowest and `255` is the fastest.
 
 You can modify this value here:
 - [`MotorControl.cpp`](../src/platformio/osww-server/src/utils/MotorControl.cpp#L7)
