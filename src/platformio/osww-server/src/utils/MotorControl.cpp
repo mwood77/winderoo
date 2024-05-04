@@ -4,7 +4,7 @@
 	#include <ESP32MX1508.h>
 	#define CH1 1
 	#define CH2 2
-    int motorSpeed = 200;
+    int motorSpeed = 145;
 #endif
 
 MotorControl::MotorControl(int pinA, int pinB, bool pwmMotorControl)
