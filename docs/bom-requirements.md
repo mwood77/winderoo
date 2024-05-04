@@ -24,7 +24,7 @@
 ### Optional parts
 The following parts list will allow you to add:
 - 1x SSD1306 compatible OLED screen (0.96" size)
-- 1x MX1508 Motor Controller, which is a much smaller DC motor controller. Winderoo supports granular motor control with this board (PWM control). You must set a build flag to use this, which is calledout during the [software installation instructions](./install-software.md).
+- 1x MX1508 Motor Controller. This is a much smaller DC motor controller. Winderoo supports granular motor control with this board (PWM control); you must set a build flag to use this, which has a callout step during the [software installation instructions](./install-software.md).
 
 ESP32MX1508
 
