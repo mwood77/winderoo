@@ -75,4 +75,4 @@ Ok, you've got 2 LEDs illuminated on your board. Great! Let's make sure the code
         - After changing that value, you must recompile the software and upload it to your ESP32
 - You can also tweak the rotational timing value. By default this is set at 8 seconds to complete one revolution.
     - To change this value, change the variable `durationInSecondsToCompleteOneRevolution` here:
-    -  (`main.cpp`)[../src/platformio/osww-server/src/main.cpp#L38]
+    -  [`main.cpp`](../src/platformio/osww-server/src/main.cpp#L38)
