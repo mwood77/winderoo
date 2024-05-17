@@ -10,9 +10,10 @@ private:
     int _pinB;
     // 1 = clockwise, 0 = counter clockwise
     int _motorDirection;
+    bool _pwmMotorControl;
 
 public:
-    MotorControl(int _pinA, int _pinB);
+    MotorControl(int _pinA, int _pinB, bool pwmMotorControl = false);
 
     void clockwise();
 

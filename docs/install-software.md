@@ -3,7 +3,7 @@
 # Software Installtion & Flashing your ESP32
 
 > [!IMPORTANT]
-> This project is an add-on to your already built [Open Source Watch Winder (OSWW)](https://github.com/mwood77/osww). 
+> This project is an add-on to your already built [Open Source Watch Winder (OSWW)](https://github.com/mwood77/osww).
 
 - This project requires a microncontroller which replaces the Pi Pico used in the OSWW.
 - The Raspberry Pi Pico is incompatible with this project and must be swapped.
@@ -21,16 +21,20 @@
     - If you downloaded the repository as a zip, uzip it before proceeding to step 2.
     <div align="center"><img src="images/download_directory.png" alt="how to download"></div>
 1. Open the extracted folder (or cloned repository if using git) in Visual Studio Code
-1. **IMPORTANT** -> if you're building Winderoo with an OLED screen attached, you must enable a build flag to tell PlatformIO to include additional libraries. To do this:
-    - Navigate to the file `platformio.ini`
+1. **Build Options - IMPORTANT**
+    -  if you're building Winderoo with an OLED screen or you desire fine-grained motor control (pulse width modulation), you must enable one (or two) build flags to tell PlatformIO to include additional libraries.
+    - To toggle these build flags, navigate to the file called `platformio.ini`:
             <div align="center"><img src="images/platformio-ini.png" alt="how to download"></div>
-    - In this file, you'll see the following block of code:
-        ```yml
-        build_flags =
-	        -D OLED_ENABLED=false
-        ```
-    - Change `-D OLED_ENABLED=false` to `-D OLED_ENABLED=true`
-    - PlatformIO will now compile Winderoo with OLED screen support
+        - In this file, you'll see the following block of code:
+            ```yml
+            build_flags =
+                -D OLED_ENABLED=false
+                -D PWM_MOTOR_CONTROL=false
+            ```
+            - Change `-D OLED_ENABLED=false` to `-D OLED_ENABLED=true` to enable OLED screen support
+            - Change `-D PWM_MOTOR_CONTROL=false` to `-D PWM_MOTOR_CONTROL=true` to enable PWM motor control
+                - > PWM_MOTOR_CONTROL is an experimental flag. You will encounter incorrect cycle time estimation and other possible bugs unless you align the motor speed to **20 RPM** (see [Troubleshooting](#troubleshooting)). Use at your own risk.
+    - PlatformIO will now compile Winderoo with OLED screen and or PWM motor support
 1. Select 'PlatformIO' (alien/insect looking button) on the workspace menu and wait for visual studio code to finish initializing the project
     <div align="center"><img src="images/platformIO.png" alt="platformIO button"></div>
 1. Expand the main heading: **"esp32doit-devkit-v1"**:
@@ -41,7 +45,7 @@
     <div align="center"><img src="images/code_uploaded.png" alt="upload filesystem button"></div>
 1. All done! Your microcontroller should now have 2 LEDs illuminated (see beneath). If it does, proceed to [Next steps](#next-steps). If not, try to upload the code & file system again.
     <div align="center"><img src="images/led_states/blue_on.png" alt="upload filesystem button" height="300"></div>
-1. If you have a different LED state, compare it with this table: 
+1. If you have a different LED state, compare it with this table:
     - [Understanding Winderoo's LED Blink Status](user-manual.md#understanding-winderoos-led-blink-status)
 
 ## Next steps:
@@ -59,3 +63,16 @@ Ok, you've got 2 LEDs illuminated on your board. Great! Let's make sure the code
     - [http://winderoo.local/](http://winderoo.local/)
 1. If you see Winderoo's user interface, you're all done!
     - [Here is an overview of Winderoo's user interface](./user-manual.md)
+
+## Troubleshooting
+### Motor Turns too fast when using PWM
+> [!WARNING]
+> PWM_MOTOR_CONTROL is an experimental flag. You will encounter incorrect cycle time estimation and other possible bugs unless you align the motor speed to **20 RPM**.
+
+- The default speed is `145` (8-bit resolution), where `0` is the slowest and `255` is the fastest. You can modify this value here:
+    - [`MotorControl.cpp`](../src/platformio/osww-server/src/utils/MotorControl.cpp#L7)
+        - Change the value for the variable `motorSpeed` to any value between `0` and `255`
+        - After changing that value, you must recompile the software and upload it to your ESP32
+- You can also tweak the rotational timing value. By default this is set at 8 seconds to complete one revolution.
+    - To change this value, change the variable `durationInSecondsToCompleteOneRevolution` here:
+    -  [`main.cpp`](../src/platformio/osww-server/src/main.cpp#L38)
