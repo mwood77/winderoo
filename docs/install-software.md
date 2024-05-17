@@ -69,9 +69,10 @@ Ok, you've got 2 LEDs illuminated on your board. Great! Let's make sure the code
 > [!WARNING]
 > PWM_MOTOR_CONTROL is an experimental flag. You will encounter incorrect cycle time estimation and other possible bugs unless you align the motor speed to **20 RPM**.
 
-The default speed is `145` (8-bit resolution), where `0` is the slowest and `255` is the fastest.
-
-You can modify this value here:
-- [`MotorControl.cpp`](../src/platformio/osww-server/src/utils/MotorControl.cpp#L7)
-    - Change the value for the variable `motorSpeed` to any value between `0` and `255`
-    - After changing that value, you must recompile the software and upload it to your ESP32
+- The default speed is `145` (8-bit resolution), where `0` is the slowest and `255` is the fastest. You can modify this value here:
+    - [`MotorControl.cpp`](../src/platformio/osww-server/src/utils/MotorControl.cpp#L7)
+        - Change the value for the variable `motorSpeed` to any value between `0` and `255`
+        - After changing that value, you must recompile the software and upload it to your ESP32
+- You can also tweak the rotational timing value. By default this is set at 8 seconds to complete one revolution.
+    - To change this value, change the variable `durationInSecondsToCompleteOneRevolution` here:
+    -  (`main.cpp`)[../src/platformio/osww-server/src/main.cpp#L38]
