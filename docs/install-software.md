@@ -32,7 +32,7 @@
                 -D PWM_MOTOR_CONTROL=false
             ```
             - Change `-D OLED_ENABLED=false` to `-D OLED_ENABLED=true` to enable OLED screen support
-            - Change `-D PWM_MOTOR_CONTROL=false` to `-D PWM_MOTOR_CONTROL=true` to enable PWM motor control
+            - Change `-D PWM_MOTOR_CONTROL=false` to `-D PWM_MOTOR_CONTROL=true` to enable PWM motor control; at the time of writing, Winderoo with PWM only supports `MX1508` derived motor controllers.
                 - > PWM_MOTOR_CONTROL is an experimental flag. You will encounter incorrect cycle time estimation and other possible bugs unless you align the motor speed to **20 RPM** (see [Troubleshooting](#troubleshooting)). Use at your own risk.
     - PlatformIO will now compile Winderoo with OLED screen and or PWM motor support
 1. Select 'PlatformIO' (alien/insect looking button) on the workspace menu and wait for visual studio code to finish initializing the project
