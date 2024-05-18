@@ -70,24 +70,16 @@ paths:
                 type: string
                 examples:
                   - Failed to deserialize request body
-  /winder/{address}/update:
+  /winder/update:
     put:
       tags:
         - Modify
       summary: Change the state of a networked Winderoo
-      parameters:
-        - in: path
-          name: address
-          schema:
-            type: string
-          description: The address of the networked Winderoo
-          example: DA-CE-5C-63-BD-D2
-          required: true
       requestBody:
         $ref: '#/components/requestBodies/UpdateNetworkWinderBody'
       responses:
-        '204':
-          description: Successful opeation
+        '202':
+          description: Accepted
         '400':
           description: Missing required field in request body
           content:
@@ -211,6 +203,7 @@ components:
           schema:
             $ref: '#/components/schemas/Update'
           example:
+            address: "00:00:00:00:00"
             tpd: "600"
             hour: "10"
             minutes: "10"

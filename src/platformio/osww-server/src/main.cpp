@@ -101,6 +101,7 @@ struct MESH_MESSAGE
 	String screenSleep = "1";
 	String timerEnabled = "0";
 	String screenEquipped;
+	String channel;
 	int db = 0;
 };
 
@@ -509,7 +510,9 @@ void registerSelfAsChildNode(char* localMacString) {
 		JsonDocument json;
 		deserializeJson(json, http.getStream());
 		const char* rootNode = json["rootNode"];
+		const char* rootChannel = json["channel"];
 		Serial.println("[STATUS] - received root node mac: " + (String)rootNode);
+		Serial.println("[STATUS] - received root channel: " + (String)rootChannel);
 		rootMac = rootNode;
 
 		http.end();
@@ -528,6 +531,23 @@ void registerSelfAsChildNode(char* localMacString) {
 		meshMessage.rotationsPerDay = userDefinedSettings.rotationsPerDay;
 		meshMessage.screenEquipped = screenEquipped;
 		meshMessage.db = WiFi.RSSI();
+
+		// Disconnect from WiFi & configure to run on CH 1 as child mesh
+		// wm.disconnect();
+		// WiFi.disconnect(); 
+		// WiFi.mode(WIFI_AP_STA); 
+		// WiFi.softAP("childNode","fakepasswordforchildnode", 11, true); // hide true
+		// WiFi.set
+		
+		// Reconfigure to match parent node wifi channel
+		// esp_wifi_set_promiscuous(true);
+		// // esp_wifi_set_channel(atoi(rootChannel), WIFI_SECOND_CHAN_NONE);
+		// esp_wifi_set_channel(11, WIFI_SECOND_CHAN_NONE);
+		// esp_wifi_set_promiscuous(false);
+		// quickEspNow.begin(atoi(rootChannel), 0 , false);
+		
+		// @todo - something weird is still going on with wifi channels...
+		quickEspNow.begin(11, 0 , false);
 
 		meshMessageReady = true;
 	}
@@ -587,7 +607,7 @@ void parseReceivedMessageBody(String address, uint8_t* data, uint8_t len)
 		return;
 	}
 
-	// We assume the message is an child update message
+	// We assume the message is a child update message
 	if (doc["forRoot"].as<bool>())
 	{
 		Serial.println("[STATUS] - Received child update message");
@@ -641,6 +661,22 @@ void parseReceivedMessageBody(String address, uint8_t* data, uint8_t len)
 		userDefinedSettings.timerEnabled = doc["timerEnabled"].as<String>();
 		return;
 	}
+	
+	// @todo check this
+	// tx_update = update self with new settings
+	if (doc["rootMessage"].as<String>() == "tx_update")
+	{
+		Serial.println("[STATUS] - Updating local state with new settings");
+		userDefinedSettings.status = doc["status"].as<String>();
+		userDefinedSettings.rotationsPerDay = doc["rotationsPerDay"].as<String>();
+		userDefinedSettings.direction = doc["direction"].as<String>();
+		userDefinedSettings.hour = doc["hour"].as<String>();
+		userDefinedSettings.minutes = doc["minutes"].as<String>();
+		screenSleep = doc["screenSleep"].as<String>();
+		userDefinedSettings.timerEnabled = doc["timerEnabled"].as<String>();
+		return;
+	}
+
 }
 
 void meshDataReceived(uint8_t* address, uint8_t* data, uint8_t len, signed int rssi, bool broadcast) {
@@ -713,14 +749,14 @@ void meshMessageRoot(String message) {
 		meshMessageSent = true;
 		meshResetMessageBody();
     }
-	else if (retries < 3)
-	{
-        Serial.println("[WARN] - >>>>>>>>>> Failed to send message to root node: " + rootMac);
-        Serial.println("[WARN] - Retrying...: " + retries);
-		delay(127);
-		retries++;
-		meshMessageRoot(message);
-    }
+	// else if (retries < 3)
+	// {
+    //     Serial.println("[WARN] - >>>>>>>>>> Failed to send message to root node: " + rootMac);
+    //     Serial.println("[WARN] - Retrying...: " + retries);
+	// 	delay(127);
+	// 	retries++;
+	// 	meshMessageRoot(message);
+    // }
 	else 
 	{
 		retries = 0;
@@ -729,15 +765,15 @@ void meshMessageRoot(String message) {
 	}
 }
 
-void requestNodeStatus(String macAddress, String message) {
+void messageSpecificNode(String macAddress, String message) {
 	int retries = 0;
-	Serial.println("[STATUS] - Requesting status of node: " + macAddress);
+	Serial.println("[STATUS] - Messaging node: " + macAddress);
 	byte* nodeMac = new byte[6];
 	String hexByte;
 	int j = 0;
-	for (int i = 0; i < macAddress.length(); i++) {
-		if (macAddress.charAt(i) != ':') {
-			hexByte += macAddress.charAt(i);
+	for (int i = 0; i < rootMac.length(); i++) {
+		if (rootMac.charAt(i) != ':') {
+			hexByte += rootMac.charAt(i);
 			if (hexByte.length() == 2) {
 				nodeMac[j] = strtol(hexByte.c_str(), NULL, 16);
 				hexByte = "";
@@ -752,14 +788,14 @@ void requestNodeStatus(String macAddress, String message) {
 		meshMessageSent = true;
 		meshResetMessageBody();
     }
-	else if (retries < 3)
-	{
-        Serial.println("[WARN] - >>>>>>>>>> Message failed to send to node: " + macAddress);
-		Serial.println("[WARN] - Retrying...: " + retries);
-		delay(320);
-		retries++;
-		requestNodeStatus(macAddress, message);
-    }
+	// else if (retries < 3)
+	// {
+    //     Serial.println("[WARN] - >>>>>>>>>> Message failed to send to node: " + macAddress);
+	// 	Serial.println("[WARN] - Retrying...: " + retries);
+	// 	delay(320);
+	// 	retries++
+	// 	requestNodeStatus(macAddress, message);
+    // }
 	else 
 	{
 		retries = 0;
@@ -895,13 +931,13 @@ void startWebserver()
 			}
 
 			// validate request body
-				for (int i = 0; i < arraySize; i++)
+			for (int i = 0; i < arraySize; i++)
+			{
+				if(!json.containsKey(requiredKeys[i]))
 				{
-					if(!json.containsKey(requiredKeys[i]))
-					{
-						request->send(400, "text/plain", "Missing required field: '" + requiredKeys[i] +"'");
-					}
+					request->send(400, "text/plain", "Missing required field: '" + requiredKeys[i] +"'");
 				}
+			}
 
 			// These values can be mutated / saved directly
 			userDefinedSettings.hour = json["hour"].as<String>();
@@ -1053,6 +1089,54 @@ void startWebserver()
 			}
 		}
 
+		if (request->url() == "/api/winder/update") {
+			Serial.println("[STATUS] - Received update winder node POST request");
+			JsonDocument json;
+			DeserializationError error = deserializeJson(json, data);
+			int arraySize = 8;
+			String requiredKeys[arraySize] = {"address", "tpd", "hour", "minutes", "timerEnabled", "action", "rotationDirection", "screenSleep"};
+
+			if (error)
+			{
+				Serial.println("[ERROR] - Failed to deserialize [winder node] request body");
+				request->send(500, "text/plain", "Failed to deserialize request body");
+				return;
+			}
+
+			// validate request body
+			for (int i = 0; i < arraySize; i++)
+			{
+				if(!json.containsKey(requiredKeys[i]))
+				{
+					request->send(400, "text/plain", "Missing required field: '" + requiredKeys[i] +"'");
+				}
+			}
+
+			request->send(202);
+
+			String nodeToUpdate = json["address"].as<String>();
+			String requestNodeTPD = json["tpd"].as<String>();
+			String requestNodeHour = json["hour"].as<String>();
+			String requestNodeMinutes = json["minutes"].as<String>();
+			String requestNodeTimerEnabled = json["timerEnabled"].as<String>();
+			String requestNodeAction = json["action"].as<String>();
+			String requestNodeRotationDirection = json["rotationDirection"].as<String>();
+			String requestNodeScreenSleep = json["screenSleep"].as<String>();
+
+			// set mesh message body and set meshMessageReady flag for loop execution
+			meshMessage.forRoot = false;
+			meshMessage.rootMessage = "tx_update";
+			meshMessage.destinationMacAddress = nodeToUpdate;
+			meshMessage.rotationsPerDay = requestNodeTPD;
+			meshMessage.hour = requestNodeHour;
+			meshMessage.minutes = requestNodeMinutes;
+			meshMessage.timerEnabled = requestNodeTimerEnabled;
+			meshMessage.direction = requestNodeRotationDirection;
+			meshMessage.status = requestNodeAction;
+			meshMessage.screenSleep = requestNodeScreenSleep;
+
+			meshMessageReady = true;
+		}
 	});
 
 	server.on("/api/reset", HTTP_GET, [](AsyncWebServerRequest *request)
@@ -1259,8 +1343,9 @@ void setup()
 			drawNotification("mdns started");
 			Serial.println("[STATUS] - mDNS started");
 
+
 			// Initialize ESP-NOW
-			quickEspNow.begin(1, 0, false);
+			quickEspNow.begin(11, 0, false);
 			quickEspNow.onDataRcvd(meshDataReceived);
 
 		} else {
@@ -1270,10 +1355,7 @@ void setup()
 			sprintf(localMacString, "%02x:%02x:%02x:%02x:%02x:%02x", localMac[0], localMac[1], localMac[2], localMac[3], localMac[4], localMac[5]);
 			selfIsChildNode = true;
 
-			// Initialize ESP-NOW
-			quickEspNow.begin();
 			quickEspNow.onDataRcvd(meshDataReceived);
-
 			registerSelfAsChildNode(localMacString);
 		}
 
@@ -1427,6 +1509,12 @@ void loop()
 	{
 		lastMessageSendTime = millis();
 		meshMessageSent = false;
+
+		// @todo - move this somewhere else
+		uint8_t primaryChan;
+		wifi_second_chan_t secondChan;
+		esp_wifi_get_channel(&primaryChan, &secondChan);
+		Serial.println("[STATUS] - WiFi Channel: " + String(primaryChan));
 		
 		JsonDocument doc;
 		doc["destinationMacAddress"] = meshMessage.destinationMacAddress;
@@ -1441,6 +1529,7 @@ void loop()
 		doc["timerEnabled"] = meshMessage.timerEnabled;
 		doc["screenEquipped"] = meshMessage.screenEquipped;
 		doc["db"] = meshMessage.db;
+		doc["channel"] = String(primaryChan);
 		doc.shrinkToFit();
 
 		String output;
@@ -1452,7 +1541,7 @@ void loop()
 		}
 		else if (meshMessage.destinationMacAddress != "")
 		{
-			requestNodeStatus(meshMessage.destinationMacAddress, output);
+			messageSpecificNode(meshMessage.destinationMacAddress, output);
 		}
 		else
 		{
