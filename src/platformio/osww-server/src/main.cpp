@@ -47,6 +47,11 @@ bool OLED_ROTATE_SCREEN_180 = false;
 int SCREEN_WIDTH = 128; // OLED display width, in pixels
 int SCREEN_HEIGHT = 64; // OLED display height, in pixels
 int OLED_RESET = -1; // Reset pin number (or -1 if sharing Arduino reset pin)
+
+// Home Assistant Configuration
+char* HOME_ASSISTANT_BROKER_IP = "YOUR_HOME_ASSISTANT_IP";
+char* HOME_ASSISTANT_USERNAME = "YOUR_HOME_ASSISTANT_LOGIN_USERNAME";
+char* HOME_ASSISTANT_PASSWORD = "YOUR_HOME_ASSISTANT_LOGIN_PASSWORD";
 /*
  * *************************************************************************************
  * ******************************* END CONFIGURABLES ***********************************
@@ -98,6 +103,21 @@ ESP32Time rtc;
 
 #ifdef OLED_ENABLED
 	Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
+#endif
+
+#ifdef HOME_ASSISTANT_ENABLED
+	#include <ArduinoHA.h>
+
+	HADevice device;
+	HAMqtt mqtt(client, device);
+
+	// Define HA Sensors
+	HASwitch ha_oledSwitch("oled");
+	HANumber ha_rpd("rpd");
+	HASelect ha_select("direction");
+	HASwitch ha_timerSwitch("timerEnabled");
+	HAButton ha_startButton("startButton");
+	HAButton ha_stopButton("stopButton");
 #endif
 
 void drawCentreStringToMemory(const char *buf, int x, int y)
@@ -258,6 +278,23 @@ template <int N> static void drawMultiLineText(const String (&message)[N]) {
 			}
 		}
 	display.display();
+	}
+}
+
+// Home Assistant Helper Function
+int getDirectionIndexForHomeAssistant(String direction)
+{
+	if (direction == "CCW")
+	{
+		return 0;
+	}
+	else if (direction == "BOTH")
+	{
+		return 1;
+	}
+	else
+	{
+		return 2;
 	}
 }
 
@@ -473,6 +510,7 @@ void startWebserver()
 			if( strcmp(p->name().c_str(), "timerEnabled") == 0 )
 			{
 				userDefinedSettings.timerEnabled = p->value().c_str();
+				ha_timerSwitch.setState(userDefinedSettings.timerEnabled.toInt());
 			}
 		}
 
@@ -552,11 +590,20 @@ void startWebserver()
 			userDefinedSettings.minutes = json["minutes"].as<String>();
 			userDefinedSettings.timerEnabled = json["timerEnabled"].as<String>();
 
+			// Update Home Assistant State
+			ha_timerSwitch.setState(userDefinedSettings.timerEnabled.toInt());
+
 			// These values need to be compared to the current settings / running state
 			String requestRotationDirection = json["rotationDirection"].as<String>();
 			String requestTPD = json["tpd"].as<String>();
 			String requestAction = json["action"].as<String>();
 			screenSleep = json["screenSleep"].as<bool>();
+
+			// Update Home Assistant state
+			ha_oledSwitch.setState(!screenSleep); // Invert state because naming is hard...
+			ha_rpd.setState(static_cast<int>(requestTPD.toInt()));
+
+			ha_select.setState(getDirectionIndexForHomeAssistant(requestRotationDirection));
 
 			// Update motor direction
 			if (strcmp(requestRotationDirection.c_str(), userDefinedSettings.direction.c_str()) != 0)
@@ -767,11 +814,116 @@ void saveWifiCallback()
 	delay(1500);
 }
 
+// MQTT & Home Assistant Handlers
+void mqttOnConnected()
+{
+	Serial.println("[STATUS] - MQTT connected!");
+}
+
+void mqttOnDisconnected()
+{
+	Serial.println("[STATUS] - MQTT disconnected!");
+}
+
+void onOledSwitchCommand(bool state, HASwitch* sender)
+{
+	if (state)
+	{
+		screenSleep = false;
+		display.clearDisplay();
+		drawStaticGUI(true);
+		drawDynamicGUI();
+	}
+	else
+	{
+		screenSleep = true;
+		display.clearDisplay();
+		display.display();
+	}
+	
+	// report state back to the Home Assistant
+	sender->setState(state);
+}
+
+void onRpdChangeCommand(HANumeric number, HANumber* sender)
+{
+	char buffer[10];
+	number.toStr(buffer);
+	userDefinedSettings.rotationsPerDay = String(buffer);
+
+	bool writeSuccess = writeConfigVarsToFile(settingsFile, userDefinedSettings);
+	if ( !writeSuccess )
+	{
+		Serial.println("[ERROR] - Failed to write number state [MQTT]");
+	}
+
+	sender->setCurrentState(number);
+}
+
+void onSelectDirectionCommand(int8_t index, HASelect* sender) {
+   switch (index) {
+    case 0:
+        // Option "CCW" was selected
+		userDefinedSettings.direction = "CCW";
+        break;
+
+    case 1:
+        // Option "BOTH" was selected
+		userDefinedSettings.direction = "BOTH";
+        break;
+
+    case 2:
+        // Option "CW" was selected
+		userDefinedSettings.direction = "CW";
+        break;
+
+    default:
+        // unknown option
+        return;
+    }
+
+	bool writeSuccess = writeConfigVarsToFile(settingsFile, userDefinedSettings);
+	if ( !writeSuccess )
+	{
+		Serial.println("[ERROR] - Failed to write direction select state [MQTT]");
+	}
+
+	sender->setState(index);
+}
+
+void onTimerSwitchCommand(bool state, HASwitch* sender)
+{
+	userDefinedSettings.timerEnabled = state ? "1" : "0";
+	bool writeSuccess = writeConfigVarsToFile(settingsFile, userDefinedSettings);
+	if ( !writeSuccess )
+	{
+		Serial.println("[ERROR] - Failed to write timer switch state [MQTT]");
+	}
+
+	sender->setState(state);
+}
+
+void handleHAStartButton(HAButton* sender)
+{
+	if (!routineRunning)
+	{
+		beginWindingRoutine();
+	}
+}
+
+void handleHAStopButton(HAButton* sender)
+{
+	motor.stop();
+	routineRunning = false;
+	userDefinedSettings.status = "Stopped";
+	drawNotification("Stopped");
+}
+
 void setup()
 {
 	WiFi.mode(WIFI_STA);
 	Serial.begin(115200);
-	setCpuFrequencyMhz(80);
+	setCpuFrequencyMhz(240);
 
 	// Prepare pins
 	pinMode(directionalPinA, OUTPUT);
@@ -827,6 +979,66 @@ void setup()
 		}
 		MDNS.addService("_winderoo", "_tcp", 80);
 		Serial.println("[STATUS] - mDNS started");
+
+		// Configure Home Assistant
+		if (HOME_ASSISTANT_ENABLED) 
+		{
+			byte mac[6];
+			WiFi.macAddress(mac);
+			device.setUniqueId(mac, sizeof(mac));
+
+			device.setName("Winderoo");
+			device.setManufacturer("mwood77");
+			device.setModel("Winderoo");
+			device.setSoftwareVersion("1.0.0");
+			device.enableSharedAvailability();
+
+			ha_oledSwitch.setName("OLED");
+			ha_oledSwitch.setIcon("mdi:overscan");
+			ha_oledSwitch.setCurrentState(!screenSleep);
+			ha_oledSwitch.onCommand(onOledSwitchCommand);
+
+			ha_rpd.setName("Rotations Per Day");
+			ha_rpd.setIcon("mdi:rotate-3d-variant");
+			ha_rpd.setMin(100);
+			ha_rpd.setMax(960);
+			ha_rpd.setStep(10);
+			ha_rpd.setCurrentState(static_cast<int32_t>(userDefinedSettings.rotationsPerDay.toInt()));
+			ha_rpd.setOptimistic(true);
+			ha_rpd.onCommand(onRpdChangeCommand);
+
+			ha_select.setName("Direction");
+			ha_select.setIcon("mdi:arrow-left-right");
+			ha_select.setOptions("CCW;BOTH;CW");
+			ha_select.onCommand(onSelectDirectionCommand);
+			ha_select.setCurrentState(getDirectionIndexForHomeAssistant(userDefinedSettings.direction));
+
+			ha_timerSwitch.setName("Timer Enabled");
+			ha_timerSwitch.setIcon("mdi:timer");
+			ha_timerSwitch.setCurrentState(userDefinedSettings.timerEnabled.toInt());
+			ha_timerSwitch.onCommand(onTimerSwitchCommand);
+
+			ha_startButton.setName("Start");
+			ha_startButton.setIcon("mdi:play");
+			ha_startButton.onCommand(handleHAStartButton);
+
+			ha_stopButton.setName("Stop");
+			ha_stopButton.setIcon("mdi:stop");
+			ha_stopButton.onCommand(handleHAStopButton);
+
+			mqtt.onConnected(mqttOnConnected);
+			mqtt.onDisconnected(mqttOnDisconnected);
+			mqtt.begin(HOME_ASSISTANT_BROKER_IP, HOME_ASSISTANT_USERNAME, HOME_ASSISTANT_PASSWORD);
+			Serial.println("[STATUS] - HA Configured - Will attempt to connect to MQTT broker");
+
+			if (OLED_ENABLED)
+			{
+				String configuredHomeAssistantMessage[3] = {"Connfigured", "for", "Home Assistant"};
+				drawMultiLineText(configuredHomeAssistantMessage);
+				delay(1500);
+			}
+		}
+
 		if (OLED_ENABLED)
 		{
 			display.clearDisplay();
@@ -834,7 +1046,10 @@ void setup()
 			drawNotification("Connected to WiFi");
 		}
 
+		drawNotification("Getting time...");
 		getTime();
+
+		drawNotification("Starting webserver...");
 		startWebserver();
 
 		if (strcmp(userDefinedSettings.status.c_str(), "Winding") == 0)
@@ -969,6 +1184,11 @@ void loop()
 	else
 	{
 		drawDynamicGUI();
+	}
+
+	if (HOME_ASSISTANT_ENABLED)
+	{
+		mqtt.loop();
 	}
 
 	wm.process();
