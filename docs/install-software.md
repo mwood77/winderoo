@@ -36,7 +36,7 @@
                 - > 🚦 I'd strongly recommend you have a dedicated MQTT user; do not use your main account.
 
                 - If this feature is enabled, you must add your Home Assistant's IP, username, and password.
-                    - You can add them in [`main.cpp`](https://github.com/mwood77/winderoo/blob/b2d59a803a1c96bf578acefc24e2de71b626fc6e/src/platformio/osww-server/src/main.cpp#L51-L54) inside the configuration block:
+                    - You can add them in [`main.cpp`](https://github.com/mwood77/winderoo/blob/main/src/platformio/osww-server/src/main.cpp#L51-L54) inside the configuration block:
                     ```cpp
                     // Home Assistant Configuration
                     const char* HOME_ASSISTANT_BROKER_IP = "YOUR_HOME_ASSISTANT_IP";
