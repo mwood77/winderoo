@@ -8,11 +8,10 @@
   </h2>
 </div>
 
-<div align="center">
-  <a href="https://www.youtube.com/watch?v=BJKpY6Zp8BI" target="_blank"><strong>👉 See Winderoo in action on youtube 👈</strong></a>
-  <br>
-  <br>
-  <img src="./docs/images/splash-image.jpg" alt="Winderoo - The Open Source Watch Winder" width="600">
+<div align="center"> 
+  <a href="https://www.youtube.com/watch?v=BJKpY6Zp8BI" target="_blank">
+    <img src="./docs/images/winderoo-splash.png" alt="Winderoo - The Open Source Watch Winder" width="600">
+  </a>
   <br>
   <br>
   <p>
@@ -36,7 +35,7 @@
 * Simple setup. Flash the firmware and File System with a few clicks, then connect your phone (or other device) to the winder's setup wifi network & add it to your home network.
 * There's no app required! You control it from a web browser.
 * Minimal electronics / programming experience required
-* Web UI is fully tranlated into 5 langauges (more are welcome!)
+* Web UI is fully translated into 5 languages (more are welcome!)
 
 
 ### Winderoo Requires a Different Microcontroller
@@ -52,7 +51,7 @@
 #### Download and install the following on your computer:
 1. [Visual Studio Code](https://code.visualstudio.com/)
 1. [PlatformIO](https://platformio.org/install/ide?install=vscode)
-    - Note: the "extensions" button has changed since Platformio has created their install guide. You can access the extions pane with the following key combinations:
+    - Note: the "extensions" button has changed since Platformio has created their install guide. You can access the extensions pane with the following key combinations:
         - Windows: Ctrl+Shift+X
         - macOS: Command+Shift+X
 1. You may or may not need these drivers, but some 'knock off' ESP32 dev boards require them.
@@ -70,12 +69,12 @@
 This project welcomes contributions. Please follow the regular git workflow; fork + PR to contribute.
 
 ### Translations / Localization
-Winderoo has multi-language support, and we welcome adding more langauges.
+Winderoo has multi-language support, and we welcome adding more languages.
 
 To add another language:
 1. Duplicate one of the current localizations, and translate the text:
     - `src/angular/osww-frontend/src/assets/i18n/` stores the current localizations.
-1. Add a new langauge menu item here to enable your langauge:
+1. Add a new language menu item here to enable your language:
     - `src/angular/osww-frontend/src/app/header/header.component.html`
 1. Open a Pull Request
 

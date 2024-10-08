@@ -17,7 +17,7 @@
 ### Reset / Change WiFi Network
 | UI Element | Function |
 | :---: |:---: |
-|<img src="gui/reset.png" >  | This is will open a pop-up window, which will ask you to confirm reset, and walk you through the reset proceedure. Use this to change the WiFi network Winderoo connects to. |
+|<img src="gui/reset.png" >  | This is will open a pop-up window, which will ask you to confirm reset, and walk you through the reset procedure. Use this to change the WiFi network Winderoo connects to. |
 |<img src="gui/language.png" >  | This will open a pop-up menu where you can select which language you'd prefer. |
 
 ### Status Bar
@@ -57,7 +57,7 @@
 | UI Element | Function |
 | :---: |:---: |
 |<img src="gui/cycle-start-time-toggle.png" >  | This will enable or disable the winder's timer. When the switch is set to **ENABLED**, Winderoo will begin winding at a your desired 'Cycle Start Time.' If the switch is set to **DISABLED**, you must start the winder using the [control buttons](#control-buttons) |
-|<img src="gui/cycle-start-time.png" >  | Set which time you'd like Winderoo to begin winding at. **_Important!_** WInderoo will _always_ start at this time, even if you've already triggered a manual run with a [control button](#control-buttons). To stop this behaviour, see: [Enable / Disable Winding](#enable--disable-winding) |
+|<img src="gui/cycle-start-time.png" >  | Set which time you'd like Winderoo to begin winding at. **_Important!_** Winderoo will _always_ start at this time, even if you've already triggered a manual run with a [control button](#control-buttons). To stop this behavior, see: [Enable / Disable Winding](#enable--disable-winding) |
 
 ### OLED Screen
 
@@ -72,13 +72,13 @@
 ### Save / Update Settings
 | UI Element | Function |
 | :---: |:---: |
-|<img src="gui/save-button.png" >  | This will capture and save all settings (winding direction, rotations per day, cycle start time). If a winding routine is currenty running, it does not reset the current routine (it will update and finish accordingly). If you wish to make sure the routine is changed, manually stop, then start the routine. See [control buttons](#control-buttons). |
+|<img src="gui/save-button.png" >  | This will capture and save all settings (winding direction, rotations per day, cycle start time). If a winding routine is currently running, it does not reset the current routine (it will update and finish accordingly). If you wish to make sure the routine is changed, manually stop, then start the routine. See [control buttons](#control-buttons). |
 
 
 ## Understanding Winderoo's LED Blink Status
 
 - Most ESP32 dev boards have a primary RED LED that is always on. This cannot be shut off via firmware. 
-    - If you find it bothersome, you can cover it with electrical tape, de-solder it, or cut the trace with an exacto knife.
+    - If you find it bothersome, you can cover it with electrical tape, de-solder it, or cut the trace with an x-acto knife.
 
 - Most ESP32 dev boards have a secondary BLUE LED, however some may be a different colour. 
     - Please use the following table to understand what Winderoo is telling you.
@@ -90,4 +90,4 @@
 | <img src="images/led_states/blue_on.png" height="300">  | secondary LED is illuminated  | Winderoo is ready for setup. Connect to the WiFi network called "Winderoo Setup" and add Winderoo to your WiFi network. |
 | <img src="images/led_states/Winderoo_slow_blink.gif" height="300">   | slow blinking | Winderoo has successfully connected to your WiFi network. When the the **BLUE LED** stops blinking, you may access Winderoo's UI from your web browser. |
 | <img src="images/led_states/Winderoo_fast_blink.gif" height="300"> | fast blinking | Winderoo is resetting, wait until the **BLUE LED** turns solid to begin WiFi setup. |
-| <img src="images/led_states/Winderoo_snooze.gif" height="300">  | extremely slow blinking | Winderoo's winding capabilities have been turned 'OFF' via the software swtich, or an optional physical button. Winderoo will not wind until it has been turned to 'ON.' |
+| <img src="images/led_states/Winderoo_snooze.gif" height="300">  | extremely slow blinking | Winderoo's winding capabilities have been turned 'OFF' via the software switch, or an optional physical button. Winderoo will not wind until it has been turned to 'ON.' |
