@@ -94,6 +94,7 @@ AsyncWebServer server(80);
 HTTPClient http;
 WiFiClient client;
 ESP32Time rtc;
+String winderooVersion = "3.0.0";
 
 #if PWM_MOTOR_CONTROL
 	MotorControl motor(directionalPinA, directionalPinB, true);
@@ -1216,7 +1217,7 @@ void setup()
 			device.setName("Winderoo");
 			device.setManufacturer("mwood77");
 			device.setModel("Winderoo");
-			device.setSoftwareVersion("1.0.0");
+			device.setSoftwareVersion(winderooVersion.c_str());
 			device.enableSharedAvailability();
 
 			ha_oledSwitch.setName("OLED");
