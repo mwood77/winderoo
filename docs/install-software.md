@@ -33,22 +33,20 @@
                 -D HOME_ASSISTANT_ENABLED=false
             ```
             - Change `-D HOME_ASSISTANT_ENABLED=false` to `-D HOME_ASSISTANT_ENABLED=true` to enable Winderoo's Home Assistant integration
-            
-            > ![CAUTION]
-            > I'd strongly recommend you have a dedicated MQTT user; do not use your main account.
+                - > 🚦 I'd strongly recommend you have a dedicated MQTT user; do not use your main account.
 
                 - If this feature is enabled, you must add your Home Assistant's IP, username, and password.
                     - You can add them in [`main.cpp`](https://github.com/mwood77/winderoo/blob/b2d59a803a1c96bf578acefc24e2de71b626fc6e/src/platformio/osww-server/src/main.cpp#L51-L54) inside the configuration block:
-                        ```cpp
-                        // Home Assistant Configuration
-                        const char* HOME_ASSISTANT_BROKER_IP = "YOUR_HOME_ASSISTANT_IP";
-                        const char* HOME_ASSISTANT_USERNAME = "REPLACE_THIS_WITH_HOME_ASSISTANT_LOGIN_USERNAME";
-                        const char* HOME_ASSISTANT_PASSWORD = "REPLACE_THIS_WITH_HOME_ASSISTANT_LOGIN_PASSWORD";
-                        ```
+                    ```cpp
+                    // Home Assistant Configuration
+                    const char* HOME_ASSISTANT_BROKER_IP = "YOUR_HOME_ASSISTANT_IP";
+                    const char* HOME_ASSISTANT_USERNAME = "REPLACE_THIS_WITH_HOME_ASSISTANT_LOGIN_USERNAME";
+                    const char* HOME_ASSISTANT_PASSWORD = "REPLACE_THIS_WITH_HOME_ASSISTANT_LOGIN_PASSWORD";
+                    ```
             - Change `-D OLED_ENABLED=false` to `-D OLED_ENABLED=true` to enable OLED screen support
             - Change `-D PWM_MOTOR_CONTROL=false` to `-D PWM_MOTOR_CONTROL=true` to enable PWM motor control; at the time of writing, Winderoo with PWM only supports `MX1508` derived motor controllers.
-                - > PWM_MOTOR_CONTROL is an experimental flag. You will encounter incorrect cycle time estimation and other possible bugs unless you align the motor speed to **20 RPM** (see [Troubleshooting](#troubleshooting)). Use at your own risk.
-    - PlatformIO will now compile Winderoo with OLED screen and or PWM motor support
+                - > `PWM_MOTOR_CONTROL` is an experimental flag. You will encounter incorrect cycle time estimation and other possible bugs unless you align the motor speed to **20 RPM** (see [Troubleshooting](#troubleshooting)). Use at your own risk.
+    - PlatformIO will now compile Winderoo with OLED screen, Home Assistant, and or PWM motor support
 1. Select 'PlatformIO' (alien/insect looking button) on the workspace menu and wait for visual studio code to finish initializing the project
     <div align="center"><img src="images/platformIO.png" alt="platformIO button"></div>
 1. Expand the main heading: **"esp32doit-devkit-v1"**:
