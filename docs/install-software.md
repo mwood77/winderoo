@@ -33,8 +33,9 @@
                 -D HOME_ASSISTANT_ENABLED=false
             ```
             - Change `-D HOME_ASSISTANT_ENABLED=false` to `-D HOME_ASSISTANT_ENABLED=true` to enable Winderoo's Home Assistant integration
-                > ![CAUTION]
-                > I'd strongly recommend you have a dedicated MQTT user; do not use your main account.
+            
+            > ![CAUTION]
+            > I'd strongly recommend you have a dedicated MQTT user; do not use your main account.
 
                 - If this feature is enabled, you must add your Home Assistant's IP, username, and password.
                     - You can add them in [`main.cpp`](https://github.com/mwood77/winderoo/blob/b2d59a803a1c96bf578acefc24e2de71b626fc6e/src/platformio/osww-server/src/main.cpp#L51-L54) inside the configuration block:
@@ -80,17 +81,19 @@ Ok, you've got 2 LEDs illuminated on your board. Great! Let's make sure the code
 ### Home Assistant
 If you've enabled Winderoo's Home Assistant integration, Winderoo will stream a number of entities into Home Assistant over MQTT. If you're unsure what MQTT or need to set this up in Home Assistant, [please see this document](https://www.home-assistant.io/integrations/mqtt).
 
-Winderoo should be automatically discovered within Home Assistant within 60 seconds of boot. The following entities are available within Home Assistant:
+Winderoo should be automatically discovered by Home Assistant within 60 seconds. The following entities are available to Home Assistant:
 ```yml
  -  button.winderoo_start
  -  button.winderoo_stop
 
  -  sensor.winderoo_status            : "Winding | Stopped"
+ -  sensor.winderoo_wifi_reception    : "Excellent | Good | Fair | Poor"
+ 
  -  number.winderoo_rotations_per_day : 100 <-> 960 
 
  -  select.winderoo_direction         : "CCW | BOTH | CW"
- -  select.winderoo_hour              : "00 <-> 23"
- -  select.winderoo_minutes           : "00 <-> 50"
+ -  select.winderoo_hour              : 00 <-> 23
+ -  select.winderoo_minutes           : 00 <-> 50
  
  -  switch.winderoo_timer_enabled     : "true | false"
  -  switch.winderoo_oled              : "true | false"
