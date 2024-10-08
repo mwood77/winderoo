@@ -52,7 +52,6 @@ int OLED_RESET = -1; // Reset pin number (or -1 if sharing Arduino reset pin)
 const char* HOME_ASSISTANT_BROKER_IP = "YOUR_HOME_ASSISTANT_IP";
 const char* HOME_ASSISTANT_USERNAME = "YOUR_HOME_ASSISTANT_LOGIN_USERNAME";
 const char* HOME_ASSISTANT_PASSWORD = "YOUR_HOME_ASSISTANT_LOGIN_PASSWORD";
-
 /*
  * *************************************************************************************
  * ******************************* END CONFIGURABLES ***********************************
@@ -124,7 +123,6 @@ ESP32Time rtc;
 	HASwitch ha_powerSwitch("power");
 	HASensor ha_rssiReception("rssiReception");
 	HASensor ha_activityState("activity");
-
 #endif
 
 void drawCentreStringToMemory(const char *buf, int x, int y)
@@ -199,7 +197,7 @@ static void drawWifiStatus() {
 			display.fillRect(18, 55+6, 2, 4, WHITE);
 			display.fillRect(22, 55+4, 2, 6, WHITE);
 			display.fillRect(26, 55+2, 2, 8, WHITE);
-			ha_rssiReception.setValue("Excellent");
+			if (HOME_ASSISTANT_ENABLED)	ha_rssiReception.setValue("Excellent");
 		}
 		else if (WiFi.RSSI() > -60)
 		{
@@ -207,20 +205,20 @@ static void drawWifiStatus() {
 			display.fillRect(14, 55+8, 2, 2, WHITE);
 			display.fillRect(18, 55+6, 2, 4, WHITE);
 			display.fillRect(22, 55+4, 2, 6, WHITE);
-			ha_rssiReception.setValue("Good");
+			if (HOME_ASSISTANT_ENABLED) ha_rssiReception.setValue("Good");
 		}
 		else if (WiFi.RSSI() > -70)
 		{
 			// Fair reception - 2 bars
 			display.fillRect(14, 55+8, 2, 2, WHITE);
 			display.fillRect(18, 55+6, 2, 4, WHITE);
-			ha_rssiReception.setValue("Fair");
+			if (HOME_ASSISTANT_ENABLED) ha_rssiReception.setValue("Fair");
 		}
 		else
 		{
 			// Terrible reception - 1 bar
 			display.fillRect(14, 55+8, 2, 2, WHITE);
-			ha_rssiReception.setValue("Poor");
+			if (HOME_ASSISTANT_ENABLED) ha_rssiReception.setValue("Poor");
 		}
 	}
 }
@@ -406,7 +404,7 @@ void beginWindingRoutine()
 	Serial.println(finishTime);
 
 	drawNotification("Winding");
-	ha_activityState.setValue("Winding");
+	if (HOME_ASSISTANT_ENABLED) ha_activityState.setValue("Winding");
 }
 
 /**
@@ -573,7 +571,7 @@ void startWebserver()
 			if( strcmp(p->name().c_str(), "timerEnabled") == 0 )
 			{
 				userDefinedSettings.timerEnabled = p->value().c_str();
-				ha_timerSwitch.setState(userDefinedSettings.timerEnabled.toInt());
+				if (HOME_ASSISTANT_ENABLED) ha_timerSwitch.setState(userDefinedSettings.timerEnabled.toInt());
 			}
 		}
 
@@ -614,15 +612,19 @@ void startWebserver()
 				Serial.println("[STATUS] - Switched off!");
 				userDefinedSettings.status = "Stopped";
 				routineRunning = false;
-				ha_powerSwitch.setState(false);
-				ha_activityState.setValue("Stopped");
 				motor.stop();
 				display.clearDisplay();
 				display.display();
+				
+				if (HOME_ASSISTANT_ENABLED) 
+				{
+					ha_powerSwitch.setState(false);
+					ha_activityState.setValue("Stopped");
+				}
 			} else {
-				ha_powerSwitch.setState(true);
 				drawStaticGUI(true);
 				drawDynamicGUI();
+				if (HOME_ASSISTANT_ENABLED) ha_powerSwitch.setState(true);
 			}
 
 			request->send(204);
@@ -663,12 +665,17 @@ void startWebserver()
 			screenSleep = json["screenSleep"].as<bool>();
 
 			// Update Home Assistant state
-			ha_timerSwitch.setState(userDefinedSettings.timerEnabled.toInt());
-			ha_selectHours.setState(userDefinedSettings.hour.toInt());
-			ha_selectMinutes.setState(getTimerMinutesIndexForHomeAssistant(userDefinedSettings.minutes.toInt()));
-			ha_oledSwitch.setState(!screenSleep); // Invert state because naming is hard...
-			ha_rpd.setState(static_cast<int>(requestTPD.toInt()));
-			ha_selectDirection.setState(getDirectionIndexForHomeAssistant(requestRotationDirection));
+
+			if (HOME_ASSISTANT_ENABLED)
+			{
+				ha_timerSwitch.setState(userDefinedSettings.timerEnabled.toInt());
+				ha_selectHours.setState(userDefinedSettings.hour.toInt());
+				ha_selectMinutes.setState(getTimerMinutesIndexForHomeAssistant(userDefinedSettings.minutes.toInt()));
+				ha_oledSwitch.setState(!screenSleep); // Invert state because naming is hard...
+				ha_rpd.setState(static_cast<int>(requestTPD.toInt()));
+				ha_selectDirection.setState(getDirectionIndexForHomeAssistant(requestRotationDirection));
+			}
+
 
 			// Update motor direction
 			if (strcmp(requestRotationDirection.c_str(), userDefinedSettings.direction.c_str()) != 0)
@@ -718,7 +725,7 @@ void startWebserver()
 				routineRunning = false;
 				userDefinedSettings.status = "Stopped";
 				drawNotification("Stopped");
-				ha_activityState.setValue("Stopped");
+				if (HOME_ASSISTANT_ENABLED) ha_activityState.setValue("Stopped");
 			}
 
 			// Update screen sleep state
@@ -836,7 +843,7 @@ void awaitWhileListening(int pauseInSeconds)
 			routineRunning = false;
 			userDefinedSettings.status = "Stopped";
 			Serial.println("[STATUS] - Switched off!");
-			ha_activityState.setValue("Stopped");
+			if (HOME_ASSISTANT_ENABLED) ha_activityState.setValue("Stopped");
 		}
 	}
 	else
@@ -1407,7 +1414,7 @@ void loop()
 			if (OLED_ENABLED && !screenSleep)
 			{
 				drawNotification("Winding Complete");
-				ha_activityState.setValue("Winding Complete");
+				if (HOME_ASSISTANT_ENABLED) ha_activityState.setValue("Winding Complete");
 			}
 
 			bool writeSuccess = writeConfigVarsToFile(settingsFile, userDefinedSettings);
