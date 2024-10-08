@@ -33,7 +33,7 @@
  * externalButton = OPTIONAL - If you want to use an external ON/OFF button, connect it to this pin 13. If you need to use another pin, change the value here.
  *
  * If you're using a NeoPixel equipped board, you'll need to change directionalPinA, directionalPinB and ledPin (pin 18 on most, I think) to appropriate GPIOs.
- * Faiulre to set these pins on NeoPixel boards will result in kernel panics.
+ * Failure to set these pins on NeoPixel boards will result in kernel panics.
  */
 int durationInSecondsToCompleteOneRevolution = 8;
 int directionalPinA = 25;
@@ -49,9 +49,10 @@ int SCREEN_HEIGHT = 64; // OLED display height, in pixels
 int OLED_RESET = -1; // Reset pin number (or -1 if sharing Arduino reset pin)
 
 // Home Assistant Configuration
-char* HOME_ASSISTANT_BROKER_IP = "YOUR_HOME_ASSISTANT_IP";
-char* HOME_ASSISTANT_USERNAME = "YOUR_HOME_ASSISTANT_LOGIN_USERNAME";
-char* HOME_ASSISTANT_PASSWORD = "YOUR_HOME_ASSISTANT_LOGIN_PASSWORD";
+const char* HOME_ASSISTANT_BROKER_IP = "YOUR_HOME_ASSISTANT_IP";
+const char* HOME_ASSISTANT_USERNAME = "YOUR_HOME_ASSISTANT_LOGIN_USERNAME";
+const char* HOME_ASSISTANT_PASSWORD = "YOUR_HOME_ASSISTANT_LOGIN_PASSWORD";
+
 /*
  * *************************************************************************************
  * ******************************* END CONFIGURABLES ***********************************
@@ -114,10 +115,16 @@ ESP32Time rtc;
 	// Define HA Sensors
 	HASwitch ha_oledSwitch("oled");
 	HANumber ha_rpd("rpd");
-	HASelect ha_select("direction");
+	HASelect ha_selectDirection("direction");
 	HASwitch ha_timerSwitch("timerEnabled");
 	HAButton ha_startButton("startButton");
 	HAButton ha_stopButton("stopButton");
+	HASelect ha_selectHours("hour");
+	HASelect ha_selectMinutes("minutes");
+	HASwitch ha_powerSwitch("power");
+	HASensor ha_rssiReception("rssiReception");
+	HASensor ha_activityState("activity");
+
 #endif
 
 void drawCentreStringToMemory(const char *buf, int x, int y)
@@ -187,11 +194,12 @@ static void drawWifiStatus() {
 
 		if (WiFi.RSSI() > -50)
 		{
-			// Excelent reception - 4 bars
+			// Excellent reception - 4 bars
 			display.fillRect(14, 55+8, 2, 2, WHITE);
 			display.fillRect(18, 55+6, 2, 4, WHITE);
 			display.fillRect(22, 55+4, 2, 6, WHITE);
 			display.fillRect(26, 55+2, 2, 8, WHITE);
+			ha_rssiReception.setValue("Excellent");
 		}
 		else if (WiFi.RSSI() > -60)
 		{
@@ -199,17 +207,20 @@ static void drawWifiStatus() {
 			display.fillRect(14, 55+8, 2, 2, WHITE);
 			display.fillRect(18, 55+6, 2, 4, WHITE);
 			display.fillRect(22, 55+4, 2, 6, WHITE);
+			ha_rssiReception.setValue("Good");
 		}
 		else if (WiFi.RSSI() > -70)
 		{
 			// Fair reception - 2 bars
 			display.fillRect(14, 55+8, 2, 2, WHITE);
 			display.fillRect(18, 55+6, 2, 4, WHITE);
+			ha_rssiReception.setValue("Fair");
 		}
 		else
 		{
 			// Terrible reception - 1 bar
 			display.fillRect(14, 55+8, 2, 2, WHITE);
+			ha_rssiReception.setValue("Poor");
 		}
 	}
 }
@@ -281,7 +292,19 @@ template <int N> static void drawMultiLineText(const String (&message)[N]) {
 	}
 }
 
-// Home Assistant Helper Function
+// Home Assistant Helper Functions
+/**
+ * @brief Returns the index corresponding to a given direction for Home Assistant.
+ *
+ * This function takes a direction string and returns an integer index that 
+ * corresponds to the direction for Home Assistant. The mapping is as follows:
+ * - "CCW" -> 0
+ * - "BOTH" -> 1
+ * - Any other string -> 2
+ *
+ * @param direction The direction string. Expected values are "CCW", "BOTH", or any other string.
+ * @return int The index corresponding to the given direction.
+ */
 int getDirectionIndexForHomeAssistant(String direction)
 {
 	if (direction == "CCW")
@@ -299,7 +322,46 @@ int getDirectionIndexForHomeAssistant(String direction)
 }
 
 /**
- * Calclates the duration and estimated finish time of the winding routine
+ * @brief Converts a given minute value to an index used by Home Assistant.
+ *
+ * This function takes a minute value and returns a corresponding index
+ * that is used by Home Assistant. The mapping is as follows:
+ * - 0 minutes -> index 0
+ * - 10 minutes -> index 1
+ * - 20 minutes -> index 2
+ * - 30 minutes -> index 3
+ * - 40 minutes -> index 4
+ * - 50 minutes -> index 5
+ * 
+ * If the minute value does not match any of the predefined cases, the function
+ * returns 0 by default.
+ *
+ * @param minuteValue The minute value to be converted to an index.
+ * @return The index corresponding to the given minute value.
+ */
+int getTimerMinutesIndexForHomeAssistant(int minuteValue)
+{
+	switch(minuteValue)
+	{
+		case 0:
+			return 0;
+		case 10:
+			return 1;
+		case 20:
+			return 2;
+		case 30:
+			return 3;
+		case 40:
+			return 4;
+		case 50:
+			return 5;
+		default:
+			return 0;
+	}
+}
+
+/**
+ * Calculates the duration and estimated finish time of the winding routine
  *
  * @return epoch - estimated epoch when winding routine will finish
  */
@@ -344,6 +406,7 @@ void beginWindingRoutine()
 	Serial.println(finishTime);
 
 	drawNotification("Winding");
+	ha_activityState.setValue("Winding");
 }
 
 /**
@@ -551,10 +614,13 @@ void startWebserver()
 				Serial.println("[STATUS] - Switched off!");
 				userDefinedSettings.status = "Stopped";
 				routineRunning = false;
+				ha_powerSwitch.setState(false);
+				ha_activityState.setValue("Stopped");
 				motor.stop();
 				display.clearDisplay();
 				display.display();
 			} else {
+				ha_powerSwitch.setState(true);
 				drawStaticGUI(true);
 				drawDynamicGUI();
 			}
@@ -590,9 +656,6 @@ void startWebserver()
 			userDefinedSettings.minutes = json["minutes"].as<String>();
 			userDefinedSettings.timerEnabled = json["timerEnabled"].as<String>();
 
-			// Update Home Assistant State
-			ha_timerSwitch.setState(userDefinedSettings.timerEnabled.toInt());
-
 			// These values need to be compared to the current settings / running state
 			String requestRotationDirection = json["rotationDirection"].as<String>();
 			String requestTPD = json["tpd"].as<String>();
@@ -600,10 +663,12 @@ void startWebserver()
 			screenSleep = json["screenSleep"].as<bool>();
 
 			// Update Home Assistant state
+			ha_timerSwitch.setState(userDefinedSettings.timerEnabled.toInt());
+			ha_selectHours.setState(userDefinedSettings.hour.toInt());
+			ha_selectMinutes.setState(getTimerMinutesIndexForHomeAssistant(userDefinedSettings.minutes.toInt()));
 			ha_oledSwitch.setState(!screenSleep); // Invert state because naming is hard...
 			ha_rpd.setState(static_cast<int>(requestTPD.toInt()));
-
-			ha_select.setState(getDirectionIndexForHomeAssistant(requestRotationDirection));
+			ha_selectDirection.setState(getDirectionIndexForHomeAssistant(requestRotationDirection));
 
 			// Update motor direction
 			if (strcmp(requestRotationDirection.c_str(), userDefinedSettings.direction.c_str()) != 0)
@@ -653,6 +718,7 @@ void startWebserver()
 				routineRunning = false;
 				userDefinedSettings.status = "Stopped";
 				drawNotification("Stopped");
+				ha_activityState.setValue("Stopped");
 			}
 
 			// Update screen sleep state
@@ -750,7 +816,7 @@ void triggerLEDCondition(int blinkState)
 
 /**
  * This is a non-block button listener function.
- * Credit to github OSWW ontribution from user @danagarcia
+ * Credit to github OSWW contribution from user @danagarcia
  *
  * @param pauseInSeconds the amount of time to pause and listen
 */
@@ -770,6 +836,7 @@ void awaitWhileListening(int pauseInSeconds)
 			routineRunning = false;
 			userDefinedSettings.status = "Stopped";
 			Serial.println("[STATUS] - Switched off!");
+			ha_activityState.setValue("Stopped");
 		}
 	}
 	else
@@ -840,8 +907,7 @@ void onOledSwitchCommand(bool state, HASwitch* sender)
 		display.clearDisplay();
 		display.display();
 	}
-	
-	// report state back to the Home Assistant
+
 	sender->setState(state);
 }
 
@@ -917,13 +983,166 @@ void handleHAStopButton(HAButton* sender)
 	routineRunning = false;
 	userDefinedSettings.status = "Stopped";
 	drawNotification("Stopped");
+	ha_activityState.setValue("Stopped");
+}
+
+void onSelectHoursCommand(int8_t index, HASelect* sender)
+{
+	// Ugly but more reliable
+	switch (index) 
+	{
+		case 0:
+			userDefinedSettings.hour = "00";
+			break;
+		case 1:
+			userDefinedSettings.hour = "01";
+			break;
+		case 2:
+			userDefinedSettings.hour = "02";
+			break;
+		case 3:
+			userDefinedSettings.hour = "03";
+			break;
+		case 4:
+			userDefinedSettings.hour = "04";
+			break;
+		case 5:
+			userDefinedSettings.hour = "05";
+			break;
+		case 6:
+			userDefinedSettings.hour = "06";
+			break;
+		case 7:
+			userDefinedSettings.hour = "07";
+			break;
+		case 8:
+			userDefinedSettings.hour = "08";
+			break;
+		case 9:
+			userDefinedSettings.hour = "09";
+			break;
+		case 10:
+			userDefinedSettings.hour = "10";
+			break;
+		case 11:
+			userDefinedSettings.hour = "11";
+			break;
+		case 12:	
+			userDefinedSettings.hour = "12";
+			break;
+		case 13:
+			userDefinedSettings.hour = "13";
+			break;
+		case 14:
+			userDefinedSettings.hour = "14";
+			break;
+		case 15:
+			userDefinedSettings.hour = "15";
+			break;
+		case 16:
+			userDefinedSettings.hour = "16";
+			break;
+		case 17:
+			userDefinedSettings.hour = "17";
+			break;
+		case 18:
+			userDefinedSettings.hour = "18";
+			break;
+		case 19:
+			userDefinedSettings.hour = "19";
+			break;
+		case 20:
+			userDefinedSettings.hour = "20";
+			break;
+		case 21:
+			userDefinedSettings.hour = "21";
+			break;
+		case 22:
+			userDefinedSettings.hour = "22";
+			break;
+		case 23:
+			userDefinedSettings.hour = "23";
+			break;
+		default:
+			return;
+    }
+
+	bool writeSuccess = writeConfigVarsToFile(settingsFile, userDefinedSettings);
+	if ( !writeSuccess )
+	{
+		Serial.println("[ERROR] - Failed to write hours select state [MQTT]");
+	}
+
+	sender->setState(index);
+}
+
+void onSelectMinutesCommand(int8_t index, HASelect* sender)
+{
+	switch(index)
+	{
+		case 0:
+			userDefinedSettings.minutes = "00";
+			break;
+		case 1:
+			userDefinedSettings.minutes = "10";
+			break;
+		case 2:
+			userDefinedSettings.minutes = "20";
+			break;
+		case 3:
+			userDefinedSettings.minutes = "30";
+			break;
+		case 4:
+			userDefinedSettings.minutes = "40";
+			break;
+		case 5:
+			userDefinedSettings.minutes = "50";
+			break;
+		default:
+			return;
+	}
+
+	bool writeSuccess = writeConfigVarsToFile(settingsFile, userDefinedSettings);
+	if ( !writeSuccess )
+	{
+		Serial.println("[ERROR] - Failed to write minutes select state [MQTT]");
+	}
+
+	sender->setState(index);
+}
+
+void onPowerSwitchCommand(bool state, HASwitch* sender)
+{
+	userDefinedSettings.winderEnabled = state ? "1" : "0";
+
+	if (userDefinedSettings.winderEnabled == "0")
+	{
+		Serial.println("[STATUS] - Switched off!");
+		userDefinedSettings.status = "Stopped";
+		routineRunning = false;
+		motor.stop();
+		display.clearDisplay();
+		display.display();
+		ha_activityState.setValue("Stopped");
+	} else {
+		drawStaticGUI(true);
+		drawDynamicGUI();
+	}
+
+	bool writeSuccess = writeConfigVarsToFile(settingsFile, userDefinedSettings);
+	if ( !writeSuccess )
+	{
+		Serial.println("[ERROR] - Failed to write power switch state [MQTT]");
+	}
+
+	sender->setState(state);
 }
 
 void setup()
 {
 	WiFi.mode(WIFI_STA);
 	Serial.begin(115200);
-	setCpuFrequencyMhz(240);
+	setCpuFrequencyMhz(160);
 
 	// Prepare pins
 	pinMode(directionalPinA, OUTPUT);
@@ -1007,11 +1226,11 @@ void setup()
 			ha_rpd.setOptimistic(true);
 			ha_rpd.onCommand(onRpdChangeCommand);
 
-			ha_select.setName("Direction");
-			ha_select.setIcon("mdi:arrow-left-right");
-			ha_select.setOptions("CCW;BOTH;CW");
-			ha_select.onCommand(onSelectDirectionCommand);
-			ha_select.setCurrentState(getDirectionIndexForHomeAssistant(userDefinedSettings.direction));
+			ha_selectDirection.setName("Direction");
+			ha_selectDirection.setIcon("mdi:arrow-left-right");
+			ha_selectDirection.setOptions("CCW;BOTH;CW");
+			ha_selectDirection.onCommand(onSelectDirectionCommand);
+			ha_selectDirection.setCurrentState(getDirectionIndexForHomeAssistant(userDefinedSettings.direction));
 
 			ha_timerSwitch.setName("Timer Enabled");
 			ha_timerSwitch.setIcon("mdi:timer");
@@ -1026,6 +1245,30 @@ void setup()
 			ha_stopButton.setIcon("mdi:stop");
 			ha_stopButton.onCommand(handleHAStopButton);
 
+			ha_selectHours.setName("Hour");
+			ha_selectHours.setIcon("mdi:timer-sand-full");
+			ha_selectHours.setOptions("00;01;02;03;04;05;06;07;08;09;10;11;12;13;14;15;16;17;18;19;20;21;22;23");
+			ha_selectHours.setCurrentState(userDefinedSettings.hour.toInt());
+			ha_selectHours.onCommand(onSelectHoursCommand);
+
+			ha_selectMinutes.setName("Minutes");
+			ha_selectMinutes.setIcon("mdi:timer-sand-empty");
+			ha_selectMinutes.setOptions("00;10;20;30;40;50");
+			ha_selectMinutes.setCurrentState(userDefinedSettings.minutes.toInt());
+			ha_selectMinutes.onCommand(onSelectMinutesCommand);
+
+			ha_powerSwitch.setName("Power");
+			ha_powerSwitch.setIcon("mdi:power");
+			ha_powerSwitch.setCurrentState(userDefinedSettings.winderEnabled.toInt());
+			ha_powerSwitch.onCommand(onPowerSwitchCommand);
+
+			ha_activityState.setName("Status");
+			ha_activityState.setIcon("mdi:information");
+			ha_activityState.setValue(userDefinedSettings.status.c_str());
+
+			ha_rssiReception.setName("WiFi Reception");
+			ha_rssiReception.setIcon("mdi:antenna");
+
 			mqtt.onConnected(mqttOnConnected);
 			mqtt.onDisconnected(mqttOnDisconnected);
 			mqtt.begin(HOME_ASSISTANT_BROKER_IP, HOME_ASSISTANT_USERNAME, HOME_ASSISTANT_PASSWORD);
@@ -1033,7 +1276,7 @@ void setup()
 
 			if (OLED_ENABLED)
 			{
-				String configuredHomeAssistantMessage[3] = {"Connfigured", "for", "Home Assistant"};
+				String configuredHomeAssistantMessage[2] = {"Configured for", "Home Assistant"};
 				drawMultiLineText(configuredHomeAssistantMessage);
 				delay(1500);
 			}
@@ -1164,6 +1407,7 @@ void loop()
 			if (OLED_ENABLED && !screenSleep)
 			{
 				drawNotification("Winding Complete");
+				ha_activityState.setValue("Winding Complete");
 			}
 
 			bool writeSuccess = writeConfigVarsToFile(settingsFile, userDefinedSettings);
@@ -1189,6 +1433,11 @@ void loop()
 	if (HOME_ASSISTANT_ENABLED)
 	{
 		mqtt.loop();
+		// We report these every cycle as if the device's MQTT connection is dropped,
+		// it will not be able to report its up-to-date state to Home Assistant.
+		// This mitigates de-sync between HA and the web gui.
+		ha_powerSwitch.setState(userDefinedSettings.winderEnabled.toInt());
+		ha_activityState.setValue(userDefinedSettings.status.c_str());
 	}
 
 	wm.process();
