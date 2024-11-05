@@ -397,6 +397,17 @@ unsigned long calculateWindingTime()
  */
 void beginWindingRoutine()
 {
+
+	
+	if (userDefinedSettings.direction == "CW" )
+	{
+		motor.setMotorDirection(1);
+	}
+	else if (userDefinedSettings.direction == "CCW")
+	{
+		motor.setMotorDirection(0);
+	}
+
 	startTimeEpoch = rtc.getEpoch();
 	previousEpoch = startTimeEpoch;
 	routineRunning = true;

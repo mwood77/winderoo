@@ -12,6 +12,16 @@ private:
     int _motorDirection;
     bool _pwmMotorControl;
 
+    void stepperSetup();
+
+    static void IRAM_ATTR onTimerStatic(); // Add this line
+
+    void onTimer();
+
+    void configureHardwareTimer();
+
+    static MotorControl* instance; // Add this line
+
 public:
     MotorControl(int _pinA, int _pinB, bool pwmMotorControl = false);
 
