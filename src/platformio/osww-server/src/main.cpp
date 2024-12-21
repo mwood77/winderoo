@@ -94,11 +94,19 @@ AsyncWebServer server(80);
 HTTPClient http;
 WiFiClient client;
 ESP32Time rtc;
-String winderooVersion = "3.0.0";
+String winderooVersion = "3.1.0";
 
-#if PWM_MOTOR_CONTROL
+#if PWM_MOTOR_CONTROL && STEPPER_MOTOR_CONTROL
+	#error "You can only have one optional motor control method enabled at a time. You must disable either PWM_MOTOR_CONTROL or STEPPER_MOTOR_CONTROL in the platformio.ini file."
+#endif
+
+// PWM control
+#if PWM_MOTOR_CONTROL && !STEPPER_MOTOR_CONTROL
 	MotorControl motor(directionalPinA, directionalPinB, true);
-#else
+#endif
+
+// Stepper motor control || Regular DC motor control
+#if STEPPER_MOTOR_CONTROL && !PWM_MOTOR_CONTROL || !STEPPER_MOTOR_CONTROL && !WM_MOTOR_CONTROL
 	MotorControl motor(directionalPinA, directionalPinB);
 #endif
 
@@ -389,6 +397,17 @@ unsigned long calculateWindingTime()
  */
 void beginWindingRoutine()
 {
+
+	
+	if (userDefinedSettings.direction == "CW" )
+	{
+		motor.setMotorDirection(1);
+	}
+	else if (userDefinedSettings.direction == "CCW")
+	{
+		motor.setMotorDirection(0);
+	}
+
 	startTimeEpoch = rtc.getEpoch();
 	previousEpoch = startTimeEpoch;
 	routineRunning = true;
@@ -1184,6 +1203,11 @@ void setup()
 		display.invertDisplay(OLED_INVERT_SCREEN);
 		display.setRotation(rotate);
 		drawNotification("Winderoo");
+	
+
+		String savedNetworkMessage[2] = {"Winderoo build", "v" + winderooVersion};
+		drawMultiLineText(savedNetworkMessage);
+		delay(1200);
 	}
 
 	String savedNetworkMessage[2] = {"Connecting to", "saved network..."};
@@ -1302,6 +1326,7 @@ void setup()
 
 		drawNotification("Starting webserver...");
 		startWebserver();
+		delay(750); // delay to show notification
 
 		if (strcmp(userDefinedSettings.status.c_str(), "Winding") == 0)
 		{
