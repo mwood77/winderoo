@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: Winderoo API
-  version: 1.0.0
+  version: 2.0.0
 servers:
   - url: http://winderoo.local/api/
     description: local development and deployed devices
@@ -135,6 +135,8 @@ components:
             action: "START"
             rotationDirection: "BOTH"
             screenSleep: false
+            customWindDuration: 180
+            customWindPauseDuration: 15
     PowerBody:
       description: a JSON object containing winderoo power information
       required: true
@@ -252,6 +254,14 @@ components:
           type: boolean
           examples:
             - false
+        customWindDuration:
+          type: number
+          examples:
+            - 180
+        customWindPauseDuration:
+          type: number
+          examples:
+            - 15
     Resetting:
       type: object
       properties:
