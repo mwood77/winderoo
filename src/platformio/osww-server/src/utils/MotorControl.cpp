@@ -37,8 +37,8 @@ MotorControl* MotorControl::instance = nullptr;
     static bool timerConfigured = false;
 
     // For stepper timing control (RPM)
-    uint16_t microSteps = 8;
-    uint16_t rmsCurrent = 800;
+    uint16_t microSteps = 4;
+    uint16_t rmsCurrent = 600;
     uint64_t timerMicroSecondInterval = 400; // 937 microseconds for 40 RPM / 400 microseconds for 100 RPM
 
 #endif
@@ -123,7 +123,7 @@ void MotorControl::clockwise()
         // Set the direction pin
         if (timerConfigured) timerAlarmDisable(timer);
 
-        digitalWrite(DIR_PIN, LOW);
+        digitalWrite(DIR_PIN, HIGH);
         delay(10);
 
         if (timerConfigured) timerAlarmEnable(timer);
@@ -144,7 +144,7 @@ void MotorControl::countClockwise()
         // Set the direction pin
        if (timerConfigured) timerAlarmDisable(timer);
 
-        digitalWrite(DIR_PIN, HIGH);
+        digitalWrite(DIR_PIN, LOW);
         delay(10);
 
        if (timerConfigured) timerAlarmEnable(timer);
