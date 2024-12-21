@@ -150,12 +150,26 @@ export class SettingsComponent implements OnInit, AfterViewChecked {
     this.estimateDuration(this.upload.rpd);
   }
 
-  setCustomWindDuration(seconds: any): void {
-    this.upload.customWindDuration = seconds.value;
+  setCustomWindDuration(event: any): void {
+    const seconds = event.value;
+    this.upload.customWindDuration = seconds;
+    this.estimateDuration(this.upload.rpd);
   }
   
-  setCustomWindPauseDuration(seconds: any): void {
-    this.upload.customWindPauseDuration = seconds.value;
+  setCustomWindPauseDuration(event: any): void {
+    const seconds = event.value;
+    this.upload.customWindPauseDuration = seconds;
+    this.estimateDuration(this.upload.rpd);
+  }
+
+  convertSecondsToHumanReadable(seconds: number): { minutes: number, seconds: number } {
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = seconds % 60;
+
+    return {
+      minutes,
+      seconds: remainingSeconds,
+    }
   }
 
   getColour(status: string): string {
@@ -270,8 +284,8 @@ export class SettingsComponent implements OnInit, AfterViewChecked {
 
   estimateDuration(rpd: number): void {
     const totalSecondsSpentTurning = rpd * this.upload.durationInSecondsToCompleteOneRevolution;
-    const totalNumberOfRestingPeriods = totalSecondsSpentTurning / 180;
-    const totalRestDuration = totalNumberOfRestingPeriods * 180;
+    const totalNumberOfRestingPeriods = totalSecondsSpentTurning / this.upload.customWindDuration;
+    const totalRestDuration = totalNumberOfRestingPeriods * this.upload.customWindPauseDuration;
 
     const finalRoutineDuration = totalRestDuration + totalSecondsSpentTurning;
 

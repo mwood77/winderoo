@@ -171,7 +171,10 @@
                 <div class="">
                     {{ "SETTINGS.ROTATION_DURATION_TIME" | translate }}
                 </div>
-                <div class="individual-status-text">{{ this.upload.customWindDuration }} {{ "SETTINGS.SECONDS" | translate }}</div>
+                <div class="individual-status-text">
+                    {{ this.convertSecondsToHumanReadable(this.upload.customWindDuration).minutes }} {{ "SETTINGS.MINUTES" | translate }}
+                    {{ this.convertSecondsToHumanReadable(this.upload.customWindDuration).seconds }} {{ "SETTINGS.SECONDS" | translate }}
+                </div>
                 <mat-slider value="{{ this.upload.customWindDuration }}" min="100" max="960" step="10" discrete (input)="setCustomWindDuration($event)">
                     <input matSliderThumb [(ngModel)]="this.upload.customWindDuration">
                 </mat-slider>
@@ -181,7 +184,10 @@
                 <div class="">
                     {{ "SETTINGS.ROTATION_PAUSE_TIME" | translate }}
                 </div>
-                <div class="individual-status-text">{{ this.upload.customWindPauseDuration }} {{ "SETTINGS.SECONDS" | translate }}</div>
+                <div class="individual-status-text">
+                    {{ this.convertSecondsToHumanReadable(this.upload.customWindPauseDuration).minutes }} {{ "SETTINGS.MINUTES" | translate }}
+                    {{ this.convertSecondsToHumanReadable(this.upload.customWindPauseDuration).seconds }} {{ "SETTINGS.SECONDS" | translate }}
+                </div>
                 <mat-slider value="{{ this.upload.customWindPauseDuration }}" min="10" max="900" step="5" discrete (input)="setCustomWindPauseDuration($event)">
                     <input matSliderThumb [(ngModel)]="this.upload.customWindPauseDuration">
                 </mat-slider>
