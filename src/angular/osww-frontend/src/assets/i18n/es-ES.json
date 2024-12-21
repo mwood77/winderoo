@@ -35,6 +35,10 @@
         "BOTH": "Ambos",
         "PLEASE_WAIT": "Obteniendo el progreso del ciclo, espere",
         "PROGRESS": "Progreso del ciclo",
-        "SCREEN": "Pantalla OLED"
+        "SCREEN": "Pantalla OLED",
+        "CUSTOMIZE": "Personalización",
+        "ROTATION_DURATION_TIME": "Hora de rotar",
+        "ROTATION_PAUSE_TIME": "Hora de hacer una pausa",
+        "SECONDS": "segundos"
     }
 }

@@ -28,13 +28,17 @@
         "DISABLED": "Disabled",
         "HOURS": "Hour",
         "MINUTES": "Minutes",
-        "SAVE": "Save Settings",
+        "SAVE": "Save",
         "SAVE_IN_PROGRESS": "Upload in progress",
         "CLOCKWISE": "Clockwise",
         "COUNTER_CLOCKWISE": "Counter Clockwise",
         "BOTH": "Both",
         "PLEASE_WAIT": "Getting cycle progress, please wait",
         "PROGRESS": "Cycle Progress",
-        "SCREEN": "OLED Screen"
+        "SCREEN": "OLED Screen",
+        "CUSTOMIZE": "Customization",
+        "ROTATION_DURATION_TIME": "Time to rotate",
+        "ROTATION_PAUSE_TIME": "Time to pause",
+        "SECONDS": "seconds"
     }
 }

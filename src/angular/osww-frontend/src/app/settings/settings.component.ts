@@ -65,7 +65,9 @@ export class SettingsComponent implements OnInit, AfterViewChecked {
     startTimeEpoch: 0,
     estimatedRoutineFinishEpoch: 0,
     isTimerEnabledNum: 0,
-    screenSleep: false
+    screenSleep: false,
+    customWindDuration: 0,
+    customWindPauseDuration: 0,
   }
 
   selectedHour: any;
@@ -123,6 +125,18 @@ export class SettingsComponent implements OnInit, AfterViewChecked {
       this.upload.screenSleep = data.screenSleep;
       this.screenEquipped = data.screenEquipped;
 
+      if (data.customWindDuration) {
+        this.upload.customWindDuration = data.customWindDuration;
+      } else {
+        this.upload.customWindDuration = 180;
+      }
+
+      if (data.customWindPauseDuration) {
+        this.upload.customWindPauseDuration = data.customWindPauseDuration;
+      } else {
+        this.upload.customWindPauseDuration = 15;
+      }
+
       this.apiService.isWinderEnabled$.next(data.winderEnabled);
 
       this.mapTimerEnabledState(this.upload.isTimerEnabledNum);
@@ -134,6 +148,14 @@ export class SettingsComponent implements OnInit, AfterViewChecked {
   setRotationsPerDay(rpd: any): void {
     this.upload.rpd = rpd.value
     this.estimateDuration(this.upload.rpd);
+  }
+
+  setCustomWindDuration(seconds: any): void {
+    this.upload.customWindDuration = seconds.value;
+  }
+  
+  setCustomWindPauseDuration(seconds: any): void {
+    this.upload.customWindPauseDuration = seconds.value;
   }
 
   getColour(status: string): string {
@@ -216,6 +238,8 @@ export class SettingsComponent implements OnInit, AfterViewChecked {
       minutes: this.selectedMinutes == null ? this.upload.minutes : this.selectedMinutes,
       timerEnabled: this.upload.isTimerEnabledNum,
       screenSleep: this.upload.screenSleep,
+      customWindDuration: this.upload.customWindDuration,
+      customWindPauseDuration: this.upload.customWindPauseDuration,
     }
 
     this.apiService.updateState(body).subscribe((response) => {

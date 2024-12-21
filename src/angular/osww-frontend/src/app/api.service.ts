@@ -12,6 +12,8 @@ export interface Update {
   minutes: string;
   timerEnabled: number;
   screenSleep: boolean;
+  customWindDuration: number;
+  customWindPauseDuration: number;
 }
 
 export interface Status {
@@ -30,6 +32,8 @@ export interface Status {
   timerEnabled: number;
   screenSleep: boolean;
   screenEquipped: boolean;
+  customWindDuration: number;
+  customWindPauseDuration: number;
 }
 
 @Injectable({

@@ -35,6 +35,10 @@
         "BOTH": "Beide Richtungen",
         "PLEASE_WAIT": "Zyklusfortschritt wird angezeigt, bitte warten",
         "PROGRESS": "Zyklusfortschritt",
-        "SCREEN": "OLED Bildschirm"
+        "SCREEN": "OLED Bildschirm",
+        "CUSTOMIZE": "Anpassung",
+        "ROTATION_DURATION_TIME": "Zeit zum Drehen",
+        "ROTATION_PAUSE_TIME": "Zeit zum Innehalten",
+        "SECONDS": "sekunden"
     }
 }
