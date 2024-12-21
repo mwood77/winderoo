@@ -135,6 +135,13 @@ void drawCentreStringToMemory(const char *buf, int x, int y)
     display.print(buf);
 }
 
+void drawSavingIcon()
+{
+	display.drawCircle(4, 4, 2, WHITE);
+	delay(750);
+	display.drawCircle(4, 4, 2, BLACK);
+}
+
 static void drawStaticGUI(bool drawHeaderTitle = false, String title = "Winderoo") {
 	if (OLED_ENABLED)
 	{
@@ -414,6 +421,7 @@ void beginWindingRoutine()
 void getTime()
 {
 	http.begin(client, timeURL);
+	http.setTimeout(3500);
 	int httpCode = http.GET();
 
 	if (httpCode > 0)
@@ -436,7 +444,8 @@ void getTime()
 	}
 	else
 	{
-		Serial.println("[ERROR] - Failed to get time from Worldtime API");
+		Serial.print("[ERROR] - Failed to get time from Worldtime API, error code: ");
+		Serial.println(httpCode);
 	}
 
 	http.end();
@@ -754,6 +763,11 @@ void startWebserver()
 			}
 
 			request->send(204);
+
+			if (OLED_ENABLED)
+			{
+				drawSavingIcon();
+			}
 		}
 	});
 
