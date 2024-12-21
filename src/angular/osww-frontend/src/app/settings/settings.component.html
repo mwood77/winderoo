@@ -192,6 +192,49 @@
                     <input matSliderThumb [(ngModel)]="this.upload.customWindPauseDuration">
                 </mat-slider>
             </div>
+            
+            <div class="individual-setting">
+                <div>
+                    {{ "SETTINGS.INTERNAL_CLOCK" | translate }}
+                </div>
+                
+                <span class="individual-status-text">
+                    {{ this.winderooInternalRTC | date:'medium' }}
+                </span>
+
+                <div class="individual-explainer-text">
+                    {{ "SETTINGS.INTERNAL_CLOCK_BLURB" | translate }}
+                </div>
+
+                <div class="time-input">
+                    <mat-form-field color="accent" appearance="outline">
+                        <mat-label>
+                            {{ "SETTINGS.HOURS" | translate }}
+                        </mat-label>
+                        <select matNativeControl [(ngModel)]="rtc_selectedHour" name="rtc-hour">
+                            <option value="" selected></option>
+                            <option *ngFor="let hr of hours" [value]="hr.value">
+                                {{ hr.value }}
+                            </option>
+                            </select>
+                    </mat-form-field>
+                    <mat-form-field color="accent" appearance="outline">
+                        <mat-label>
+                            {{ "SETTINGS.MINUTES" | translate }}
+                        </mat-label>
+                        <select matNativeControl [(ngModel)]="rtc_selectedMinutes" name="rtc-minutes">
+                            <option value="" selected></option>
+                            <option *ngFor="let mn of rtc_minutes" [value]="mn.value">
+                                {{ mn.value }}
+                            </option>
+                            </select>
+                    </mat-form-field>
+                </div>
+
+                <!-- @todo - complete sending new clock data as epoch! -->
+
+            </div>
+
         </div>
     </mat-card>
 

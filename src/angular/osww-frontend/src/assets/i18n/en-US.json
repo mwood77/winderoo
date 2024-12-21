@@ -36,9 +36,12 @@
         "PLEASE_WAIT": "Getting cycle progress, please wait",
         "PROGRESS": "Cycle Progress",
         "SCREEN": "OLED Screen",
-        "CUSTOMIZE": "Cycle Customization",
+        "CUSTOMIZE": "Settings & Customization",
         "ROTATION_DURATION_TIME": "Time to rotate",
         "ROTATION_PAUSE_TIME": "Time to pause",
-        "SECONDS": "seconds"
+        "SECONDS": "seconds",
+        "INTERNAL_CLOCK": "Internal Clock",
+        "INTERNAL_CLOCK_BLURB": "Winderoo has an internal clock (RTC), which is automatically kept up to date. If this is incorrect, please update the clock beneath.",
+        "REFRESH_CLOCK": "Refresh RTC"
     }
 }

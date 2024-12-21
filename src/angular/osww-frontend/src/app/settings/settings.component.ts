@@ -2,6 +2,7 @@ import { Component, OnInit, AfterViewChecked } from '@angular/core';
 import { ApiService, Update } from '../api.service';
 import { ProgressBarMode } from '@angular/material/progress-bar';
 import { TranslateService } from '@ngx-translate/core';
+import { ClockService } from '../clock.service';
 
 interface SelectInterface {
   value: string;
@@ -51,6 +52,9 @@ export class SettingsComponent implements OnInit, AfterViewChecked {
       { value: '23', viewValue: '23' },
   ];
 
+  // populated by ngOnInit
+  rtc_minutes: SelectInterface[] = [];
+
   wifiSignalIcon = ''
 
   upload = {
@@ -74,6 +78,11 @@ export class SettingsComponent implements OnInit, AfterViewChecked {
   selectedMinutes: any;
   estHoursDuration: string = "";
   estMinutesDuration: string = "";
+  
+  winderooInternalRTC: number = 0;
+  refreshingRTC: boolean = false;
+  rtc_selectedHour: any;
+  rtc_selectedMinutes: any;
 
   progressMode: ProgressBarMode = 'indeterminate';
   progressPercentageComplete: number =  0;
@@ -83,7 +92,7 @@ export class SettingsComponent implements OnInit, AfterViewChecked {
 
   watchWindingParametersURL = 'https://watch-winder.store/watch-winding-table/';
 
-  constructor(private apiService: ApiService, private translateService: TranslateService) {
+  constructor(private apiService: ApiService, private translateService: TranslateService, private clockService: ClockService) {
     this.isWinderEnabled = this.apiService.isWinderEnabled$.getValue();
     this.isTimerEnabled = false;
   }
@@ -94,6 +103,13 @@ export class SettingsComponent implements OnInit, AfterViewChecked {
   ngOnInit(): void {
     this.getData();
     this.setupSubscriptions();
+
+    // Populate RTC minutes array
+    for (let i = 0; i < 60; i++) {
+      this.rtc_minutes.push(
+        { value: i.toString(), viewValue: i.toString() },
+      )
+    }
   }
 
   setupSubscriptions(): void {
@@ -106,6 +122,26 @@ export class SettingsComponent implements OnInit, AfterViewChecked {
       if (result === true) {
         this.apiService.shouldRefresh$.next(false);
         this.getData();
+      }
+    })
+  }
+
+  refreshRTC(): void {
+    this.refreshingRTC = true;
+
+    this.clockService.stopClock();
+
+    this.apiService.getRtcEpoch().subscribe((response) => {
+      if (response.unixtime != null) {
+        this.winderooInternalRTC = response.unixtime;
+        
+        this.clockService.startClock(this.winderooInternalRTC, (updatedEpoch: number) => {
+          this.winderooInternalRTC = updatedEpoch * 1000; // Convert seconds to milliseconds for display
+        });
+
+        // @todo - Send POST request to Winderoo to update time
+
+        this.refreshingRTC = true;
       }
     })
   }
@@ -124,6 +160,7 @@ export class SettingsComponent implements OnInit, AfterViewChecked {
       this.upload.isTimerEnabledNum = data.timerEnabled;
       this.upload.screenSleep = data.screenSleep;
       this.screenEquipped = data.screenEquipped;
+      this.winderooInternalRTC = data.currentTimeEpoch;
 
       if (data.customWindDuration) {
         this.upload.customWindDuration = data.customWindDuration;
@@ -142,6 +179,10 @@ export class SettingsComponent implements OnInit, AfterViewChecked {
       this.mapTimerEnabledState(this.upload.isTimerEnabledNum);
       this.estimateDuration(this.upload.rpd);
       this.getProgressComplete(data.startTimeEpoch, data.currentTimeEpoch, data.estimatedRoutineFinishEpoch);
+
+      this.clockService.startClock(this.winderooInternalRTC, (updatedEpoch: number) => {
+        this.winderooInternalRTC = updatedEpoch * 1000; // Convert seconds to milliseconds for display
+      });
     });
   }
 

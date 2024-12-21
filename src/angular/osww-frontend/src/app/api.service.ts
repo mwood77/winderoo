@@ -36,6 +36,24 @@ export interface Status {
   customWindPauseDuration: number;
 }
 
+export interface WorldTimeAPI {
+  utc_offset: string;
+  timezone: string;
+  day_of_week: number;
+  day_of_year: number;
+  datetime: string;
+  utc_datetime: string;
+  unixtime: number;
+  raw_offset: number;
+  week_number: number;
+  dst: boolean;
+  abbreviation: string;
+  dst_offset: number;
+  dst_from: string | null;
+  dst_until: string | null;
+  client_ip: string;
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -43,6 +61,8 @@ export class ApiService {
 
   isWinderEnabled$ = new BehaviorSubject(0);
   shouldRefresh$ = new BehaviorSubject(false);
+
+  private worldtimeURL = 'http://worldtimeapi.org/api/ip';
 
   constructor(private http: HttpClient) { }
 
@@ -106,5 +126,14 @@ export class ApiService {
 
   resetDevice() {
     return this.http.get<any>(ApiService.constructURL() + 'reset');
+  }
+
+  /**
+   * Makes an external call to the WorldTime API to get current epoch, based off of IP (best fit)
+   * 
+   * @returns WoldTimeAPI interface
+   */
+  getRtcEpoch() {
+    return this.http.get<WorldTimeAPI>(this.worldtimeURL);
   }
 }
