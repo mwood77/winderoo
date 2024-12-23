@@ -444,8 +444,13 @@ void getTime()
 	}
 	else
 	{
-		Serial.print("[ERROR] - Failed to get time from Worldtime API, error code: ");
-		Serial.println(httpCode);
+		if (httpCode != -5) {
+			Serial.print("[ERROR] - Failed to get time from Worldtime API, error code: ");
+			Serial.println(httpCode);
+		} else {
+			Serial.print("[WARN] - Failed to get time from Worldtime API, likely due to rate limiting. ");
+			Serial.print("Wait a while to see if it resolves.");
+		}
 	}
 
 	http.end();
