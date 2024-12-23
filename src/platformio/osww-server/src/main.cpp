@@ -1448,12 +1448,14 @@ void loop()
 
 			if (r <= 25)
 			{
-				if ((strcmp(userDefinedSettings.direction.c_str(), "BOTH") == 0) && (currentTime - previousEpoch) > 180)
+				if ((strcmp(userDefinedSettings.direction.c_str(), "BOTH") == 0) && (rtc.getEpoch() - previousEpoch) > userDefinedSettings.customWindDuration)
 				{
 					motor.stop();
-					delay(3000);
+					Serial.print("[STATUS] - Pause for duration: ");
+					Serial.println(userDefinedSettings.customWindPauseDuration);
+					delay(userDefinedSettings.customWindPauseDuration);
 
-					previousEpoch = currentTime;
+					previousEpoch = rtc.getEpoch();
 
 					int currentDirection = motor.getMotorDirection();
 					motor.setMotorDirection(!currentDirection);
@@ -1462,12 +1464,14 @@ void loop()
 					motor.determineMotorDirectionAndBegin();
 				}
 
-				if ((currentTime - previousEpoch) > 180)
+				if ((rtc.getEpoch() - previousEpoch) > userDefinedSettings.customWindDuration)
 				{
-					Serial.println("[STATUS] - Pause");
-					previousEpoch = currentTime;
 					motor.stop();
-					delay(3000);
+					Serial.print("[STATUS] - Pause for duration: ");
+					Serial.println(userDefinedSettings.customWindPauseDuration);
+					delay(userDefinedSettings.customWindPauseDuration);
+					
+					previousEpoch = rtc.getEpoch();
 				}
 			}
 		}
