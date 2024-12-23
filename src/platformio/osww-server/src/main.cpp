@@ -83,6 +83,7 @@ struct RUNTIME_VARS
 	String timerEnabled = "0";
 	String customWindDuration = "";
 	String customWindPauseDuration = "";
+	String customHostname = "";
 };
 
 /*
@@ -95,7 +96,7 @@ AsyncWebServer server(80);
 HTTPClient http;
 WiFiClient client;
 ESP32Time rtc;
-String winderooVersion = "3.0.0";
+String winderooVersion = "4.0.1";
 
 #if PWM_MOTOR_CONTROL
 	MotorControl motor(directionalPinA, directionalPinB, true);
@@ -533,6 +534,7 @@ void loadConfigVarsFromFile(String file_name)
 	userDefinedSettings.direction = json["savedDirection"].as<String>();							// CW || CCW || BOTH
 	userDefinedSettings.customWindDuration = json["customWindDuration"].as<String>();				// 180 (in seconds)
 	userDefinedSettings.customWindPauseDuration = json["customWindPauseDuration"].as<String>();		// 15 (in seconds)
+	userDefinedSettings.customHostname = json["customHostname"].as<String>();						// <String>
 
 	this_file.close();
 }
@@ -564,6 +566,7 @@ bool writeConfigVarsToFile(String file_name, const RUNTIME_VARS& userDefinedSett
 	json["savedDirection"] = userDefinedSettings.direction;
 	json["customWindDuration"] = userDefinedSettings.customWindDuration;
 	json["customWindPauseDuration"] = userDefinedSettings.customWindPauseDuration;
+	json["customHostname"] = userDefinedSettings.customHostname;
 
 	if (serializeJson(json, this_file) == 0)
 	{
@@ -618,6 +621,7 @@ void startWebserver()
 		json["screenEquipped"] = screenEquipped;
 		json["customWindDuration"] = userDefinedSettings.customWindDuration;
 		json["customWindPauseDuration"] = userDefinedSettings.customWindPauseDuration;
+		json["customHostname"] = userDefinedSettings.customHostname;
 		serializeJson(json, *response);
 
 		request->send(response);
@@ -734,6 +738,7 @@ void startWebserver()
 			String requestTPD = json["tpd"].as<String>();
 			String requestAction = json["action"].as<String>();
 			screenSleep = json["screenSleep"].as<bool>();
+			String customHostname = json["customHostname"].as<String>();
 
 			// Update Home Assistant state
 			if (HOME_ASSISTANT_ENABLED)
@@ -776,7 +781,7 @@ void startWebserver()
 			}
 
 			// Update (turns) rotations per day
-			if (strcmp(requestTPD.c_str(), userDefinedSettings.rotationsPerDay .c_str()) != 0)
+			if (strcmp(requestTPD.c_str(), userDefinedSettings.rotationsPerDay.c_str()) != 0)
 			{
 				userDefinedSettings.rotationsPerDay = requestTPD;
 
@@ -832,6 +837,11 @@ void startWebserver()
 				}
 
 				updateRtcEpoch(rtc, rtcUpdateHours, rtcUpdateMinutes);
+			}
+
+			if (strcmp(customHostname.c_str(), userDefinedSettings.customHostname.c_str()) != 0) 
+			{
+				userDefinedSettings.customHostname = customHostname;
 			}
 
 			// Write new parameters to file
@@ -1225,6 +1235,18 @@ void onPowerSwitchCommand(bool state, HASwitch* sender)
 	sender->setState(state);
 }
 
+String determineHostname() 
+{
+	String defaultHostname = "winderoo";
+	
+	if (userDefinedSettings.customHostname != nullptr && strcmp(userDefinedSettings.customHostname.c_str(), "") != 0) 
+	{
+		return userDefinedSettings.customHostname;
+	}
+
+	return defaultHostname;
+}
+
 void setup()
 {
 	WiFi.mode(WIFI_STA);
@@ -1278,7 +1300,11 @@ void setup()
 		// retrieve & read saved settings
 		loadConfigVarsFromFile(settingsFile);
 
-		if (!MDNS.begin("winderoo"))
+		Serial.print("[STATUS] - using hostname: ");
+		Serial.print(determineHostname().c_str());
+		Serial.println(".local");
+
+		if (!MDNS.begin(determineHostname().c_str()))
 		{
 			Serial.println("[STATUS] - Failed to start mDNS");
 			drawNotification("Failed to start mDNS");
