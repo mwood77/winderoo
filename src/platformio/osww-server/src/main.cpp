@@ -134,11 +134,18 @@ void drawCentreStringToMemory(const char *buf, int x, int y)
     display.print(buf);
 }
 
-void drawSavingIcon()
+void toggleDrawSavingIcon(bool showOnDisplay = false)
 {
-	display.drawCircle(4, 4, 2, WHITE);
-	delay(750);
+	if (showOnDisplay) 
+	{
+		// Write to screen buffer
+		display.drawCircle(4, 4, 2, WHITE);
+		return;
+	}
+	
+	// remove icon from screen buffer
 	display.drawCircle(4, 4, 2, BLACK);
+	return;
 }
 
 static void drawStaticGUI(bool drawHeaderTitle = false, String title = "Winderoo") {
@@ -375,6 +382,8 @@ unsigned long calculateWindingTime()
 	int tpd = atoi(userDefinedSettings.rotationsPerDay.c_str());
 
 	long totalSecondsSpentTurning = tpd * durationInSecondsToCompleteOneRevolution;
+
+	// @todo - set adjustable winding duration when coming from POST request
 
 	// We want to rest every 3 minutes for 15 seconds
 	long totalNumberOfRestingPeriods = totalSecondsSpentTurning / 180;
@@ -661,6 +670,8 @@ void startWebserver()
 
 		if (request->url() == "/api/update")
 		{
+			if (OLED_ENABLED) toggleDrawSavingIcon(true);
+			
 			JsonDocument json;
 			DeserializationError error = deserializeJson(json, data);
 			int arraySize = 7;
@@ -688,8 +699,8 @@ void startWebserver()
 			userDefinedSettings.timerEnabled = json["timerEnabled"].as<String>();
 
 			// RTC values
-			int rtcUpdateHours = json["rtc_selectedHour"].as<int>();
-			int rtcUpdateMinutes = json["rtc_selectedMinutes"].as<int>();
+			int rtcUpdateHours = json["rtcSelectedHour"].as<int>();
+			int rtcUpdateMinutes = json["rtcSelectedMinutes"].as<int>();
 
 			// These values need to be compared to the current settings / running state
 			String requestRotationDirection = json["rotationDirection"].as<String>();
@@ -796,10 +807,8 @@ void startWebserver()
 
 			request->send(204);
 
-			if (OLED_ENABLED)
-			{
-				drawSavingIcon();
-			}
+			// Remove save icon
+			if (OLED_ENABLED) toggleDrawSavingIcon();
 		}
 	});
 

@@ -14,8 +14,8 @@ export interface Update {
   screenSleep: boolean;
   customWindDuration: number;
   customWindPauseDuration: number;
-  rtc_selectedHour: number;
-  rtc_selectedMinutes: number;
+  rtcSelectedHour: number;
+  rtcSelectedMinutes: number;
 }
 
 export interface Status {

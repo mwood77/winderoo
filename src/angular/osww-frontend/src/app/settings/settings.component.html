@@ -219,7 +219,7 @@
                         <mat-label>
                             {{ "SETTINGS.HOURS" | translate }}
                         </mat-label>
-                        <select matNativeControl [(ngModel)]="rtc_selectedHour" name="rtc-hour">
+                        <select matNativeControl [(ngModel)]="rtcSelectedHour" name="rtc-hour">
                             <option value="" selected></option>
                             <option *ngFor="let hr of hours" [value]="hr.value">
                                 {{ hr.value }}
@@ -230,7 +230,7 @@
                         <mat-label>
                             {{ "SETTINGS.MINUTES" | translate }}
                         </mat-label>
-                        <select matNativeControl [(ngModel)]="rtc_selectedMinutes" name="rtc-minutes">
+                        <select matNativeControl [(ngModel)]="rtcSelectedMinutes" name="rtc-minutes">
                             <option value="" selected></option>
                             <option *ngFor="let mn of rtc_minutes" [value]="mn.value">
                                 {{ mn.value }}

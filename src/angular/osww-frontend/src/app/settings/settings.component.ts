@@ -81,8 +81,8 @@ export class SettingsComponent implements OnInit, AfterViewChecked {
   
   winderooInternalRTC: number = 0;
   refreshingRTC: boolean = false;
-  rtc_selectedHour: any;
-  rtc_selectedMinutes: any;
+  rtcSelectedHour: any;
+  rtcSelectedMinutes: any;
 
   progressMode: ProgressBarMode = 'indeterminate';
   progressPercentageComplete: number =  0;
@@ -168,8 +168,8 @@ export class SettingsComponent implements OnInit, AfterViewChecked {
       });
 
       // Reset the RTC dropdowns
-      this.rtc_selectedHour = "";
-      this.rtc_selectedMinutes = "";
+      this.rtcSelectedHour = "";
+      this.rtcSelectedMinutes = "";
 
       setTimeout(() => {
         this.refreshingRTC = false;
@@ -286,8 +286,8 @@ export class SettingsComponent implements OnInit, AfterViewChecked {
       screenSleep: this.upload.screenSleep,
       customWindDuration: this.upload.customWindDuration,
       customWindPauseDuration: this.upload.customWindPauseDuration,
-      rtc_selectedHour: this.rtc_selectedHour,
-      rtc_selectedMinutes: this.rtc_selectedMinutes,
+      rtcSelectedHour: this.rtcSelectedHour,
+      rtcSelectedMinutes: this.rtcSelectedMinutes,
     }
 
     this.apiService.updateState(body).subscribe((response) => {

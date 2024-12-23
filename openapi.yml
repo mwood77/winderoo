@@ -137,8 +137,8 @@ components:
             screenSleep: false
             customWindDuration: 180
             customWindPauseDuration: 15
-            rtc_selectedHour: 8
-            rtc_selectedminutes: 30
+            rtcSelectedHour: 8
+            rtcSelectedminutes: 30
     PowerBody:
       description: a JSON object containing winderoo power information
       required: true
