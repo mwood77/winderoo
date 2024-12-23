@@ -49,9 +49,9 @@ int SCREEN_HEIGHT = 64; // OLED display height, in pixels
 int OLED_RESET = -1; // Reset pin number (or -1 if sharing Arduino reset pin)
 
 // Home Assistant Configuration
-const char* HOME_ASSISTANT_BROKER_IP = "YOUR_HOME_ASSISTANT_IP";
-const char* HOME_ASSISTANT_USERNAME = "YOUR_HOME_ASSISTANT_LOGIN_USERNAME";
-const char* HOME_ASSISTANT_PASSWORD = "YOUR_HOME_ASSISTANT_LOGIN_PASSWORD";
+// const char* HOME_ASSISTANT_BROKER_IP = "YOUR_HOME_ASSISTANT_IP";
+// const char* HOME_ASSISTANT_USERNAME = "YOUR_HOME_ASSISTANT_LOGIN_USERNAME";
+// const char* HOME_ASSISTANT_PASSWORD = "YOUR_HOME_ASSISTANT_LOGIN_PASSWORD";
 /*
  * *************************************************************************************
  * ******************************* END CONFIGURABLES ***********************************
@@ -125,6 +125,10 @@ String winderooVersion = "3.0.0";
 	HASwitch ha_powerSwitch("power");
 	HASensor ha_rssiReception("rssiReception");
 	HASensor ha_activityState("activity");
+
+	// Define HA Sensors (Setting & Customization)
+	HANumber ha_customWindDuration("customWindDuration");
+	HANumber ha_customWindPauseDuration("customWindPauseDuration");
 #endif
 
 void drawCentreStringToMemory(const char *buf, int x, int y)
@@ -737,6 +741,10 @@ void startWebserver()
 				ha_oledSwitch.setState(!screenSleep); // Invert state because naming is hard...
 				ha_rpd.setState(static_cast<int>(requestTPD.toInt()));
 				ha_selectDirection.setState(getDirectionIndexForHomeAssistant(requestRotationDirection));
+
+				// Settings & Customization
+				ha_customWindDuration.setState(static_cast<int>(userDefinedSettings.customWindDuration.toInt()));
+				ha_customWindPauseDuration.setState(static_cast<int>(userDefinedSettings.customWindPauseDuration.toInt()));
 			}
 
 
@@ -1002,7 +1010,37 @@ void onRpdChangeCommand(HANumeric number, HANumber* sender)
 	bool writeSuccess = writeConfigVarsToFile(settingsFile, userDefinedSettings);
 	if ( !writeSuccess )
 	{
-		Serial.println("[ERROR] - Failed to write number state [MQTT]");
+		Serial.println("[ERROR] - Failed to write rpd number state [MQTT]");
+	}
+
+	sender->setCurrentState(number);
+}
+
+void onCustomWindDurationChangeCommand(HANumeric number, HANumber* sender)
+{
+	char buffer[10];
+	number.toStr(buffer);
+	userDefinedSettings.customWindDuration = String(buffer);
+
+	bool writeSuccess = writeConfigVarsToFile(settingsFile, userDefinedSettings);
+	if ( !writeSuccess )
+	{
+		Serial.println("[ERROR] - Failed to write customWindDuration number state [MQTT]");
+	}
+
+	sender->setCurrentState(number);
+}
+
+void onCustomWindPauseDurationChangeCommand(HANumeric number, HANumber* sender)
+{
+	char buffer[10];
+	number.toStr(buffer);
+	userDefinedSettings.customWindPauseDuration = String(buffer);
+
+	bool writeSuccess = writeConfigVarsToFile(settingsFile, userDefinedSettings);
+	if ( !writeSuccess )
+	{
+		Serial.println("[ERROR] - Failed to write customWindPauseDuration state [MQTT]");
 	}
 
 	sender->setCurrentState(number);
@@ -1350,6 +1388,28 @@ void setup()
 
 			ha_rssiReception.setName("WiFi Reception");
 			ha_rssiReception.setIcon("mdi:antenna");
+
+
+			// Settings & Customization
+			ha_customWindDuration.setName("Time to Rotate");
+			ha_customWindDuration.setIcon("mdi:play-circle-outline");
+			ha_customWindDuration.setMin(100);
+			ha_customWindDuration.setMax(960);
+			ha_customWindDuration.setStep(10);
+			ha_customWindDuration.setCurrentState(static_cast<int32_t>(userDefinedSettings.customWindDuration.toInt()));
+			ha_customWindDuration.setOptimistic(true);
+			ha_customWindDuration.onCommand(onCustomWindDurationChangeCommand);
+
+			ha_customWindPauseDuration.setName("Time to pause");
+			ha_customWindPauseDuration.setIcon("mdi:pause-circle-outline");
+			ha_customWindPauseDuration.setMin(10);
+			ha_customWindPauseDuration.setMax(900);
+			ha_customWindPauseDuration.setStep(5);
+			ha_customWindPauseDuration.setCurrentState(static_cast<int32_t>(userDefinedSettings.customWindPauseDuration.toInt()));
+			ha_customWindPauseDuration.setOptimistic(true);
+			ha_customWindPauseDuration.onCommand(onCustomWindPauseDurationChangeCommand);
+
+
 
 			mqtt.onConnected(mqttOnConnected);
 			mqtt.onDisconnected(mqttOnDisconnected);
