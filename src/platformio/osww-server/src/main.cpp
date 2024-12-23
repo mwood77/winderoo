@@ -49,9 +49,9 @@ int SCREEN_HEIGHT = 64; // OLED display height, in pixels
 int OLED_RESET = -1; // Reset pin number (or -1 if sharing Arduino reset pin)
 
 // Home Assistant Configuration
-// const char* HOME_ASSISTANT_BROKER_IP = "YOUR_HOME_ASSISTANT_IP";
-// const char* HOME_ASSISTANT_USERNAME = "YOUR_HOME_ASSISTANT_LOGIN_USERNAME";
-// const char* HOME_ASSISTANT_PASSWORD = "YOUR_HOME_ASSISTANT_LOGIN_PASSWORD";
+const char* HOME_ASSISTANT_BROKER_IP = "YOUR_HOME_ASSISTANT_IP";
+const char* HOME_ASSISTANT_USERNAME = "YOUR_HOME_ASSISTANT_LOGIN_USERNAME";
+const char* HOME_ASSISTANT_PASSWORD = "YOUR_HOME_ASSISTANT_LOGIN_PASSWORD";
 /*
  * *************************************************************************************
  * ******************************* END CONFIGURABLES ***********************************
@@ -129,6 +129,9 @@ String winderooVersion = "3.0.0";
 	// Define HA Sensors (Setting & Customization)
 	HANumber ha_customWindDuration("customWindDuration");
 	HANumber ha_customWindPauseDuration("customWindPauseDuration");
+	HASelect ha_rtcSelectedHour("rtcSelectedHour");
+	HASelect ha_rtcSelectedMinutes("rtcSelectedMinutes");
+	HASensor ha_currentEpoch("currentEpoch");
 #endif
 
 void drawCentreStringToMemory(const char *buf, int x, int y)
@@ -821,6 +824,13 @@ void startWebserver()
 				Serial.print(rtcUpdateHours);
 				Serial.print(" and minutes: ");
 				Serial.println(rtcUpdateMinutes);
+
+				if (HOME_ASSISTANT_ENABLED) 
+				{
+					ha_rtcSelectedHour.setState(rtcUpdateHours);
+					ha_rtcSelectedMinutes.setState(rtcUpdateMinutes);
+				}
+
 				updateRtcEpoch(rtc, rtcUpdateHours, rtcUpdateMinutes);
 			}
 
@@ -1106,85 +1116,42 @@ void handleHAStopButton(HAButton* sender)
 	ha_activityState.setValue("Stopped");
 }
 
+void onSelectRtcCustomMinutesCommand(int8_t index, HASelect* sender)
+{
+    int selectedMinute = 0;
+
+    if (index >= 0 && index <= 59) {
+        selectedMinute = index;
+    } else {
+        return; // Exit if index is out of range
+    }
+
+    updateRtcEpoch(rtc, rtc.getHour(), selectedMinute);
+
+    sender->setState(index);
+}
+
+void onSelectRtcCustomHoursCommand(int8_t index, HASelect* sender)
+{
+	int selectedHour = 0;
+
+    if (index >= 0 && index <= 23) {
+        selectedHour = index;
+    } else {
+        return; // Exit if index is out of range
+    }
+
+	updateRtcEpoch(rtc, selectedHour, rtc.getMinute());
+
+	sender->setState(index);
+}
+
 void onSelectHoursCommand(int8_t index, HASelect* sender)
 {
-	// Ugly but more reliable
-	switch (index) 
-	{
-		case 0:
-			userDefinedSettings.hour = "00";
-			break;
-		case 1:
-			userDefinedSettings.hour = "01";
-			break;
-		case 2:
-			userDefinedSettings.hour = "02";
-			break;
-		case 3:
-			userDefinedSettings.hour = "03";
-			break;
-		case 4:
-			userDefinedSettings.hour = "04";
-			break;
-		case 5:
-			userDefinedSettings.hour = "05";
-			break;
-		case 6:
-			userDefinedSettings.hour = "06";
-			break;
-		case 7:
-			userDefinedSettings.hour = "07";
-			break;
-		case 8:
-			userDefinedSettings.hour = "08";
-			break;
-		case 9:
-			userDefinedSettings.hour = "09";
-			break;
-		case 10:
-			userDefinedSettings.hour = "10";
-			break;
-		case 11:
-			userDefinedSettings.hour = "11";
-			break;
-		case 12:	
-			userDefinedSettings.hour = "12";
-			break;
-		case 13:
-			userDefinedSettings.hour = "13";
-			break;
-		case 14:
-			userDefinedSettings.hour = "14";
-			break;
-		case 15:
-			userDefinedSettings.hour = "15";
-			break;
-		case 16:
-			userDefinedSettings.hour = "16";
-			break;
-		case 17:
-			userDefinedSettings.hour = "17";
-			break;
-		case 18:
-			userDefinedSettings.hour = "18";
-			break;
-		case 19:
-			userDefinedSettings.hour = "19";
-			break;
-		case 20:
-			userDefinedSettings.hour = "20";
-			break;
-		case 21:
-			userDefinedSettings.hour = "21";
-			break;
-		case 22:
-			userDefinedSettings.hour = "22";
-			break;
-		case 23:
-			userDefinedSettings.hour = "23";
-			break;
-		default:
-			return;
+    if (index >= 0 && index <= 23) {
+        userDefinedSettings.hour = index;
+    } else {
+        return; // Exit if index is out of range
     }
 
 	bool writeSuccess = writeConfigVarsToFile(settingsFile, userDefinedSettings);
@@ -1409,6 +1376,19 @@ void setup()
 			ha_customWindPauseDuration.setOptimistic(true);
 			ha_customWindPauseDuration.onCommand(onCustomWindPauseDurationChangeCommand);
 
+			ha_rtcSelectedHour.setName("RTC Hour");
+			ha_rtcSelectedHour.setIcon("mdi:timer-sand-full");
+			ha_rtcSelectedHour.setOptions("00;01;02;03;04;05;06;07;08;09;10;11;12;13;14;15;16;17;18;19;20;21;22;23");
+			ha_rtcSelectedHour.onCommand(onSelectRtcCustomHoursCommand);
+
+			ha_rtcSelectedMinutes.setName("RTC Minutes");
+			ha_rtcSelectedMinutes.setIcon("mdi:timer-sand-empty");
+			ha_rtcSelectedMinutes.setOptions("00;01;02;03;04;05;06;07;08;09;10;11;12;13;14;15;16;17;18;19;20;21;22;23;24;25;26;27;28;29;30;31;32;33;34;35;36;37;38;39;40;41;42;43;44;45;46;47;48;49;50;51;52;53;54;55;56;57;58;59");
+			ha_rtcSelectedMinutes.onCommand(onSelectRtcCustomMinutesCommand);
+
+			ha_currentEpoch.setName("RTC Epoch Time");
+			ha_currentEpoch.setIcon("mdi:clock-time-nine-outline");
+			ha_currentEpoch.setValue(std::to_string(rtc.getEpoch()).c_str());
 
 
 			mqtt.onConnected(mqttOnConnected);
@@ -1590,7 +1570,9 @@ void loop()
 		// This mitigates de-sync between HA and the web gui.
 		ha_powerSwitch.setState(userDefinedSettings.winderEnabled.toInt());
 		ha_activityState.setValue(userDefinedSettings.status.c_str());
+		ha_currentEpoch.setValue(std::to_string(rtc.getEpoch()).c_str());
 	}
 
 	wm.process();
+
 }

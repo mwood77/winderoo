@@ -86,12 +86,17 @@ Winderoo should be automatically discovered by Home Assistant within 60 seconds.
 
  -  sensor.winderoo_status            : "Winding | Stopped"
  -  sensor.winderoo_wifi_reception    : "Excellent | Good | Fair | Poor"
+ -  sensor.winderoo_rtc_epoch         : <unix epoch>
  
  -  number.winderoo_rotations_per_day : 100 <-> 960 
+ -  number.winderoo_time_to_rotate    : 100 <-> 960 
+ -  number.winderoo_time_to_pause     : 10 <-> 900 
 
  -  select.winderoo_direction         : "CCW | BOTH | CW"
  -  select.winderoo_hour              : 00 <-> 23
  -  select.winderoo_minutes           : 00 <-> 50
+ -  select.winderoo_rtc_hour          : 00 <-> 23
+ -  select.winderoo_rtc_minutes       : 00 <-> 59
  
  -  switch.winderoo_timer_enabled     : "true | false"
  -  switch.winderoo_oled              : "true | false"
@@ -133,6 +138,27 @@ entities:
     name: Power
 title: Winderoo
 show_header_toggle: false
+</pre></code>
+    </td>
+  </tr>
+  <tr>
+    <td>
+        <img src="./images/home-assistant-customize-gui.png" alt="Winderoo - The Open Source Watch Winder" width="300">
+    </td>
+    <td>
+<pre><code>
+type: entities
+entities:
+  - entity: number.winderoo_time_to_rotate
+    name: Time to Rotate
+  - entity: number.winderoo_time_to_pause
+    name: " Time to pause"
+  - entity: select.winderoo_rtc_hour
+    name: RTC Hour
+  - entity: select.winderoo_rtc_minutes
+    name: RTC Minutes
+  - entity: sensor.winderoo_rtc_epoch_time
+title: Winderoo - Settings & Customization
 </pre></code>
     </td>
   </tr>
