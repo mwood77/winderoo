@@ -81,6 +81,8 @@ struct RUNTIME_VARS
 	String minutes = "00";
 	String winderEnabled = "1";
 	String timerEnabled = "0";
+	String customWindDuration = "";
+	String customWindPauseDuration = "";
 };
 
 /*
@@ -501,17 +503,20 @@ void loadConfigVarsFromFile(String file_name)
 	{
 		Serial.println("[STATUS] - Failed to open configuration file, returning empty result");
 	}
+
 	while (this_file.available())
 	{
 		result += (char)this_file.read();
 	}
 
-	userDefinedSettings.status = json["savedStatus"].as<String>();						// Winding || Stopped = 7char
-	userDefinedSettings.rotationsPerDay = json["savedTPD"].as<String>();				// min = 100 || max = 960
-	userDefinedSettings.hour = json["savedHour"].as<String>();							// 00
-	userDefinedSettings.minutes = json["savedMinutes"].as<String>();					// 00
-	userDefinedSettings.timerEnabled = json["savedTimerState"].as<String>();			// 0 || 1
-	userDefinedSettings.direction = json["savedDirection"].as<String>();				// CW || CCW || BOTH
+	userDefinedSettings.status = json["savedStatus"].as<String>();									// Winding || Stopped = 7char
+	userDefinedSettings.rotationsPerDay = json["savedTPD"].as<String>();							// min = 100 || max = 960
+	userDefinedSettings.hour = json["savedHour"].as<String>();										// 00
+	userDefinedSettings.minutes = json["savedMinutes"].as<String>();								// 00
+	userDefinedSettings.timerEnabled = json["savedTimerState"].as<String>();						// 0 || 1
+	userDefinedSettings.direction = json["savedDirection"].as<String>();							// CW || CCW || BOTH
+	userDefinedSettings.customWindDuration = json["customWindDuration"].as<String>();				// 180 (in seconds)
+	userDefinedSettings.customWindPauseDuration = json["customWindPauseDuration"].as<String>();		// 15 (in seconds)
 
 	this_file.close();
 }
@@ -541,6 +546,8 @@ bool writeConfigVarsToFile(String file_name, const RUNTIME_VARS& userDefinedSett
 	json["savedMinutes"] = userDefinedSettings.minutes;
 	json["savedTimerState"] = userDefinedSettings.timerEnabled;
 	json["savedDirection"] = userDefinedSettings.direction;
+	json["customWindDuration"] = userDefinedSettings.customWindDuration;
+	json["customWindPauseDuration"] = userDefinedSettings.customWindPauseDuration;
 
 	if (serializeJson(json, this_file) == 0)
 	{
@@ -593,6 +600,8 @@ void startWebserver()
 		json["db"] = WiFi.RSSI();
 		json["screenSleep"] = screenSleep;
 		json["screenEquipped"] = screenEquipped;
+		json["customWindDuration"] = userDefinedSettings.customWindDuration;
+		json["customWindPauseDuration"] = userDefinedSettings.customWindPauseDuration;
 		serializeJson(json, *response);
 
 		request->send(response);
@@ -614,7 +623,7 @@ void startWebserver()
 		}
 
 		bool writeSuccess = writeConfigVarsToFile(settingsFile, userDefinedSettings);
-		if ( !writeSuccess )
+		if (!writeSuccess)
 		{
 			Serial.println("[ERROR] - Failed to write [timer] endpoint data to file");
 			request->send(500, "text/plain", "Failed to write new configuration to file");
@@ -697,6 +706,8 @@ void startWebserver()
 			userDefinedSettings.hour = json["hour"].as<String>();
 			userDefinedSettings.minutes = json["minutes"].as<String>();
 			userDefinedSettings.timerEnabled = json["timerEnabled"].as<String>();
+			userDefinedSettings.customWindDuration = json["customWindDuration"].as<String>();
+			userDefinedSettings.customWindPauseDuration = json["customWindPauseDuration"].as<String>();
 
 			// RTC values
 			int rtcUpdateHours = json["rtcSelectedHour"].as<int>();
@@ -709,7 +720,6 @@ void startWebserver()
 			screenSleep = json["screenSleep"].as<bool>();
 
 			// Update Home Assistant state
-
 			if (HOME_ASSISTANT_ENABLED)
 			{
 				ha_timerSwitch.setState(userDefinedSettings.timerEnabled.toInt());
