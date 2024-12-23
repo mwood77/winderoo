@@ -127,6 +127,9 @@ export class SettingsComponent implements OnInit, AfterViewChecked {
   }
 
   getData(): void {
+    this.refreshingRTC = true
+    this.clockService.stopClock();
+
     this.apiService.getStatus().subscribe((data) => {
       this.upload.activityState = data.status;
       this.upload.rpd = data.rotationsPerDay;
@@ -167,6 +170,10 @@ export class SettingsComponent implements OnInit, AfterViewChecked {
       // Reset the RTC dropdowns
       this.rtc_selectedHour = "";
       this.rtc_selectedMinutes = "";
+
+      setTimeout(() => {
+        this.refreshingRTC = false;
+      }, 1500)
     });
   }
 

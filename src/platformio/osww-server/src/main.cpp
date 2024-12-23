@@ -63,7 +63,6 @@ const char* HOME_ASSISTANT_PASSWORD = "YOUR_HOME_ASSISTANT_LOGIN_PASSWORD";
  */
 String timeURL = "http://worldtimeapi.org/api/ip";
 String settingsFile = "/settings.json";
-unsigned long rtc_offset;
 unsigned long rtc_epoch;
 unsigned long estimatedRoutineFinishEpoch;
 unsigned long previousEpoch;
@@ -428,19 +427,9 @@ void getTime()
 	{
 		JsonDocument json;
 		deserializeJson(json, http.getStream());
-		const String datetime = json["datetime"];
+		int unixtime = json["unixtime"].as<int>();
 
-		String date = datetime.substring(0, datetime.indexOf("T") - 1);
-		int day = date.substring(8, 10).toInt();
-		int month = date.substring(5, 7).toInt();
-		int year = date.substring(0, 4).toInt();
-
-		String time = datetime.substring(datetime.indexOf("T") + 1);
-		int seconds = time.substring(6, 8).toInt();
-		int hours = time.substring(0, 2).toInt();
-		int minutes = time.substring(3, 5).toInt();
-
-		rtc.setTime(seconds, minutes, hours, day, month, year);
+		rtc.setTime(unixtime);
 	}
 	else
 	{
@@ -449,11 +438,39 @@ void getTime()
 			Serial.println(httpCode);
 		} else {
 			Serial.print("[WARN] - Failed to get time from Worldtime API, likely due to rate limiting. ");
-			Serial.print("Wait a while to see if it resolves.");
+			Serial.println("Wait a while to see if it resolves.");
 		}
 	}
 
 	http.end();
+}
+
+/**
+ * Update the internal RTC's hours or minutes
+ * 
+ * @param rtc is the current rtc instance
+ * @param hours the hours value to set
+ * @param minutes the minutes value to set
+ */
+void updateRtcEpoch(ESP32Time &rtc, int hours, int minutes) {
+    // Get the current epoch
+    unsigned long currentEpoch = rtc.getEpoch();
+    struct tm *timeInfo;
+
+    // Convert current epoch to a tm structure
+    time_t rawTime = static_cast<time_t>(currentEpoch);
+    timeInfo = gmtime(&rawTime);
+
+    // Update time to the desired hours and minutes
+    timeInfo->tm_hour = hours;
+    timeInfo->tm_min = minutes;
+    timeInfo->tm_sec = 0;  // Reset seconds for a clean time
+
+    // Convert back to epoch
+    time_t updatedTime = mktime(timeInfo);
+
+    // Set the new epoch
+    rtc.setTime(static_cast<unsigned long>(updatedTime), 0);  // Set with 0 microseconds
 }
 
 /**
@@ -570,9 +587,6 @@ void startWebserver()
 		serializeJson(json, *response);
 
 		request->send(response);
-
-		// Update RTC time ref
-		getTime();
 	});
 
 	server.on("/api/timer", HTTP_POST, [](AsyncWebServerRequest *request)
@@ -673,6 +687,10 @@ void startWebserver()
 			userDefinedSettings.minutes = json["minutes"].as<String>();
 			userDefinedSettings.timerEnabled = json["timerEnabled"].as<String>();
 
+			// RTC values
+			int rtcUpdateHours = json["rtc_selectedHour"].as<int>();
+			int rtcUpdateMinutes = json["rtc_selectedMinutes"].as<int>();
+
 			// These values need to be compared to the current settings / running state
 			String requestRotationDirection = json["rotationDirection"].as<String>();
 			String requestTPD = json["tpd"].as<String>();
@@ -757,6 +775,15 @@ void startWebserver()
 					drawStaticGUI(true, userDefinedSettings.status);
 					drawDynamicGUI();
 				}
+			}
+
+			if (rtcUpdateHours || rtcUpdateMinutes) 
+			{
+				Serial.print("[INFO] - Updating RTC hours: ");
+				Serial.print(rtcUpdateHours);
+				Serial.print(" and minutes: ");
+				Serial.println(rtcUpdateMinutes);
+				updateRtcEpoch(rtc, rtcUpdateHours, rtcUpdateMinutes);
 			}
 
 			// Write new parameters to file

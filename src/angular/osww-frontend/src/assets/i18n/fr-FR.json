@@ -40,8 +40,9 @@
         "ROTATION_DURATION_TIME": "Il est temps de tourner",
         "ROTATION_PAUSE_TIME": "Il est temps de faire une pause",
         "SECONDS": "secondes",
-        "INTERNAL_CLOCK": "Internal Clock",
-        "INTERNAL_CLOCK_BLURB": "Winderoo has an internal clock (RTC), which is automatically kept up to date. If this is incorrect, please refresh the clock by clicking the button beneath.",
-        "REFRESH_CLOCK": "Refresh RTC"
+        "INTERNAL_CLOCK": "Horloge Interne",
+        "INTERNAL_CLOCK_BLURB": "Winderoo dispose d'une horloge interne (RTC), qui est automatiquement réglée au démarrage.",
+        "INTERNAL_CLOCK_BLURB_2": "Si cela est incorrect, veuillez mettre à jour l'horloge ci-dessous.",
+        "LOADING": "Chargement, veuillez patienter..."
     }
 }

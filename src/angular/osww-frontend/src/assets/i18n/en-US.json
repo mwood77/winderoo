@@ -41,7 +41,8 @@
         "ROTATION_PAUSE_TIME": "Time to pause",
         "SECONDS": "seconds",
         "INTERNAL_CLOCK": "Internal Clock",
-        "INTERNAL_CLOCK_BLURB": "Winderoo has an internal clock (RTC), which is automatically kept up to date. If this is incorrect, please update the clock beneath.",
-        "REFRESH_CLOCK": "Refresh RTC"
+        "INTERNAL_CLOCK_BLURB": "Winderoo has an internal clock (RTC), which is automatically set during boot.",
+        "INTERNAL_CLOCK_BLURB_2": "If this is incorrect, please update the clock beneath.",
+        "LOADING": "Loading, please wait..."
     }
 }
