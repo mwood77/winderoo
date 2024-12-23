@@ -387,9 +387,9 @@ unsigned long calculateWindingTime()
 
 	// @todo - set adjustable winding duration when coming from POST request
 
-	// We want to rest every 3 minutes for 15 seconds
-	long totalNumberOfRestingPeriods = totalSecondsSpentTurning / 180;
-	long totalRestDuration = totalNumberOfRestingPeriods * 180;
+	// We want to rest every userDefinedSettings.customWindDuration (180 is default) minutes for userDefinedSettings.customWindPauseDuration (5 is default) seconds
+	long totalNumberOfRestingPeriods = totalSecondsSpentTurning / userDefinedSettings.customWindDuration;
+	long totalRestDuration = totalNumberOfRestingPeriods * userDefinedSettings.customWindPauseDuration;
 	long finalRoutineDuration = totalRestDuration + totalSecondsSpentTurning;
 
 	Serial.print("[STATUS] - Total winding duration: ");
@@ -1470,7 +1470,7 @@ void loop()
 					Serial.print("[STATUS] - Pause for duration: ");
 					Serial.println(userDefinedSettings.customWindPauseDuration);
 					delay(userDefinedSettings.customWindPauseDuration);
-					
+
 					previousEpoch = rtc.getEpoch();
 				}
 			}
