@@ -126,26 +126,6 @@ export class SettingsComponent implements OnInit, AfterViewChecked {
     })
   }
 
-  refreshRTC(): void {
-    this.refreshingRTC = true;
-
-    this.clockService.stopClock();
-
-    this.apiService.getRtcEpoch().subscribe((response) => {
-      if (response.unixtime != null) {
-        this.winderooInternalRTC = response.unixtime;
-        
-        this.clockService.startClock(this.winderooInternalRTC, (updatedEpoch: number) => {
-          this.winderooInternalRTC = updatedEpoch * 1000; // Convert seconds to milliseconds for display
-        });
-
-        // @todo - Send POST request to Winderoo to update time
-
-        this.refreshingRTC = true;
-      }
-    })
-  }
-
   getData(): void {
     this.apiService.getStatus().subscribe((data) => {
       this.upload.activityState = data.status;
@@ -183,6 +163,10 @@ export class SettingsComponent implements OnInit, AfterViewChecked {
       this.clockService.startClock(this.winderooInternalRTC, (updatedEpoch: number) => {
         this.winderooInternalRTC = updatedEpoch * 1000; // Convert seconds to milliseconds for display
       });
+
+      // Reset the RTC dropdowns
+      this.rtc_selectedHour = "";
+      this.rtc_selectedMinutes = "";
     });
   }
 
@@ -295,6 +279,8 @@ export class SettingsComponent implements OnInit, AfterViewChecked {
       screenSleep: this.upload.screenSleep,
       customWindDuration: this.upload.customWindDuration,
       customWindPauseDuration: this.upload.customWindPauseDuration,
+      rtc_selectedHour: this.rtc_selectedHour,
+      rtc_selectedMinutes: this.rtc_selectedMinutes,
     }
 
     this.apiService.updateState(body).subscribe((response) => {

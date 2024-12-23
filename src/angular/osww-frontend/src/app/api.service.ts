@@ -14,6 +14,8 @@ export interface Update {
   screenSleep: boolean;
   customWindDuration: number;
   customWindPauseDuration: number;
+  rtc_selectedHour: number;
+  rtc_selectedMinutes: number;
 }
 
 export interface Status {
@@ -61,8 +63,6 @@ export class ApiService {
 
   isWinderEnabled$ = new BehaviorSubject(0);
   shouldRefresh$ = new BehaviorSubject(false);
-
-  private worldtimeURL = 'http://worldtimeapi.org/api/ip';
 
   constructor(private http: HttpClient) { }
 
@@ -128,12 +128,4 @@ export class ApiService {
     return this.http.get<any>(ApiService.constructURL() + 'reset');
   }
 
-  /**
-   * Makes an external call to the WorldTime API to get current epoch, based off of IP (best fit)
-   * 
-   * @returns WoldTimeAPI interface
-   */
-  getRtcEpoch() {
-    return this.http.get<WorldTimeAPI>(this.worldtimeURL);
-  }
 }
