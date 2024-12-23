@@ -306,6 +306,17 @@ template <int N> static void drawMultiLineText(const String (&message)[N]) {
 	}
 }
 
+void pauseWindingAndNotify() {
+	int pauseDuration = userDefinedSettings.customWindPauseDuration.toInt();
+	for (int i = 0; i < pauseDuration; i++) {
+		Serial.print("[STATUS] - Remaining seconds: ");
+		Serial.println(pauseDuration - i);
+
+		// Delay for 1000ms (1 second)
+		delay(1000);
+	}
+}
+
 // Home Assistant Helper Functions
 /**
  * @brief Returns the index corresponding to a given direction for Home Assistant.
@@ -385,11 +396,9 @@ unsigned long calculateWindingTime()
 
 	long totalSecondsSpentTurning = tpd * durationInSecondsToCompleteOneRevolution;
 
-	// @todo - set adjustable winding duration when coming from POST request
-
 	// We want to rest every userDefinedSettings.customWindDuration (180 is default) minutes for userDefinedSettings.customWindPauseDuration (5 is default) seconds
-	long totalNumberOfRestingPeriods = totalSecondsSpentTurning / userDefinedSettings.customWindDuration;
-	long totalRestDuration = totalNumberOfRestingPeriods * userDefinedSettings.customWindPauseDuration;
+	long totalNumberOfRestingPeriods = totalSecondsSpentTurning / userDefinedSettings.customWindDuration.toInt();
+	long totalRestDuration = totalNumberOfRestingPeriods * userDefinedSettings.customWindPauseDuration.toInt();
 	long finalRoutineDuration = totalRestDuration + totalSecondsSpentTurning;
 
 	Serial.print("[STATUS] - Total winding duration: ");
@@ -1448,29 +1457,35 @@ void loop()
 
 			if (r <= 25)
 			{
-				if ((strcmp(userDefinedSettings.direction.c_str(), "BOTH") == 0) && (rtc.getEpoch() - previousEpoch) > userDefinedSettings.customWindDuration)
+				if ((strcmp(userDefinedSettings.direction.c_str(), "BOTH") == 0) && (rtc.getEpoch() - previousEpoch) > userDefinedSettings.customWindDuration.toInt())
 				{
 					motor.stop();
 					Serial.print("[STATUS] - Pause for duration: ");
 					Serial.println(userDefinedSettings.customWindPauseDuration);
-					delay(userDefinedSettings.customWindPauseDuration);
+
+					drawNotification("Cycle Pause");
+					pauseWindingAndNotify();
 
 					previousEpoch = rtc.getEpoch();
 
 					int currentDirection = motor.getMotorDirection();
 					motor.setMotorDirection(!currentDirection);
 					Serial.println("[STATUS] - Motor changing direction, mode: " + userDefinedSettings.direction);
-
+					
+					drawNotification("Winding");
 					motor.determineMotorDirectionAndBegin();
 				}
 
-				if ((rtc.getEpoch() - previousEpoch) > userDefinedSettings.customWindDuration)
+				if ((rtc.getEpoch() - previousEpoch) > userDefinedSettings.customWindDuration.toInt())
 				{
 					motor.stop();
 					Serial.print("[STATUS] - Pause for duration: ");
 					Serial.println(userDefinedSettings.customWindPauseDuration);
-					delay(userDefinedSettings.customWindPauseDuration);
-
+					
+					drawNotification("Cycle Pause");
+					pauseWindingAndNotify();
+					drawNotification("Winding");
+					
 					previousEpoch = rtc.getEpoch();
 				}
 			}
