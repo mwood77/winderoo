@@ -35,7 +35,7 @@
  * If you're using a NeoPixel equipped board, you'll need to change directionalPinA, directionalPinB and ledPin (pin 18 on most, I think) to appropriate GPIOs.
  * Failure to set these pins on NeoPixel boards will result in kernel panics.
  */
-int durationInSecondsToCompleteOneRevolution = 8;
+// int durationInSecondsToCompleteOneRevolution = 8;
 int directionalPinA = 25;
 int directionalPinB = 26;
 int ledPin = 0;
@@ -83,6 +83,7 @@ struct RUNTIME_VARS
 	String timerEnabled = "0";
 	String customWindDuration = "";
 	String customWindPauseDuration = "";
+	int customDurationInSecondsToCompleteOneRevolution = 8;
 };
 
 /*
@@ -132,6 +133,7 @@ String winderooVersion = "3.0.0";
 	HASelect ha_rtcSelectedHour("rtcSelectedHour");
 	HASelect ha_rtcSelectedMinutes("rtcSelectedMinutes");
 	HASensor ha_currentEpoch("currentEpoch");
+	HANumber ha_customDurationInSecondsToCompleteOneRevolution("customDurationInSecondsToCompleteOneRevolution");
 #endif
 
 void drawCentreStringToMemory(const char *buf, int x, int y)
@@ -401,7 +403,7 @@ unsigned long calculateWindingTime()
 {
 	int tpd = atoi(userDefinedSettings.rotationsPerDay.c_str());
 
-	long totalSecondsSpentTurning = tpd * durationInSecondsToCompleteOneRevolution;
+	long totalSecondsSpentTurning = tpd * userDefinedSettings.customDurationInSecondsToCompleteOneRevolution;
 
 	// We want to rest every userDefinedSettings.customWindDuration (180 is default) minutes for userDefinedSettings.customWindPauseDuration (5 is default) seconds
 	long totalNumberOfRestingPeriods = totalSecondsSpentTurning / userDefinedSettings.customWindDuration.toInt();
@@ -525,14 +527,15 @@ void loadConfigVarsFromFile(String file_name)
 		result += (char)this_file.read();
 	}
 
-	userDefinedSettings.status = json["savedStatus"].as<String>();									// Winding || Stopped = 7char
-	userDefinedSettings.rotationsPerDay = json["savedTPD"].as<String>();							// min = 100 || max = 960
-	userDefinedSettings.hour = json["savedHour"].as<String>();										// 00
-	userDefinedSettings.minutes = json["savedMinutes"].as<String>();								// 00
-	userDefinedSettings.timerEnabled = json["savedTimerState"].as<String>();						// 0 || 1
-	userDefinedSettings.direction = json["savedDirection"].as<String>();							// CW || CCW || BOTH
-	userDefinedSettings.customWindDuration = json["customWindDuration"].as<String>();				// 180 (in seconds)
-	userDefinedSettings.customWindPauseDuration = json["customWindPauseDuration"].as<String>();		// 15 (in seconds)
+	userDefinedSettings.status = json["savedStatus"].as<String>();																				// Winding || Stopped = 7char
+	userDefinedSettings.rotationsPerDay = json["savedTPD"].as<String>();																		// min = 100 || max = 960
+	userDefinedSettings.hour = json["savedHour"].as<String>();																					// 00
+	userDefinedSettings.minutes = json["savedMinutes"].as<String>();																			// 00
+	userDefinedSettings.timerEnabled = json["savedTimerState"].as<String>();																	// 0 || 1
+	userDefinedSettings.direction = json["savedDirection"].as<String>();																		// CW || CCW || BOTH
+	userDefinedSettings.customWindDuration = json["customWindDuration"].as<String>();															// 180 (in seconds)
+	userDefinedSettings.customWindPauseDuration = json["customWindPauseDuration"].as<String>();													// 15 (in seconds)
+	userDefinedSettings.customDurationInSecondsToCompleteOneRevolution = json["customDurationInSecondsToCompleteOneRevolution"].as<int>();		// min 1 <-> max 16; default 8
 
 	this_file.close();
 }
@@ -564,6 +567,7 @@ bool writeConfigVarsToFile(String file_name, const RUNTIME_VARS& userDefinedSett
 	json["savedDirection"] = userDefinedSettings.direction;
 	json["customWindDuration"] = userDefinedSettings.customWindDuration;
 	json["customWindPauseDuration"] = userDefinedSettings.customWindPauseDuration;
+	json["customDurationInSecondsToCompleteOneRevolution"] = userDefinedSettings.customDurationInSecondsToCompleteOneRevolution;
 
 	if (serializeJson(json, this_file) == 0)
 	{
@@ -607,7 +611,6 @@ void startWebserver()
 		json["direction"] = userDefinedSettings.direction;
 		json["hour"] = userDefinedSettings.hour;
 		json["minutes"] = userDefinedSettings.minutes;
-		json["durationInSecondsToCompleteOneRevolution"] = durationInSecondsToCompleteOneRevolution;
 		json["startTimeEpoch"] = startTimeEpoch;
 		json["currentTimeEpoch"] = rtc.getEpoch();
 		json["estimatedRoutineFinishEpoch"] = estimatedRoutineFinishEpoch;
@@ -618,6 +621,7 @@ void startWebserver()
 		json["screenEquipped"] = screenEquipped;
 		json["customWindDuration"] = userDefinedSettings.customWindDuration;
 		json["customWindPauseDuration"] = userDefinedSettings.customWindPauseDuration;
+		json["customDurationInSecondsToCompleteOneRevolution"] = userDefinedSettings.customDurationInSecondsToCompleteOneRevolution;
 		serializeJson(json, *response);
 
 		request->send(response);
@@ -724,6 +728,7 @@ void startWebserver()
 			userDefinedSettings.timerEnabled = json["timerEnabled"].as<String>();
 			userDefinedSettings.customWindDuration = json["customWindDuration"].as<String>();
 			userDefinedSettings.customWindPauseDuration = json["customWindPauseDuration"].as<String>();
+			userDefinedSettings.customDurationInSecondsToCompleteOneRevolution = json["customDurationInSecondsToCompleteOneRevolution"];
 
 			// RTC values
 			int rtcUpdateHours = json["rtcSelectedHour"].as<int>();
@@ -748,6 +753,7 @@ void startWebserver()
 				// Settings & Customization
 				ha_customWindDuration.setState(static_cast<int>(userDefinedSettings.customWindDuration.toInt()));
 				ha_customWindPauseDuration.setState(static_cast<int>(userDefinedSettings.customWindPauseDuration.toInt()));
+				ha_customDurationInSecondsToCompleteOneRevolution.setState(userDefinedSettings.customDurationInSecondsToCompleteOneRevolution);
 			}
 
 
@@ -1009,6 +1015,19 @@ void onOledSwitchCommand(bool state, HASwitch* sender)
 	}
 
 	sender->setState(state);
+}
+
+void onCustomDurationInSecondsToCompleteOneRevolution(HANumeric number, HANumber* sender)
+{
+	userDefinedSettings.customDurationInSecondsToCompleteOneRevolution = number.toInt16();
+
+	bool writeSuccess = writeConfigVarsToFile(settingsFile, userDefinedSettings);
+	if ( !writeSuccess )
+	{
+		Serial.println("[ERROR] - Failed to write customDurationInSecondsToCompleteOneRevolution number state [MQTT]");
+	}
+
+	sender->setCurrentState(number);
 }
 
 void onRpdChangeCommand(HANumeric number, HANumber* sender)
@@ -1390,6 +1409,14 @@ void setup()
 			ha_currentEpoch.setIcon("mdi:clock-time-nine-outline");
 			ha_currentEpoch.setValue(std::to_string(rtc.getEpoch()).c_str());
 
+			ha_customDurationInSecondsToCompleteOneRevolution.setName("Duration to complete a single rotation");
+			ha_customDurationInSecondsToCompleteOneRevolution.setIcon("mdi:arrow-u-down-right");
+			ha_customDurationInSecondsToCompleteOneRevolution.setMin(1);
+			ha_customDurationInSecondsToCompleteOneRevolution.setMax(16);
+			ha_customDurationInSecondsToCompleteOneRevolution.setStep(1);
+			ha_customDurationInSecondsToCompleteOneRevolution.setCurrentState(userDefinedSettings.customDurationInSecondsToCompleteOneRevolution);
+			ha_customDurationInSecondsToCompleteOneRevolution.setOptimistic(true);
+			ha_customDurationInSecondsToCompleteOneRevolution.onCommand(onCustomDurationInSecondsToCompleteOneRevolution);
 
 			mqtt.onConnected(mqttOnConnected);
 			mqtt.onDisconnected(mqttOnDisconnected);

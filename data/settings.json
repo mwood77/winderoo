@@ -1,1 +1,1 @@
-{"savedStatus":"Stopped","savedTPD":"220","savedHour":"00","savedMinutes":"00","savedTimerState":"0","savedDirection":"BOTH", "customWindDuration":"180", "customWindPauseDuration":"15"}
+{"savedStatus":"Stopped","savedTPD":"220","savedHour":"00","savedMinutes":"00","savedTimerState":"0","savedDirection":"BOTH", "customWindDuration":"180", "customWindPauseDuration":"15", "customDurationInSecondsToCompleteOneRevolution": 8}
