@@ -65,13 +65,13 @@ export class SettingsComponent implements OnInit, AfterViewChecked {
     rpd: 0,
     hour: '00',
     minutes: '00',
-    durationInSecondsToCompleteOneRevolution: 0,
     startTimeEpoch: 0,
     estimatedRoutineFinishEpoch: 0,
     isTimerEnabledNum: 0,
     screenSleep: false,
     customWindDuration: 0,
     customWindPauseDuration: 0,
+    customDurationInSecondsToCompleteOneRevolution: 0,
   }
 
   selectedHour: any;
@@ -137,13 +137,13 @@ export class SettingsComponent implements OnInit, AfterViewChecked {
       this.upload.hour = data.hour;
       this.upload.minutes = data.minutes;
       this.wifiSignalIcon = this.getWifiSignalStrengthIcon(data.db *= -1);
-      this.upload.durationInSecondsToCompleteOneRevolution = data.durationInSecondsToCompleteOneRevolution;
       this.upload.startTimeEpoch = data.startTimeEpoch;
       this.upload.estimatedRoutineFinishEpoch = data.estimatedRoutineFinishEpoch;
       this.upload.isTimerEnabledNum = data.timerEnabled;
       this.upload.screenSleep = data.screenSleep;
       this.screenEquipped = data.screenEquipped;
       this.winderooInternalRTC = data.currentTimeEpoch;
+      this.upload.customDurationInSecondsToCompleteOneRevolution = data.customDurationInSecondsToCompleteOneRevolution;
 
       if (data.customWindDuration) {
         this.upload.customWindDuration = data.customWindDuration;
@@ -192,6 +192,11 @@ export class SettingsComponent implements OnInit, AfterViewChecked {
     const seconds = event.value;
     this.upload.customWindPauseDuration = seconds;
     this.estimateDuration(this.upload.rpd);
+  }
+
+  setcustomDurationInSecondsToCompleteOneRevolution(event: any): void {
+    const customSingleRotationTime = event.value;
+    this.upload.customDurationInSecondsToCompleteOneRevolution = customSingleRotationTime;
   }
 
   convertSecondsToHumanReadable(seconds: number): { minutes: number, seconds: number } {
@@ -286,6 +291,7 @@ export class SettingsComponent implements OnInit, AfterViewChecked {
       screenSleep: this.upload.screenSleep,
       customWindDuration: this.upload.customWindDuration,
       customWindPauseDuration: this.upload.customWindPauseDuration,
+      customDurationInSecondsToCompleteOneRevolution: this.upload.customDurationInSecondsToCompleteOneRevolution,
       rtcSelectedHour: this.rtcSelectedHour,
       rtcSelectedMinutes: this.rtcSelectedMinutes,
     }
@@ -317,7 +323,7 @@ export class SettingsComponent implements OnInit, AfterViewChecked {
   }
 
   estimateDuration(rpd: number): void {
-    const totalSecondsSpentTurning = rpd * this.upload.durationInSecondsToCompleteOneRevolution;
+    const totalSecondsSpentTurning = rpd * this.upload.customDurationInSecondsToCompleteOneRevolution;
     const totalNumberOfRestingPeriods = totalSecondsSpentTurning / this.upload.customWindDuration;
     const totalRestDuration = totalNumberOfRestingPeriods * this.upload.customWindPauseDuration;
 

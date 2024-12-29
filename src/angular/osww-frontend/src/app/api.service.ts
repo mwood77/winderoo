@@ -14,6 +14,7 @@ export interface Update {
   screenSleep: boolean;
   customWindDuration: number;
   customWindPauseDuration: number;
+  customDurationInSecondsToCompleteOneRevolution: number;
   rtcSelectedHour: number;
   rtcSelectedMinutes: number;
 }
@@ -26,7 +27,6 @@ export interface Status {
   direction: string;
   hour: string;
   minutes: string;
-  durationInSecondsToCompleteOneRevolution: number;
   startTimeEpoch: number,
   currentTimeEpoch: number;
   estimatedRoutineFinishEpoch: number;
@@ -36,6 +36,7 @@ export interface Status {
   screenEquipped: boolean;
   customWindDuration: number;
   customWindPauseDuration: number;
+  customDurationInSecondsToCompleteOneRevolution: number;
 }
 
 export interface WorldTimeAPI {

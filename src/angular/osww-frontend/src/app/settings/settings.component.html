@@ -192,6 +192,18 @@
                     <input matSliderThumb [(ngModel)]="this.upload.customWindPauseDuration">
                 </mat-slider>
             </div>
+
+            <div class="individual-setting">
+                <div class="">
+                    {{ "SETTINGS.SINGLE_ROTATION_TIMING" | translate }}
+                </div>
+                <div class="individual-status-text">
+                    {{ this.upload.customDurationInSecondsToCompleteOneRevolution }} {{ "SETTINGS.SECONDS" | translate }}
+                </div>
+                <mat-slider value="{{ this.upload.customDurationInSecondsToCompleteOneRevolution }}" min="1" max="16" step="1" discrete (input)="setcustomDurationInSecondsToCompleteOneRevolution($event)">
+                    <input matSliderThumb [(ngModel)]="this.upload.customDurationInSecondsToCompleteOneRevolution">
+                </mat-slider>
+            </div>
             
             <div class="individual-setting">
                 <div>

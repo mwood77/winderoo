@@ -43,6 +43,7 @@
         "INTERNAL_CLOCK": "Horloge Interne",
         "INTERNAL_CLOCK_BLURB": "Winderoo dispose d'une horloge interne (RTC), qui est automatiquement réglée au démarrage.",
         "INTERNAL_CLOCK_BLURB_2": "Si cela est incorrect, veuillez mettre à jour l'horloge ci-dessous.",
-        "LOADING": "Chargement, veuillez patienter..."
+        "LOADING": "Chargement, veuillez patienter...",
+        "SINGLE_ROTATION_TIMING": "Temps nécessaire pour effectuer une seule rotation"
     }
 }
