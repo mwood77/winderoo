@@ -2,11 +2,16 @@
 
 # User Manual
 
-## Winderoo's User Interface
+#### Contents
+- [Winderoo's Web User Interface](#winderoos-web-user-interface)
+- [Winderoo's Home Assistant Interface](#winderoos-home-assistant-interface)
+- [Winderoo's LED Blink Status](#winderoos-led-blink-status)
 
-| v1.0.0 | |
+## Winderoo's Web User Interface
+
+| v1.1.0 | |
 | :---: |:---: |
-|<img src="gui/overview_v1.0.0.png" height="600">  | This is winderoo's primary interface. From here you can change any settings you need |
+|<img src="gui/overview_1.1.0.png" height="600">  | This is winderoo's primary interface. From here you can change any settings you need |
 
 
 ### Enable / Disable Winding
@@ -69,13 +74,118 @@
 |<img src="gui/oled_screen.png" >  | This will toggle the attached OLED screen on and off. |
 
 
+### Settings & Customization
+
+| UI Element | Function |
+| :---: |:---: |
+|<img src="gui/custom_time-to-rotate.png" >   | This sets the amount of time to rotate between pauses. Default is `3 minutes` |
+|<img src="gui/custom_time-to-pause.png" >    | This sets the amount of time to pause between rotation cycles. Default is `15 seconds` |
+|<img src="gui/custom_rotation-timing.png" >  | This sets the amount of time it takes the winder to complete one full rotation. This value should only be changed if you've used a different motor, different gearing, or have retrofitted Winderoo into a off-the-shelf winder |
+|<img src="gui/custom_rtc.png" >              | This will update Winderoo's real time clock (RTC). Occassionally the service which Winderoo uses to update it's RTC becomes unavailable - this is expected and outlined in the source's documentation. If this happens, you can update the time here. |
+
+
 ### Save / Update Settings
 | UI Element | Function |
 | :---: |:---: |
-|<img src="gui/save-button.png" >  | This will capture and save all settings (winding direction, rotations per day, cycle start time). If a winding routine is currently running, it does not reset the current routine (it will update and finish accordingly). If you wish to make sure the routine is changed, manually stop, then start the routine. See [control buttons](#control-buttons). |
+|<img src="gui/save-button.png" >  | This will capture and save all settings (including customizations). If a winding routine is currently running, it does not reset the current routine (it will update and finish accordingly). If you wish to make sure the routine is changed, manually stop, then start the routine. See [control buttons](#control-buttons). |
 
 
-## Understanding Winderoo's LED Blink Status
+## Winderoo's Home Assistant Interface
+
+>[!IMPORTANT]
+> Home Assistant entities will only appear you've compiled Winderoo with the `HOME_ASSISTANT_ENABLED` build flag set to `TRUE`. If you're unsure how to do this, see the "**Build Options**" step under "*Flashing your microcontroller*" heading on the [Install Software](./install-software.md) documentation page.
+
+If you've enabled Winderoo's Home Assistant integration, Winderoo will stream a number of entities into Home Assistant over MQTT. If you're unsure what MQTT or need to set this up in Home Assistant, [please see this document](https://www.home-assistant.io/integrations/mqtt).
+
+Winderoo should be automatically discovered by Home Assistant within 60 seconds. The following entities are available to Home Assistant:
+```yml
+ -  button.winderoo_start
+ -  button.winderoo_stop
+
+ -  sensor.winderoo_status                                    : "Winding | Stopped"
+ -  sensor.winderoo_wifi_reception                            : "Excellent | Good | Fair | Poor"
+ -  sensor.winderoo_rtc_epoch_time                            : <unix epoch>
+ 
+ -  number.winderoo_rotations_per_day                         : 100 <-> 960 
+ -  number.winderoo_time_to_rotate                            : 100 <-> 960 
+ -  number.winderoo_time_to_pause                             : 10 <-> 900 
+ -  number.winderoo_duration_to_complete_a_single_rotation    : 1 <-> 16 
+
+ -  select.winderoo_direction                                 : "CCW | BOTH | CW"
+ -  select.winderoo_hour                                      : 00 <-> 23
+ -  select.winderoo_minutes                                   : 00 <-> 50
+ -  select.winderoo_rtc_hour                                  : 00 <-> 23
+ -  select.winderoo_rtc_minutes                               : 00 <-> 59
+ 
+ -  switch.winderoo_timer_enabled                             : "true | false"
+ -  switch.winderoo_oled                                      : "true | false"
+ -  switch.winderoo_power                                     : "true | false"
+```
+
+You can replicate Winderoo's GUI with a basic Home Assistant card:
+<table align="center">
+  <tr>
+    <th>Home Assistant GUI</th>
+    <th>Code</th>
+  </tr>
+  <tr>
+    <td>
+        <img src="./images/home-assistant-gui.png" alt="Winderoo - The Open Source Watch Winder" width="300">
+    </td>
+    <td>
+<pre><code>
+type: entities
+entities:
+- entity: sensor.winderoo_status
+- entity: number.winderoo_rotations_per_day
+    name: Rotations Per Day
+- entity: select.winderoo_direction
+    name: Direction
+- entity: button.winderoo_start
+    name: Start
+- entity: button.winderoo_stop
+    name: Stop
+- entity: switch.winderoo_timer_enabled
+    name: Timer Enabled
+- entity: select.winderoo_hour
+    name: Hour
+- entity: select.winderoo_minutes
+    name: Minutes
+- entity: switch.winderoo_oled
+    name: OLED
+- entity: switch.winderoo_power
+    name: Power
+title: Winderoo
+show_header_toggle: false
+</pre></code>
+    </td>
+  </tr>
+  <tr>
+    <td>
+        <img src="./images/home-assistant-customize-gui.png" alt="Winderoo - The Open Source Watch Winder" width="300">
+    </td>
+    <td>
+<pre><code>
+type: entities
+entities:
+  - entity: number.winderoo_time_to_rotate
+    name: Time to Rotate
+  - entity: number.winderoo_time_to_pause
+    name: Time to pause
+  - entity: number.winderoo_duration_to_complete_a_single_rotation
+  - entity: select.winderoo_rtc_hour
+    name: RTC Hour
+  - entity: select.winderoo_rtc_minutes
+    name: RTC Minutes
+  - entity: sensor.winderoo_rtc_epoch_time
+title: Winderoo - Settings & Customization
+</pre></code>
+    </td>
+  </tr>
+</table>
+
+
+## Winderoo's LED Blink Status
 
 - Most ESP32 dev boards have a primary RED LED that is always on. This cannot be shut off via firmware. 
     - If you find it bothersome, you can cover it with electrical tape, de-solder it, or cut the trace with an x-acto knife.
