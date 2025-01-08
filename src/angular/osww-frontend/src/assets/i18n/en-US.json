@@ -43,6 +43,7 @@
         "INTERNAL_CLOCK": "Internal Clock",
         "INTERNAL_CLOCK_BLURB": "Winderoo has an internal clock (RTC), which is automatically set during boot.",
         "INTERNAL_CLOCK_BLURB_2": "If this is incorrect, please update the clock beneath.",
-        "LOADING": "Loading, please wait..."
+        "LOADING": "Loading, please wait...",
+        "SINGLE_ROTATION_TIMING": "Time to complete a single rotation"
     }
 }
