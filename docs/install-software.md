@@ -53,6 +53,11 @@
     <div align="center"><img src="images/platformio_project_menu.png" alt="platformIO actions overview"></div>
 1. Expand the "General" heading, then click **Upload**. You'll see a message if the code was uploaded successfully:
     <div align="center"><img src="images/code_uploaded.png" alt="code upload button"></div>
+
+    > [!IMPORTANT]
+    > This step is separate than the step beneath.
+    > 
+    > You must do both steps; **Upload** and **Upload Filesystem Image**.
 1. Now expand the "Platform" heading, then click **Upload Filesystem Image**. You'll see a message if the code was uploaded successfully:
     <div align="center"><img src="images/code_uploaded.png" alt="upload filesystem button"></div>
 1. All done! Your microcontroller should now have 2 LEDs illuminated (see beneath). If it does, proceed to [Next steps](#next-steps). If not, try to upload the code & file system again.
