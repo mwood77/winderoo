@@ -11,7 +11,7 @@
 
 | v1.1.0 | |
 | :---: |:---: |
-|<img src="gui/overview_1.1.0.png" height="600">  | This is winderoo's primary interface. From here you can change any settings you need |
+|<img src="gui/overview_2.0.0.png" height="600">  | This is winderoo's primary interface. From here you can change any settings you need |
 
 
 ### Enable / Disable Winding
@@ -81,7 +81,7 @@
 |<img src="gui/custom_time-to-rotate.png" >   | This sets the amount of time to rotate between pauses. Default is `3 minutes` |
 |<img src="gui/custom_time-to-pause.png" >    | This sets the amount of time to pause between rotation cycles. Default is `15 seconds` |
 |<img src="gui/custom_rotation-timing.png" >  | This sets the amount of time it takes the winder to complete one full rotation. This value should only be changed if you've used a different motor, different gearing, or have retrofitted Winderoo into a off-the-shelf winder |
-|<img src="gui/custom_rtc.png" >              | This will update Winderoo's real time clock (RTC). Occassionally the service which Winderoo uses to update it's RTC becomes unavailable - this is expected and outlined in the source's documentation. If this happens, you can update the time here. |
+|<img src="gui/custom_rtc.png" >              | This reflects Winderoo's real time clock (RTC). This is set automatically using an NTP Pool. By default Winderoo's UTC offset is set to `0`. For accurate timekeeping, you must set this offset to your current location. You can use a site like [timeanddate.com](https://www.timeanddate.com/time/zone/timezone/utc) to search for your city and find your UTC offset. |
 
 
 ### Save / Update Settings
