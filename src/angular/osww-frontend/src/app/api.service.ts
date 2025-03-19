@@ -15,8 +15,8 @@ export interface Update {
   customWindDuration: number;
   customWindPauseDuration: number;
   customDurationInSecondsToCompleteOneRevolution: number;
-  rtcSelectedHour: number;
-  rtcSelectedMinutes: number;
+  rtcGmtOffset: number;
+  rtcDST: boolean;
 }
 
 export interface Status {
@@ -37,6 +37,9 @@ export interface Status {
   customWindDuration: number;
   customWindPauseDuration: number;
   customDurationInSecondsToCompleteOneRevolution: number;
+  gmtOffset: number;
+  apiVersion: string;
+  dst: boolean;
 }
 
 export interface WorldTimeAPI {

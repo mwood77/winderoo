@@ -52,6 +52,50 @@ export class SettingsComponent implements OnInit, AfterViewChecked {
       { value: '23', viewValue: '23' },
   ];
 
+  gmtOffsets: SelectInterface[] = [
+    { value: '-12', viewValue: 'UTC-12:00' },
+    { value: '-11', viewValue: 'UTC-11:00' },
+    { value: '-10', viewValue: 'UTC-10:00' },
+    { value: '-9.5', viewValue: 'UTC-09:30' },
+    { value: '-9', viewValue: 'UTC-09:00' },
+    { value: '-8', viewValue: 'UTC-08:00' },
+    { value: '-7', viewValue: 'UTC-07:00' },
+    { value: '-6', viewValue: 'UTC-06:00' },
+    { value: '-5', viewValue: 'UTC-05:00' },
+    { value: '-4.5', viewValue: 'UTC-04:30' },
+    { value: '-4', viewValue: 'UTC-04:00' },
+    { value: '-3.5', viewValue: 'UTC-03:30' },
+    { value: '-3', viewValue: 'UTC-03:00' },
+    { value: '-2', viewValue: 'UTC-02:00' },
+    { value: '-1', viewValue: 'UTC-01:00' },
+    { value: '0', viewValue: 'UTC±00:00' },
+    { value: '1', viewValue: 'UTC+01:00' },
+    { value: '2', viewValue: 'UTC+02:00' },
+    { value: '3', viewValue: 'UTC+03:00' },
+    { value: '3.5', viewValue: 'UTC+03:30' },
+    { value: '4', viewValue: 'UTC+04:00' },
+    { value: '4.5', viewValue: 'UTC+04:30' },
+    { value: '5', viewValue: 'UTC+05:00' },
+    { value: '5.5', viewValue: 'UTC+05:30' },
+    { value: '5.75', viewValue: 'UTC+05:45' },
+    { value: '6', viewValue: 'UTC+06:00' },
+    { value: '6.5', viewValue: 'UTC+06:30' },
+    { value: '7', viewValue: 'UTC+07:00' },
+    { value: '8', viewValue: 'UTC+08:00' },
+    { value: '8.75', viewValue: 'UTC+08:45' },
+    { value: '9', viewValue: 'UTC+09:00' },
+    { value: '9.5', viewValue: 'UTC+09:30' },
+    { value: '10', viewValue: 'UTC+10:00' },
+    { value: '10.5', viewValue: 'UTC+10:30' },
+    { value: '11', viewValue: 'UTC+11:00' },
+    { value: '11.5', viewValue: 'UTC+11:30' },
+    { value: '12', viewValue: 'UTC+12:00' },
+    { value: '12.75', viewValue: 'UTC+12:45' },
+    { value: '13', viewValue: 'UTC+13:00' },
+    { value: '14', viewValue: 'UTC+14:00' }
+  ];
+
+
   // populated by ngOnInit
   rtc_minutes: SelectInterface[] = [];
 
@@ -72,6 +116,8 @@ export class SettingsComponent implements OnInit, AfterViewChecked {
     customWindDuration: 0,
     customWindPauseDuration: 0,
     customDurationInSecondsToCompleteOneRevolution: 0,
+    gmtOffset: 0,
+    dst: false,
   }
 
   selectedHour: any;
@@ -81,8 +127,7 @@ export class SettingsComponent implements OnInit, AfterViewChecked {
   
   winderooInternalRTC: number = 0;
   refreshingRTC: boolean = false;
-  rtcSelectedHour: any;
-  rtcSelectedMinutes: any;
+  rtcGmtOffsets: any;
 
   progressMode: ProgressBarMode = 'indeterminate';
   progressPercentageComplete: number =  0;
@@ -144,6 +189,8 @@ export class SettingsComponent implements OnInit, AfterViewChecked {
       this.screenEquipped = data.screenEquipped;
       this.winderooInternalRTC = data.currentTimeEpoch;
       this.upload.customDurationInSecondsToCompleteOneRevolution = data.customDurationInSecondsToCompleteOneRevolution;
+      this.upload.gmtOffset = data.gmtOffset;
+      this.upload.dst = data.dst;
 
       if (data.customWindDuration) {
         this.upload.customWindDuration = data.customWindDuration;
@@ -168,8 +215,7 @@ export class SettingsComponent implements OnInit, AfterViewChecked {
       });
 
       // Reset the RTC dropdowns
-      this.rtcSelectedHour = "";
-      this.rtcSelectedMinutes = "";
+      this.rtcGmtOffsets = this.upload.gmtOffset;
 
       setTimeout(() => {
         this.refreshingRTC = false;
@@ -292,8 +338,8 @@ export class SettingsComponent implements OnInit, AfterViewChecked {
       customWindDuration: this.upload.customWindDuration,
       customWindPauseDuration: this.upload.customWindPauseDuration,
       customDurationInSecondsToCompleteOneRevolution: this.upload.customDurationInSecondsToCompleteOneRevolution,
-      rtcSelectedHour: this.rtcSelectedHour,
-      rtcSelectedMinutes: this.rtcSelectedMinutes,
+      rtcGmtOffset: this.rtcGmtOffsets,
+      rtcDST: this.upload.dst,
     }
 
     this.apiService.updateState(body).subscribe((response) => {
@@ -379,5 +425,10 @@ export class SettingsComponent implements OnInit, AfterViewChecked {
     this.upload.screenSleep = $state;
     this.uploadSettings();
   };
+
+  updateDstState($state: boolean) {
+    this.upload.dst = $state;
+    this.uploadSettings();
+  }
 
 }
