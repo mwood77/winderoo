@@ -43,6 +43,8 @@
         "INTERNAL_CLOCK": "Interne Uhr",
         "INTERNAL_CLOCK_BLURB": "Winderoo verfügt über eine interne Uhr (RTC), die beim Booten automatisch eingestellt wird.",
         "INTERNAL_CLOCK_BLURB_2": "Wenn dies falsch ist, aktualisieren Sie bitte die Uhr unten.",
+        "INTERNAL_CLOCK_BLURB_3": "GMT-Offset",
+        "INTERNAL_CLOCK_BLURB_4": "Sommerzeit (DST)",
         "LOADING": "Laden, bitte warten...",
         "SINGLE_ROTATION_TIMING": "Zeit für eine einzelne Umdrehung"
     }

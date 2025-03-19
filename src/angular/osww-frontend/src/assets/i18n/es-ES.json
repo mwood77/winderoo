@@ -43,6 +43,8 @@
         "INTERNAL_CLOCK": "Reloj Interno",
         "INTERNAL_CLOCK_BLURB": "Winderoo tiene un reloj interno (RTC), que se ajusta automáticamente durante el inicio.",
         "INTERNAL_CLOCK_BLURB_2": "Si esto es incorrecto, por favor actualice el reloj a continuación.",
+        "INTERNAL_CLOCK_BLURB_3": "Desplazamiento GMT",
+        "INTERNAL_CLOCK_BLURB_4": "Horario de verano (DST)",
         "LOADING": "Cargando, por favor espere...",
         "SINGLE_ROTATION_TIMING": "Es hora de completar una sola rotación."
     }
