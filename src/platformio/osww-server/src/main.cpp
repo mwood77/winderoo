@@ -87,6 +87,7 @@ struct RUNTIME_VARS
 	String customWindPauseDuration = "";
 	int customDurationInSecondsToCompleteOneRevolution = 8;
 	float gmtOffset = 0.0;
+	bool dst = false;
 };
 
 /*
@@ -541,6 +542,7 @@ void loadConfigVarsFromFile(String file_name)
 	userDefinedSettings.customWindPauseDuration = json["customWindPauseDuration"].as<String>();													// 15 (in seconds)
 	userDefinedSettings.customDurationInSecondsToCompleteOneRevolution = json["customDurationInSecondsToCompleteOneRevolution"].as<int>();		// min 1 <-> max 16; default 8
 	userDefinedSettings.gmtOffset = json["gmtOffset"].as<float>();																				// -12 to +14 with decimal steps
+	userDefinedSettings.dst = json["dst"].as<float>();																							// true || false
 
 	this_file.close();
 }
@@ -574,6 +576,7 @@ bool writeConfigVarsToFile(String file_name, const RUNTIME_VARS& userDefinedSett
 	json["customWindPauseDuration"] = userDefinedSettings.customWindPauseDuration;
 	json["customDurationInSecondsToCompleteOneRevolution"] = userDefinedSettings.customDurationInSecondsToCompleteOneRevolution;
 	json["gmtOffset"] = userDefinedSettings.gmtOffset;
+	json["dst"] = userDefinedSettings.dst;
 
 	if (serializeJson(json, this_file) == 0)
 	{
@@ -630,6 +633,7 @@ void startWebserver()
 		json["customDurationInSecondsToCompleteOneRevolution"] = userDefinedSettings.customDurationInSecondsToCompleteOneRevolution;
 		json["gmtOffset"] = userDefinedSettings.gmtOffset;
 		json["apiVersion"] = winderooVersion;
+		json["dst"] = userDefinedSettings.dst;
 		serializeJson(json, *response);
 
 		request->send(response);
@@ -739,6 +743,7 @@ void startWebserver()
 			userDefinedSettings.customDurationInSecondsToCompleteOneRevolution = json["customDurationInSecondsToCompleteOneRevolution"];
 
 			// // RTC values
+			userDefinedSettings.dst = json["rtcDST"].as<bool>();
 			userDefinedSettings.gmtOffset = json["rtcGmtOffset"].as<float>();
 			float rtcUpdateGmtOffset = userDefinedSettings.gmtOffset;
 
@@ -834,8 +839,15 @@ void startWebserver()
 
 			if (rtcUpdateGmtOffset)
 			{
-				Serial.print("[INFO] - Updating GMT Offset: ");
+				Serial.print("[STATUS] - Updating GMT Offset: ");
 				Serial.println(rtcUpdateGmtOffset);
+
+				Serial.print("[STATUS] - DST is: ");
+				Serial.println(userDefinedSettings.dst;);
+
+				if (userDefinedSettings.dst) {
+					rtcUpdateGmtOffset += 1.0;  // add 1 hour for DST & convert to seconds
+				}
 
 				timeClient.setTimeOffset(rtcUpdateGmtOffset * 3600);  // Convert to seconds
 
@@ -1306,8 +1318,16 @@ void setup()
 		// retrieve & read saved settings
 		loadConfigVarsFromFile(settingsFile);
 
-		timeClient.setTimeOffset(userDefinedSettings.gmtOffset * 3600);  // Convert to float for NTPClient * 3600);  // Convert to seconds
-		Serial.println("[STATUS] - initialized with GMT Offset: " + String(userDefinedSettings.gmtOffset));
+		Serial.println("[STATUS] - initialized with GMT Offset: " + String(userDefinedSettings.gmtOffset) + " and DST: " + String(userDefinedSettings.dst));
+		
+		if (userDefinedSettings.dst)
+		{
+			timeClient.setTimeOffset((userDefinedSettings.gmtOffset + 1) * 3600);  // add 1 hour & convert to seconds
+		}
+		else 
+		{
+			timeClient.setTimeOffset(userDefinedSettings.gmtOffset * 3600);  // Convert to float to seconds
+		}
 
 		if (!MDNS.begin("winderoo"))
 		{
