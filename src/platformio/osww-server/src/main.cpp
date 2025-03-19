@@ -728,7 +728,7 @@ void startWebserver()
 			// validate request body
 				for (int i = 0; i < arraySize; i++)
 				{
-					if(!json.containsKey(requiredKeys[i]))
+					if(!json[requiredKeys[i]].is<JsonVariant>())
 					{
 						request->send(400, "text/plain", "Missing required field: '" + requiredKeys[i] +"'");
 					}
@@ -843,7 +843,7 @@ void startWebserver()
 				Serial.println(rtcUpdateGmtOffset);
 
 				Serial.print("[STATUS] - DST is: ");
-				Serial.println(userDefinedSettings.dst;);
+				Serial.println(userDefinedSettings.dst);
 
 				if (userDefinedSettings.dst) {
 					rtcUpdateGmtOffset += 1.0;  // add 1 hour for DST & convert to seconds
