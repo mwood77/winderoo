@@ -5,6 +5,8 @@
 #include <HTTPClient.h>
 #include <ESPmDNS.h>
 #include <ESP32Time.h>
+#include <NTPClient.h>
+#include <WiFiUdp.h>
 
 #ifdef OLED_ENABLED
 	#include <SPI.h>
@@ -84,6 +86,7 @@ struct RUNTIME_VARS
 	String customWindDuration = "";
 	String customWindPauseDuration = "";
 	int customDurationInSecondsToCompleteOneRevolution = 8;
+	float gmtOffset = 0.0;
 };
 
 /*
@@ -96,7 +99,9 @@ AsyncWebServer server(80);
 HTTPClient http;
 WiFiClient client;
 ESP32Time rtc;
-String winderooVersion = "3.0.0";
+String winderooVersion = "4.0.0";
+WiFiUDP ntpUDP;
+NTPClient timeClient(ntpUDP);
 
 #if PWM_MOTOR_CONTROL
 	MotorControl motor(directionalPinA, directionalPinB, true);
@@ -448,30 +453,29 @@ void beginWindingRoutine()
  */
 void getTime()
 {
-	http.begin(client, timeURL);
-	http.setTimeout(3500);
-	int httpCode = http.GET();
+	Serial.print("[STATUS] - Updating RTC with configured GMT Offset: ");
+	Serial.println(userDefinedSettings.gmtOffset);
 
-	if (httpCode > 0)
-	{
-		JsonDocument json;
-		deserializeJson(json, http.getStream());
-		int unixtime = json["unixtime"].as<int>();
+	timeClient.begin();
 
-		rtc.setTime(unixtime);
-	}
-	else
-	{
-		if (httpCode != -5) {
-			Serial.print("[ERROR] - Failed to get time from Worldtime API, error code: ");
-			Serial.println(httpCode);
-		} else {
-			Serial.print("[WARN] - Failed to get time from Worldtime API, likely due to rate limiting. ");
-			Serial.println("Wait a while to see if it resolves.");
-		}
-	}
+	timeClient.update();
+	time_t epochTime = timeClient.getEpochTime();
+	struct tm *ptm = gmtime ((time_t *)&epochTime);
 
-	http.end();
+	int currentYear = ptm->tm_year + 1900;
+	int currentMonth = ptm->tm_mon + 1;
+	int currentDay = ptm->tm_mday;
+	int currentHour = timeClient.getHours();
+	int currentMinute = timeClient.getMinutes();
+	int currentSecond = timeClient.getSeconds();
+
+	Serial.printf("[STATUS] - Date: %d-%02d-%02d Time: %02d:%02d:%02d\n", 
+		currentYear, currentMonth, currentDay,
+		currentHour, currentMinute, currentSecond);
+
+	rtc.setTime(currentSecond, currentMinute, currentHour, currentDay, currentMonth, currentYear);
+
+	timeClient.end();
 }
 
 /**
@@ -536,6 +540,7 @@ void loadConfigVarsFromFile(String file_name)
 	userDefinedSettings.customWindDuration = json["customWindDuration"].as<String>();															// 180 (in seconds)
 	userDefinedSettings.customWindPauseDuration = json["customWindPauseDuration"].as<String>();													// 15 (in seconds)
 	userDefinedSettings.customDurationInSecondsToCompleteOneRevolution = json["customDurationInSecondsToCompleteOneRevolution"].as<int>();		// min 1 <-> max 16; default 8
+	userDefinedSettings.gmtOffset = json["gmtOffset"].as<float>();																				// -12 to +14 with decimal steps
 
 	this_file.close();
 }
@@ -568,6 +573,7 @@ bool writeConfigVarsToFile(String file_name, const RUNTIME_VARS& userDefinedSett
 	json["customWindDuration"] = userDefinedSettings.customWindDuration;
 	json["customWindPauseDuration"] = userDefinedSettings.customWindPauseDuration;
 	json["customDurationInSecondsToCompleteOneRevolution"] = userDefinedSettings.customDurationInSecondsToCompleteOneRevolution;
+	json["gmtOffset"] = userDefinedSettings.gmtOffset;
 
 	if (serializeJson(json, this_file) == 0)
 	{
@@ -622,6 +628,8 @@ void startWebserver()
 		json["customWindDuration"] = userDefinedSettings.customWindDuration;
 		json["customWindPauseDuration"] = userDefinedSettings.customWindPauseDuration;
 		json["customDurationInSecondsToCompleteOneRevolution"] = userDefinedSettings.customDurationInSecondsToCompleteOneRevolution;
+		json["gmtOffset"] = userDefinedSettings.gmtOffset;
+		json["apiVersion"] = winderooVersion;
 		serializeJson(json, *response);
 
 		request->send(response);
@@ -667,7 +675,7 @@ void startWebserver()
 				return;
 			}
 
-			if (!json.containsKey("winderEnabled"))
+			if (!json["winderEnabled"].is<String>())
 			{
 				request->send(400, "text/plain", "Missing required field: 'winderEnabled'");
 			}
@@ -730,9 +738,9 @@ void startWebserver()
 			userDefinedSettings.customWindPauseDuration = json["customWindPauseDuration"].as<String>();
 			userDefinedSettings.customDurationInSecondsToCompleteOneRevolution = json["customDurationInSecondsToCompleteOneRevolution"];
 
-			// RTC values
-			int rtcUpdateHours = json["rtcSelectedHour"].as<int>();
-			int rtcUpdateMinutes = json["rtcSelectedMinutes"].as<int>();
+			// // RTC values
+			userDefinedSettings.gmtOffset = json["rtcGmtOffset"].as<float>();
+			float rtcUpdateGmtOffset = userDefinedSettings.gmtOffset;
 
 			// These values need to be compared to the current settings / running state
 			String requestRotationDirection = json["rotationDirection"].as<String>();
@@ -824,20 +832,21 @@ void startWebserver()
 				}
 			}
 
-			if (rtcUpdateHours || rtcUpdateMinutes) 
+			if (rtcUpdateGmtOffset)
 			{
-				Serial.print("[INFO] - Updating RTC hours: ");
-				Serial.print(rtcUpdateHours);
-				Serial.print(" and minutes: ");
-				Serial.println(rtcUpdateMinutes);
+				Serial.print("[INFO] - Updating GMT Offset: ");
+				Serial.println(rtcUpdateGmtOffset);
 
-				if (HOME_ASSISTANT_ENABLED) 
-				{
-					ha_rtcSelectedHour.setState(rtcUpdateHours);
-					ha_rtcSelectedMinutes.setState(rtcUpdateMinutes);
-				}
+				timeClient.setTimeOffset(rtcUpdateGmtOffset * 3600);  // Convert to seconds
 
-				updateRtcEpoch(rtc, rtcUpdateHours, rtcUpdateMinutes);
+				// @todo - update GMT offset in HA
+				// if (HOME_ASSISTANT_ENABLED) 
+				// {
+				// 	ha_rtcSelectedHour.setState(rtcUpdateHours);
+				// 	ha_rtcSelectedMinutes.setState(rtcUpdateMinutes);
+				// }
+
+				getTime();
 			}
 
 			// Write new parameters to file
@@ -1296,6 +1305,9 @@ void setup()
 
 		// retrieve & read saved settings
 		loadConfigVarsFromFile(settingsFile);
+
+		timeClient.setTimeOffset(userDefinedSettings.gmtOffset * 3600);  // Convert to float for NTPClient * 3600);  // Convert to seconds
+		Serial.println("[STATUS] - initialized with GMT Offset: " + String(userDefinedSettings.gmtOffset));
 
 		if (!MDNS.begin("winderoo"))
 		{
