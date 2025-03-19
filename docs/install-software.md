@@ -53,6 +53,11 @@
     <div align="center"><img src="images/platformio_project_menu.png" alt="platformIO actions overview"></div>
 1. Expand the "General" heading, then click **Upload**. You'll see a message if the code was uploaded successfully:
     <div align="center"><img src="images/code_uploaded.png" alt="code upload button"></div>
+
+    > [!IMPORTANT]
+    > This step is separate than the step beneath.
+    > 
+    > You must do both steps; **Upload** and **Upload Filesystem Image**.
 1. Now expand the "Platform" heading, then click **Upload Filesystem Image**. You'll see a message if the code was uploaded successfully:
     <div align="center"><img src="images/code_uploaded.png" alt="upload filesystem button"></div>
 1. All done! Your microcontroller should now have 2 LEDs illuminated (see beneath). If it does, proceed to [Next steps](#next-steps). If not, try to upload the code & file system again.
@@ -75,68 +80,6 @@ Ok, you've got 2 LEDs illuminated on your board. Great! Let's make sure the code
     - [http://winderoo.local/](http://winderoo.local/)
 1. If you see Winderoo's user interface, you're all done!
     - [Here is an overview of Winderoo's user interface](./user-manual.md)
-
-### Home Assistant
-If you've enabled Winderoo's Home Assistant integration, Winderoo will stream a number of entities into Home Assistant over MQTT. If you're unsure what MQTT or need to set this up in Home Assistant, [please see this document](https://www.home-assistant.io/integrations/mqtt).
-
-Winderoo should be automatically discovered by Home Assistant within 60 seconds. The following entities are available to Home Assistant:
-```yml
- -  button.winderoo_start
- -  button.winderoo_stop
-
- -  sensor.winderoo_status            : "Winding | Stopped"
- -  sensor.winderoo_wifi_reception    : "Excellent | Good | Fair | Poor"
- 
- -  number.winderoo_rotations_per_day : 100 <-> 960 
-
- -  select.winderoo_direction         : "CCW | BOTH | CW"
- -  select.winderoo_hour              : 00 <-> 23
- -  select.winderoo_minutes           : 00 <-> 50
- 
- -  switch.winderoo_timer_enabled     : "true | false"
- -  switch.winderoo_oled              : "true | false"
- -  switch.winderoo_power             : "true | false"
-```
-
-You can replicate Winderoo's GUI with a basic Home Assistant card:
-<table align="center">
-  <tr>
-    <th>Home Assistant GUI</th>
-    <th>Code</th>
-  </tr>
-  <tr>
-    <td>
-        <img src="./images/home-assistant-gui.png" alt="Winderoo - The Open Source Watch Winder" width="300">
-    </td>
-    <td>
-<pre><code>
-type: entities
-entities:
-- entity: sensor.winderoo_status
-- entity: number.winderoo_rotations_per_day
-    name: Rotations Per Day
-- entity: select.winderoo_direction
-    name: Direction
-- entity: button.winderoo_start
-    name: Start
-- entity: button.winderoo_stop
-    name: Stop
-- entity: switch.winderoo_timer_enabled
-    name: Timer Enabled
-- entity: select.winderoo_hour
-    name: Hour
-- entity: select.winderoo_minutes
-    name: Minutes
-- entity: switch.winderoo_oled
-    name: OLED
-- entity: switch.winderoo_power
-    name: Power
-title: Winderoo
-show_header_toggle: false
-</pre></code>
-    </td>
-  </tr>
-</table>
 
 ## Troubleshooting
 ### Motor Turns too fast when using PWM

@@ -164,6 +164,99 @@
     </mat-card>
 
     <mat-card class="mat-elevation-z1">
+        <div class="individual-setting">
+            <div>{{ "SETTINGS.CUSTOMIZE" | translate }}</div>
+
+            <div class="individual-setting">
+                <div class="">
+                    {{ "SETTINGS.ROTATION_DURATION_TIME" | translate }}
+                </div>
+                <div class="individual-status-text">
+                    {{ this.convertSecondsToHumanReadable(this.upload.customWindDuration).minutes }} {{ "SETTINGS.MINUTES" | translate }}
+                    {{ this.convertSecondsToHumanReadable(this.upload.customWindDuration).seconds }} {{ "SETTINGS.SECONDS" | translate }}
+                </div>
+                <mat-slider value="{{ this.upload.customWindDuration }}" min="100" max="960" step="10" discrete (input)="setCustomWindDuration($event)">
+                    <input matSliderThumb [(ngModel)]="this.upload.customWindDuration">
+                </mat-slider>
+            </div>
+            
+            <div class="individual-setting">
+                <div class="">
+                    {{ "SETTINGS.ROTATION_PAUSE_TIME" | translate }}
+                </div>
+                <div class="individual-status-text">
+                    {{ this.convertSecondsToHumanReadable(this.upload.customWindPauseDuration).minutes }} {{ "SETTINGS.MINUTES" | translate }}
+                    {{ this.convertSecondsToHumanReadable(this.upload.customWindPauseDuration).seconds }} {{ "SETTINGS.SECONDS" | translate }}
+                </div>
+                <mat-slider value="{{ this.upload.customWindPauseDuration }}" min="10" max="900" step="5" discrete (input)="setCustomWindPauseDuration($event)">
+                    <input matSliderThumb [(ngModel)]="this.upload.customWindPauseDuration">
+                </mat-slider>
+            </div>
+
+            <div class="individual-setting">
+                <div class="">
+                    {{ "SETTINGS.SINGLE_ROTATION_TIMING" | translate }}
+                </div>
+                <div class="individual-status-text">
+                    {{ this.upload.customDurationInSecondsToCompleteOneRevolution }} {{ "SETTINGS.SECONDS" | translate }}
+                </div>
+                <mat-slider value="{{ this.upload.customDurationInSecondsToCompleteOneRevolution }}" min="1" max="16" step="1" discrete (input)="setcustomDurationInSecondsToCompleteOneRevolution($event)">
+                    <input matSliderThumb [(ngModel)]="this.upload.customDurationInSecondsToCompleteOneRevolution">
+                </mat-slider>
+            </div>
+            
+            <div class="individual-setting">
+                <div>
+                    {{ "SETTINGS.INTERNAL_CLOCK" | translate }}
+                </div>
+                
+                <span class="individual-status-text">
+                    <div *ngIf="this.refreshingRTC; else displayTime">
+                        <span>{{ "SETTINGS.LOADING" | translate }}</span>
+                    </div>
+                    <ng-template #displayTime>
+                        {{ this.winderooInternalRTC | date:'mediumTime':'UTC' }}
+                    </ng-template>
+                </span>
+
+                <div class="individual-explainer-text">
+                    {{ "SETTINGS.INTERNAL_CLOCK_BLURB" | translate }}
+                </div>
+                <div class="individual-explainer-text">
+                    {{ "SETTINGS.INTERNAL_CLOCK_BLURB_2" | translate }}
+                </div>
+
+                <div class="time-input">
+                    <mat-form-field color="accent" appearance="outline">
+                        <mat-label>
+                            {{ "SETTINGS.HOURS" | translate }}
+                        </mat-label>
+                        <select matNativeControl [(ngModel)]="rtcSelectedHour" name="rtc-hour">
+                            <option value="" selected></option>
+                            <option *ngFor="let hr of hours" [value]="hr.value">
+                                {{ hr.value }}
+                            </option>
+                            </select>
+                    </mat-form-field>
+                    <mat-form-field color="accent" appearance="outline">
+                        <mat-label>
+                            {{ "SETTINGS.MINUTES" | translate }}
+                        </mat-label>
+                        <select matNativeControl [(ngModel)]="rtcSelectedMinutes" name="rtc-minutes">
+                            <option value="" selected></option>
+                            <option *ngFor="let mn of rtc_minutes" [value]="mn.value">
+                                {{ mn.value }}
+                            </option>
+                            </select>
+                    </mat-form-field>
+                </div>
+            </div>
+
+        </div>
+    </mat-card>
+
+
+    <mat-card class="mat-elevation-z1">
             <button mat-raised-button color="primary" class="upload-button" (click)="uploadSettings()" [disabled]="upload.disabled">
                 <div class="save-button-text">{{ upload.statusMessage }}</div>
             </button>

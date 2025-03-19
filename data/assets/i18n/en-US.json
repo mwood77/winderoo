@@ -28,13 +28,22 @@
         "DISABLED": "Disabled",
         "HOURS": "Hour",
         "MINUTES": "Minutes",
-        "SAVE": "Save Settings",
+        "SAVE": "Save",
         "SAVE_IN_PROGRESS": "Upload in progress",
         "CLOCKWISE": "Clockwise",
         "COUNTER_CLOCKWISE": "Counter Clockwise",
         "BOTH": "Both",
         "PLEASE_WAIT": "Getting cycle progress, please wait",
         "PROGRESS": "Cycle Progress",
-        "SCREEN": "OLED Screen"
+        "SCREEN": "OLED Screen",
+        "CUSTOMIZE": "Settings & Customization",
+        "ROTATION_DURATION_TIME": "Time to rotate",
+        "ROTATION_PAUSE_TIME": "Time to pause",
+        "SECONDS": "seconds",
+        "INTERNAL_CLOCK": "Internal Clock",
+        "INTERNAL_CLOCK_BLURB": "Winderoo has an internal clock (RTC), which is automatically set during boot.",
+        "INTERNAL_CLOCK_BLURB_2": "If this is incorrect, please update the clock beneath.",
+        "LOADING": "Loading, please wait...",
+        "SINGLE_ROTATION_TIMING": "Time to complete a single rotation"
     }
 }

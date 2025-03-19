@@ -35,6 +35,15 @@
         "BOTH": "Ambos os sentidos",
         "PLEASE_WAIT": "A procurar o progresso do ciclo, por favor aguarde",
         "PROGRESS": "Progresso do Ciclo",
-        "SCREEN": "Ecrã OLED"
+        "SCREEN": "Ecrã OLED",
+        "CUSTOMIZE": "Configurações e personalização",
+        "ROTATION_DURATION_TIME": "Hora de girar",
+        "ROTATION_PAUSE_TIME": "Hora de fazer uma pausa",
+        "SECONDS": "segundos",
+        "INTERNAL_CLOCK": "Relógio Interno",
+        "INTERNAL_CLOCK_BLURB": "Winderoo possui um relógio interno (RTC), que é ajustado automaticamente durante a inicialização.",
+        "INTERNAL_CLOCK_BLURB_2": "Se isso estiver incorreto, por favor, atualize o relógio abaixo.",
+        "LOADING": "Carregando, por favor aguarde...",
+        "SINGLE_ROTATION_TIMING": "Hora de completar uma única rotação"
     }
 }

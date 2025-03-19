@@ -12,6 +12,11 @@ export interface Update {
   minutes: string;
   timerEnabled: number;
   screenSleep: boolean;
+  customWindDuration: number;
+  customWindPauseDuration: number;
+  customDurationInSecondsToCompleteOneRevolution: number;
+  rtcSelectedHour: number;
+  rtcSelectedMinutes: number;
 }
 
 export interface Status {
@@ -22,7 +27,6 @@ export interface Status {
   direction: string;
   hour: string;
   minutes: string;
-  durationInSecondsToCompleteOneRevolution: number;
   startTimeEpoch: number,
   currentTimeEpoch: number;
   estimatedRoutineFinishEpoch: number;
@@ -30,6 +34,27 @@ export interface Status {
   timerEnabled: number;
   screenSleep: boolean;
   screenEquipped: boolean;
+  customWindDuration: number;
+  customWindPauseDuration: number;
+  customDurationInSecondsToCompleteOneRevolution: number;
+}
+
+export interface WorldTimeAPI {
+  utc_offset: string;
+  timezone: string;
+  day_of_week: number;
+  day_of_year: number;
+  datetime: string;
+  utc_datetime: string;
+  unixtime: number;
+  raw_offset: number;
+  week_number: number;
+  dst: boolean;
+  abbreviation: string;
+  dst_offset: number;
+  dst_from: string | null;
+  dst_until: string | null;
+  client_ip: string;
 }
 
 @Injectable({
@@ -103,4 +128,5 @@ export class ApiService {
   resetDevice() {
     return this.http.get<any>(ApiService.constructURL() + 'reset');
   }
+
 }

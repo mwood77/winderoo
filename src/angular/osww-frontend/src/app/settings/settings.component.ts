@@ -2,6 +2,7 @@ import { Component, OnInit, AfterViewChecked } from '@angular/core';
 import { ApiService, Update } from '../api.service';
 import { ProgressBarMode } from '@angular/material/progress-bar';
 import { TranslateService } from '@ngx-translate/core';
+import { ClockService } from '../clock.service';
 
 interface SelectInterface {
   value: string;
@@ -51,6 +52,9 @@ export class SettingsComponent implements OnInit, AfterViewChecked {
       { value: '23', viewValue: '23' },
   ];
 
+  // populated by ngOnInit
+  rtc_minutes: SelectInterface[] = [];
+
   wifiSignalIcon = ''
 
   upload = {
@@ -61,17 +65,24 @@ export class SettingsComponent implements OnInit, AfterViewChecked {
     rpd: 0,
     hour: '00',
     minutes: '00',
-    durationInSecondsToCompleteOneRevolution: 0,
     startTimeEpoch: 0,
     estimatedRoutineFinishEpoch: 0,
     isTimerEnabledNum: 0,
-    screenSleep: false
+    screenSleep: false,
+    customWindDuration: 0,
+    customWindPauseDuration: 0,
+    customDurationInSecondsToCompleteOneRevolution: 0,
   }
 
   selectedHour: any;
   selectedMinutes: any;
   estHoursDuration: string = "";
   estMinutesDuration: string = "";
+  
+  winderooInternalRTC: number = 0;
+  refreshingRTC: boolean = false;
+  rtcSelectedHour: any;
+  rtcSelectedMinutes: any;
 
   progressMode: ProgressBarMode = 'indeterminate';
   progressPercentageComplete: number =  0;
@@ -81,7 +92,7 @@ export class SettingsComponent implements OnInit, AfterViewChecked {
 
   watchWindingParametersURL = 'https://watch-winder.store/watch-winding-table/';
 
-  constructor(private apiService: ApiService, private translateService: TranslateService) {
+  constructor(private apiService: ApiService, private translateService: TranslateService, private clockService: ClockService) {
     this.isWinderEnabled = this.apiService.isWinderEnabled$.getValue();
     this.isTimerEnabled = false;
   }
@@ -92,6 +103,13 @@ export class SettingsComponent implements OnInit, AfterViewChecked {
   ngOnInit(): void {
     this.getData();
     this.setupSubscriptions();
+
+    // Populate RTC minutes array
+    for (let i = 0; i < 60; i++) {
+      this.rtc_minutes.push(
+        { value: i.toString(), viewValue: i.toString() },
+      )
+    }
   }
 
   setupSubscriptions(): void {
@@ -109,6 +127,9 @@ export class SettingsComponent implements OnInit, AfterViewChecked {
   }
 
   getData(): void {
+    this.refreshingRTC = true
+    this.clockService.stopClock();
+
     this.apiService.getStatus().subscribe((data) => {
       this.upload.activityState = data.status;
       this.upload.rpd = data.rotationsPerDay;
@@ -116,24 +137,76 @@ export class SettingsComponent implements OnInit, AfterViewChecked {
       this.upload.hour = data.hour;
       this.upload.minutes = data.minutes;
       this.wifiSignalIcon = this.getWifiSignalStrengthIcon(data.db *= -1);
-      this.upload.durationInSecondsToCompleteOneRevolution = data.durationInSecondsToCompleteOneRevolution;
       this.upload.startTimeEpoch = data.startTimeEpoch;
       this.upload.estimatedRoutineFinishEpoch = data.estimatedRoutineFinishEpoch;
       this.upload.isTimerEnabledNum = data.timerEnabled;
       this.upload.screenSleep = data.screenSleep;
       this.screenEquipped = data.screenEquipped;
+      this.winderooInternalRTC = data.currentTimeEpoch;
+      this.upload.customDurationInSecondsToCompleteOneRevolution = data.customDurationInSecondsToCompleteOneRevolution;
+
+      if (data.customWindDuration) {
+        this.upload.customWindDuration = data.customWindDuration;
+      } else {
+        this.upload.customWindDuration = 180;
+      }
+
+      if (data.customWindPauseDuration) {
+        this.upload.customWindPauseDuration = data.customWindPauseDuration;
+      } else {
+        this.upload.customWindPauseDuration = 15;
+      }
 
       this.apiService.isWinderEnabled$.next(data.winderEnabled);
 
       this.mapTimerEnabledState(this.upload.isTimerEnabledNum);
       this.estimateDuration(this.upload.rpd);
       this.getProgressComplete(data.startTimeEpoch, data.currentTimeEpoch, data.estimatedRoutineFinishEpoch);
+
+      this.clockService.startClock(this.winderooInternalRTC, (updatedEpoch: number) => {
+        this.winderooInternalRTC = updatedEpoch * 1000; // Convert seconds to milliseconds for display
+      });
+
+      // Reset the RTC dropdowns
+      this.rtcSelectedHour = "";
+      this.rtcSelectedMinutes = "";
+
+      setTimeout(() => {
+        this.refreshingRTC = false;
+      }, 1500)
     });
   }
 
   setRotationsPerDay(rpd: any): void {
     this.upload.rpd = rpd.value
     this.estimateDuration(this.upload.rpd);
+  }
+
+  setCustomWindDuration(event: any): void {
+    const seconds = event.value;
+    this.upload.customWindDuration = seconds;
+    this.estimateDuration(this.upload.rpd);
+  }
+  
+  setCustomWindPauseDuration(event: any): void {
+    const seconds = event.value;
+    this.upload.customWindPauseDuration = seconds;
+    this.estimateDuration(this.upload.rpd);
+  }
+
+  setcustomDurationInSecondsToCompleteOneRevolution(event: any): void {
+    const customSingleRotationTime = event.value;
+    this.upload.customDurationInSecondsToCompleteOneRevolution = customSingleRotationTime;
+  }
+
+  convertSecondsToHumanReadable(seconds: number): { minutes: number, seconds: number } {
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = seconds % 60;
+
+    return {
+      minutes,
+      seconds: remainingSeconds,
+    }
   }
 
   getColour(status: string): string {
@@ -216,6 +289,11 @@ export class SettingsComponent implements OnInit, AfterViewChecked {
       minutes: this.selectedMinutes == null ? this.upload.minutes : this.selectedMinutes,
       timerEnabled: this.upload.isTimerEnabledNum,
       screenSleep: this.upload.screenSleep,
+      customWindDuration: this.upload.customWindDuration,
+      customWindPauseDuration: this.upload.customWindPauseDuration,
+      customDurationInSecondsToCompleteOneRevolution: this.upload.customDurationInSecondsToCompleteOneRevolution,
+      rtcSelectedHour: this.rtcSelectedHour,
+      rtcSelectedMinutes: this.rtcSelectedMinutes,
     }
 
     this.apiService.updateState(body).subscribe((response) => {
@@ -245,9 +323,9 @@ export class SettingsComponent implements OnInit, AfterViewChecked {
   }
 
   estimateDuration(rpd: number): void {
-    const totalSecondsSpentTurning = rpd * this.upload.durationInSecondsToCompleteOneRevolution;
-    const totalNumberOfRestingPeriods = totalSecondsSpentTurning / 180;
-    const totalRestDuration = totalNumberOfRestingPeriods * 180;
+    const totalSecondsSpentTurning = rpd * this.upload.customDurationInSecondsToCompleteOneRevolution;
+    const totalNumberOfRestingPeriods = totalSecondsSpentTurning / this.upload.customWindDuration;
+    const totalRestDuration = totalNumberOfRestingPeriods * this.upload.customWindPauseDuration;
 
     const finalRoutineDuration = totalRestDuration + totalSecondsSpentTurning;
 

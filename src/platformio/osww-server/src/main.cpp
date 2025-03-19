@@ -35,7 +35,7 @@
  * If you're using a NeoPixel equipped board, you'll need to change directionalPinA, directionalPinB and ledPin (pin 18 on most, I think) to appropriate GPIOs.
  * Failure to set these pins on NeoPixel boards will result in kernel panics.
  */
-int durationInSecondsToCompleteOneRevolution = 8;
+// int durationInSecondsToCompleteOneRevolution = 8;
 int directionalPinA = 25;
 int directionalPinB = 26;
 int ledPin = 0;
@@ -63,7 +63,6 @@ const char* HOME_ASSISTANT_PASSWORD = "YOUR_HOME_ASSISTANT_LOGIN_PASSWORD";
  */
 String timeURL = "http://worldtimeapi.org/api/ip";
 String settingsFile = "/settings.json";
-unsigned long rtc_offset;
 unsigned long rtc_epoch;
 unsigned long estimatedRoutineFinishEpoch;
 unsigned long previousEpoch;
@@ -82,6 +81,9 @@ struct RUNTIME_VARS
 	String minutes = "00";
 	String winderEnabled = "1";
 	String timerEnabled = "0";
+	String customWindDuration = "";
+	String customWindPauseDuration = "";
+	int customDurationInSecondsToCompleteOneRevolution = 8;
 };
 
 /*
@@ -124,6 +126,14 @@ String winderooVersion = "3.0.0";
 	HASwitch ha_powerSwitch("power");
 	HASensor ha_rssiReception("rssiReception");
 	HASensor ha_activityState("activity");
+
+	// Define HA Sensors (Setting & Customization)
+	HANumber ha_customWindDuration("customWindDuration");
+	HANumber ha_customWindPauseDuration("customWindPauseDuration");
+	HASelect ha_rtcSelectedHour("rtcSelectedHour");
+	HASelect ha_rtcSelectedMinutes("rtcSelectedMinutes");
+	HASensor ha_currentEpoch("currentEpoch");
+	HANumber ha_customDurationInSecondsToCompleteOneRevolution("customDurationInSecondsToCompleteOneRevolution");
 #endif
 
 void drawCentreStringToMemory(const char *buf, int x, int y)
@@ -133,6 +143,20 @@ void drawCentreStringToMemory(const char *buf, int x, int y)
     display.getTextBounds(buf, 0, y, &x1, &y1, &w, &h); //calc width of new string
     display.setCursor(x - (w / 2), y);
     display.print(buf);
+}
+
+void toggleDrawSavingIcon(bool showOnDisplay = false)
+{
+	if (showOnDisplay) 
+	{
+		// Write to screen buffer
+		display.drawCircle(4, 4, 2, WHITE);
+		return;
+	}
+	
+	// remove icon from screen buffer
+	display.drawCircle(4, 4, 2, BLACK);
+	return;
 }
 
 static void drawStaticGUI(bool drawHeaderTitle = false, String title = "Winderoo") {
@@ -291,6 +315,17 @@ template <int N> static void drawMultiLineText(const String (&message)[N]) {
 	}
 }
 
+void pauseWindingAndNotify() {
+	int pauseDuration = userDefinedSettings.customWindPauseDuration.toInt();
+	for (int i = 0; i < pauseDuration; i++) {
+		Serial.print("[STATUS] - Remaining seconds: ");
+		Serial.println(pauseDuration - i);
+
+		// Delay for 1000ms (1 second)
+		delay(1000);
+	}
+}
+
 // Home Assistant Helper Functions
 /**
  * @brief Returns the index corresponding to a given direction for Home Assistant.
@@ -368,11 +403,11 @@ unsigned long calculateWindingTime()
 {
 	int tpd = atoi(userDefinedSettings.rotationsPerDay.c_str());
 
-	long totalSecondsSpentTurning = tpd * durationInSecondsToCompleteOneRevolution;
+	long totalSecondsSpentTurning = tpd * userDefinedSettings.customDurationInSecondsToCompleteOneRevolution;
 
-	// We want to rest every 3 minutes for 15 seconds
-	long totalNumberOfRestingPeriods = totalSecondsSpentTurning / 180;
-	long totalRestDuration = totalNumberOfRestingPeriods * 180;
+	// We want to rest every userDefinedSettings.customWindDuration (180 is default) minutes for userDefinedSettings.customWindPauseDuration (5 is default) seconds
+	long totalNumberOfRestingPeriods = totalSecondsSpentTurning / userDefinedSettings.customWindDuration.toInt();
+	long totalRestDuration = totalNumberOfRestingPeriods * userDefinedSettings.customWindPauseDuration.toInt();
 	long finalRoutineDuration = totalRestDuration + totalSecondsSpentTurning;
 
 	Serial.print("[STATUS] - Total winding duration: ");
@@ -414,32 +449,57 @@ void beginWindingRoutine()
 void getTime()
 {
 	http.begin(client, timeURL);
+	http.setTimeout(3500);
 	int httpCode = http.GET();
 
 	if (httpCode > 0)
 	{
 		JsonDocument json;
 		deserializeJson(json, http.getStream());
-		const String datetime = json["datetime"];
+		int unixtime = json["unixtime"].as<int>();
 
-		String date = datetime.substring(0, datetime.indexOf("T") - 1);
-		int day = date.substring(8, 10).toInt();
-		int month = date.substring(5, 7).toInt();
-		int year = date.substring(0, 4).toInt();
-
-		String time = datetime.substring(datetime.indexOf("T") + 1);
-		int seconds = time.substring(6, 8).toInt();
-		int hours = time.substring(0, 2).toInt();
-		int minutes = time.substring(3, 5).toInt();
-
-		rtc.setTime(seconds, minutes, hours, day, month, year);
+		rtc.setTime(unixtime);
 	}
 	else
 	{
-		Serial.println("[ERROR] - Failed to get time from Worldtime API");
+		if (httpCode != -5) {
+			Serial.print("[ERROR] - Failed to get time from Worldtime API, error code: ");
+			Serial.println(httpCode);
+		} else {
+			Serial.print("[WARN] - Failed to get time from Worldtime API, likely due to rate limiting. ");
+			Serial.println("Wait a while to see if it resolves.");
+		}
 	}
 
 	http.end();
+}
+
+/**
+ * Update the internal RTC's hours or minutes
+ * 
+ * @param rtc is the current rtc instance
+ * @param hours the hours value to set
+ * @param minutes the minutes value to set
+ */
+void updateRtcEpoch(ESP32Time &rtc, int hours, int minutes) {
+    // Get the current epoch
+    unsigned long currentEpoch = rtc.getEpoch();
+    struct tm *timeInfo;
+
+    // Convert current epoch to a tm structure
+    time_t rawTime = static_cast<time_t>(currentEpoch);
+    timeInfo = gmtime(&rawTime);
+
+    // Update time to the desired hours and minutes
+    timeInfo->tm_hour = hours;
+    timeInfo->tm_min = minutes;
+    timeInfo->tm_sec = 0;  // Reset seconds for a clean time
+
+    // Convert back to epoch
+    time_t updatedTime = mktime(timeInfo);
+
+    // Set the new epoch
+    rtc.setTime(static_cast<unsigned long>(updatedTime), 0);  // Set with 0 microseconds
 }
 
 /**
@@ -461,17 +521,21 @@ void loadConfigVarsFromFile(String file_name)
 	{
 		Serial.println("[STATUS] - Failed to open configuration file, returning empty result");
 	}
+
 	while (this_file.available())
 	{
 		result += (char)this_file.read();
 	}
 
-	userDefinedSettings.status = json["savedStatus"].as<String>();						// Winding || Stopped = 7char
-	userDefinedSettings.rotationsPerDay = json["savedTPD"].as<String>();				// min = 100 || max = 960
-	userDefinedSettings.hour = json["savedHour"].as<String>();							// 00
-	userDefinedSettings.minutes = json["savedMinutes"].as<String>();					// 00
-	userDefinedSettings.timerEnabled = json["savedTimerState"].as<String>();			// 0 || 1
-	userDefinedSettings.direction = json["savedDirection"].as<String>();				// CW || CCW || BOTH
+	userDefinedSettings.status = json["savedStatus"].as<String>();																				// Winding || Stopped = 7char
+	userDefinedSettings.rotationsPerDay = json["savedTPD"].as<String>();																		// min = 100 || max = 960
+	userDefinedSettings.hour = json["savedHour"].as<String>();																					// 00
+	userDefinedSettings.minutes = json["savedMinutes"].as<String>();																			// 00
+	userDefinedSettings.timerEnabled = json["savedTimerState"].as<String>();																	// 0 || 1
+	userDefinedSettings.direction = json["savedDirection"].as<String>();																		// CW || CCW || BOTH
+	userDefinedSettings.customWindDuration = json["customWindDuration"].as<String>();															// 180 (in seconds)
+	userDefinedSettings.customWindPauseDuration = json["customWindPauseDuration"].as<String>();													// 15 (in seconds)
+	userDefinedSettings.customDurationInSecondsToCompleteOneRevolution = json["customDurationInSecondsToCompleteOneRevolution"].as<int>();		// min 1 <-> max 16; default 8
 
 	this_file.close();
 }
@@ -501,6 +565,9 @@ bool writeConfigVarsToFile(String file_name, const RUNTIME_VARS& userDefinedSett
 	json["savedMinutes"] = userDefinedSettings.minutes;
 	json["savedTimerState"] = userDefinedSettings.timerEnabled;
 	json["savedDirection"] = userDefinedSettings.direction;
+	json["customWindDuration"] = userDefinedSettings.customWindDuration;
+	json["customWindPauseDuration"] = userDefinedSettings.customWindPauseDuration;
+	json["customDurationInSecondsToCompleteOneRevolution"] = userDefinedSettings.customDurationInSecondsToCompleteOneRevolution;
 
 	if (serializeJson(json, this_file) == 0)
 	{
@@ -544,7 +611,6 @@ void startWebserver()
 		json["direction"] = userDefinedSettings.direction;
 		json["hour"] = userDefinedSettings.hour;
 		json["minutes"] = userDefinedSettings.minutes;
-		json["durationInSecondsToCompleteOneRevolution"] = durationInSecondsToCompleteOneRevolution;
 		json["startTimeEpoch"] = startTimeEpoch;
 		json["currentTimeEpoch"] = rtc.getEpoch();
 		json["estimatedRoutineFinishEpoch"] = estimatedRoutineFinishEpoch;
@@ -553,12 +619,12 @@ void startWebserver()
 		json["db"] = WiFi.RSSI();
 		json["screenSleep"] = screenSleep;
 		json["screenEquipped"] = screenEquipped;
+		json["customWindDuration"] = userDefinedSettings.customWindDuration;
+		json["customWindPauseDuration"] = userDefinedSettings.customWindPauseDuration;
+		json["customDurationInSecondsToCompleteOneRevolution"] = userDefinedSettings.customDurationInSecondsToCompleteOneRevolution;
 		serializeJson(json, *response);
 
 		request->send(response);
-
-		// Update RTC time ref
-		getTime();
 	});
 
 	server.on("/api/timer", HTTP_POST, [](AsyncWebServerRequest *request)
@@ -577,7 +643,7 @@ void startWebserver()
 		}
 
 		bool writeSuccess = writeConfigVarsToFile(settingsFile, userDefinedSettings);
-		if ( !writeSuccess )
+		if (!writeSuccess)
 		{
 			Serial.println("[ERROR] - Failed to write [timer] endpoint data to file");
 			request->send(500, "text/plain", "Failed to write new configuration to file");
@@ -633,6 +699,8 @@ void startWebserver()
 
 		if (request->url() == "/api/update")
 		{
+			if (OLED_ENABLED) toggleDrawSavingIcon(true);
+			
 			JsonDocument json;
 			DeserializationError error = deserializeJson(json, data);
 			int arraySize = 7;
@@ -658,6 +726,13 @@ void startWebserver()
 			userDefinedSettings.hour = json["hour"].as<String>();
 			userDefinedSettings.minutes = json["minutes"].as<String>();
 			userDefinedSettings.timerEnabled = json["timerEnabled"].as<String>();
+			userDefinedSettings.customWindDuration = json["customWindDuration"].as<String>();
+			userDefinedSettings.customWindPauseDuration = json["customWindPauseDuration"].as<String>();
+			userDefinedSettings.customDurationInSecondsToCompleteOneRevolution = json["customDurationInSecondsToCompleteOneRevolution"];
+
+			// RTC values
+			int rtcUpdateHours = json["rtcSelectedHour"].as<int>();
+			int rtcUpdateMinutes = json["rtcSelectedMinutes"].as<int>();
 
 			// These values need to be compared to the current settings / running state
 			String requestRotationDirection = json["rotationDirection"].as<String>();
@@ -666,7 +741,6 @@ void startWebserver()
 			screenSleep = json["screenSleep"].as<bool>();
 
 			// Update Home Assistant state
-
 			if (HOME_ASSISTANT_ENABLED)
 			{
 				ha_timerSwitch.setState(userDefinedSettings.timerEnabled.toInt());
@@ -675,6 +749,11 @@ void startWebserver()
 				ha_oledSwitch.setState(!screenSleep); // Invert state because naming is hard...
 				ha_rpd.setState(static_cast<int>(requestTPD.toInt()));
 				ha_selectDirection.setState(getDirectionIndexForHomeAssistant(requestRotationDirection));
+
+				// Settings & Customization
+				ha_customWindDuration.setState(static_cast<int>(userDefinedSettings.customWindDuration.toInt()));
+				ha_customWindPauseDuration.setState(static_cast<int>(userDefinedSettings.customWindPauseDuration.toInt()));
+				ha_customDurationInSecondsToCompleteOneRevolution.setState(userDefinedSettings.customDurationInSecondsToCompleteOneRevolution);
 			}
 
 
@@ -745,6 +824,22 @@ void startWebserver()
 				}
 			}
 
+			if (rtcUpdateHours || rtcUpdateMinutes) 
+			{
+				Serial.print("[INFO] - Updating RTC hours: ");
+				Serial.print(rtcUpdateHours);
+				Serial.print(" and minutes: ");
+				Serial.println(rtcUpdateMinutes);
+
+				if (HOME_ASSISTANT_ENABLED) 
+				{
+					ha_rtcSelectedHour.setState(rtcUpdateHours);
+					ha_rtcSelectedMinutes.setState(rtcUpdateMinutes);
+				}
+
+				updateRtcEpoch(rtc, rtcUpdateHours, rtcUpdateMinutes);
+			}
+
 			// Write new parameters to file
 			bool writeSuccess = writeConfigVarsToFile(settingsFile, userDefinedSettings);
 			if ( !writeSuccess )
@@ -754,6 +849,9 @@ void startWebserver()
 			}
 
 			request->send(204);
+
+			// Remove save icon
+			if (OLED_ENABLED) toggleDrawSavingIcon();
 		}
 	});
 
@@ -919,6 +1017,19 @@ void onOledSwitchCommand(bool state, HASwitch* sender)
 	sender->setState(state);
 }
 
+void onCustomDurationInSecondsToCompleteOneRevolution(HANumeric number, HANumber* sender)
+{
+	userDefinedSettings.customDurationInSecondsToCompleteOneRevolution = number.toInt16();
+
+	bool writeSuccess = writeConfigVarsToFile(settingsFile, userDefinedSettings);
+	if ( !writeSuccess )
+	{
+		Serial.println("[ERROR] - Failed to write customDurationInSecondsToCompleteOneRevolution number state [MQTT]");
+	}
+
+	sender->setCurrentState(number);
+}
+
 void onRpdChangeCommand(HANumeric number, HANumber* sender)
 {
 	char buffer[10];
@@ -928,7 +1039,37 @@ void onRpdChangeCommand(HANumeric number, HANumber* sender)
 	bool writeSuccess = writeConfigVarsToFile(settingsFile, userDefinedSettings);
 	if ( !writeSuccess )
 	{
-		Serial.println("[ERROR] - Failed to write number state [MQTT]");
+		Serial.println("[ERROR] - Failed to write rpd number state [MQTT]");
+	}
+
+	sender->setCurrentState(number);
+}
+
+void onCustomWindDurationChangeCommand(HANumeric number, HANumber* sender)
+{
+	char buffer[10];
+	number.toStr(buffer);
+	userDefinedSettings.customWindDuration = String(buffer);
+
+	bool writeSuccess = writeConfigVarsToFile(settingsFile, userDefinedSettings);
+	if ( !writeSuccess )
+	{
+		Serial.println("[ERROR] - Failed to write customWindDuration number state [MQTT]");
+	}
+
+	sender->setCurrentState(number);
+}
+
+void onCustomWindPauseDurationChangeCommand(HANumeric number, HANumber* sender)
+{
+	char buffer[10];
+	number.toStr(buffer);
+	userDefinedSettings.customWindPauseDuration = String(buffer);
+
+	bool writeSuccess = writeConfigVarsToFile(settingsFile, userDefinedSettings);
+	if ( !writeSuccess )
+	{
+		Serial.println("[ERROR] - Failed to write customWindPauseDuration state [MQTT]");
 	}
 
 	sender->setCurrentState(number);
@@ -994,85 +1135,42 @@ void handleHAStopButton(HAButton* sender)
 	ha_activityState.setValue("Stopped");
 }
 
+void onSelectRtcCustomMinutesCommand(int8_t index, HASelect* sender)
+{
+    int selectedMinute = 0;
+
+    if (index >= 0 && index <= 59) {
+        selectedMinute = index;
+    } else {
+        return; // Exit if index is out of range
+    }
+
+    updateRtcEpoch(rtc, rtc.getHour(), selectedMinute);
+
+    sender->setState(index);
+}
+
+void onSelectRtcCustomHoursCommand(int8_t index, HASelect* sender)
+{
+	int selectedHour = 0;
+
+    if (index >= 0 && index <= 23) {
+        selectedHour = index;
+    } else {
+        return; // Exit if index is out of range
+    }
+
+	updateRtcEpoch(rtc, selectedHour, rtc.getMinute());
+
+	sender->setState(index);
+}
+
 void onSelectHoursCommand(int8_t index, HASelect* sender)
 {
-	// Ugly but more reliable
-	switch (index) 
-	{
-		case 0:
-			userDefinedSettings.hour = "00";
-			break;
-		case 1:
-			userDefinedSettings.hour = "01";
-			break;
-		case 2:
-			userDefinedSettings.hour = "02";
-			break;
-		case 3:
-			userDefinedSettings.hour = "03";
-			break;
-		case 4:
-			userDefinedSettings.hour = "04";
-			break;
-		case 5:
-			userDefinedSettings.hour = "05";
-			break;
-		case 6:
-			userDefinedSettings.hour = "06";
-			break;
-		case 7:
-			userDefinedSettings.hour = "07";
-			break;
-		case 8:
-			userDefinedSettings.hour = "08";
-			break;
-		case 9:
-			userDefinedSettings.hour = "09";
-			break;
-		case 10:
-			userDefinedSettings.hour = "10";
-			break;
-		case 11:
-			userDefinedSettings.hour = "11";
-			break;
-		case 12:	
-			userDefinedSettings.hour = "12";
-			break;
-		case 13:
-			userDefinedSettings.hour = "13";
-			break;
-		case 14:
-			userDefinedSettings.hour = "14";
-			break;
-		case 15:
-			userDefinedSettings.hour = "15";
-			break;
-		case 16:
-			userDefinedSettings.hour = "16";
-			break;
-		case 17:
-			userDefinedSettings.hour = "17";
-			break;
-		case 18:
-			userDefinedSettings.hour = "18";
-			break;
-		case 19:
-			userDefinedSettings.hour = "19";
-			break;
-		case 20:
-			userDefinedSettings.hour = "20";
-			break;
-		case 21:
-			userDefinedSettings.hour = "21";
-			break;
-		case 22:
-			userDefinedSettings.hour = "22";
-			break;
-		case 23:
-			userDefinedSettings.hour = "23";
-			break;
-		default:
-			return;
+    if (index >= 0 && index <= 23) {
+        userDefinedSettings.hour = index;
+    } else {
+        return; // Exit if index is out of range
     }
 
 	bool writeSuccess = writeConfigVarsToFile(settingsFile, userDefinedSettings);
@@ -1277,6 +1375,49 @@ void setup()
 			ha_rssiReception.setName("WiFi Reception");
 			ha_rssiReception.setIcon("mdi:antenna");
 
+
+			// Settings & Customization
+			ha_customWindDuration.setName("Time to Rotate");
+			ha_customWindDuration.setIcon("mdi:play-circle-outline");
+			ha_customWindDuration.setMin(100);
+			ha_customWindDuration.setMax(960);
+			ha_customWindDuration.setStep(10);
+			ha_customWindDuration.setCurrentState(static_cast<int32_t>(userDefinedSettings.customWindDuration.toInt()));
+			ha_customWindDuration.setOptimistic(true);
+			ha_customWindDuration.onCommand(onCustomWindDurationChangeCommand);
+
+			ha_customWindPauseDuration.setName("Time to pause");
+			ha_customWindPauseDuration.setIcon("mdi:pause-circle-outline");
+			ha_customWindPauseDuration.setMin(10);
+			ha_customWindPauseDuration.setMax(900);
+			ha_customWindPauseDuration.setStep(5);
+			ha_customWindPauseDuration.setCurrentState(static_cast<int32_t>(userDefinedSettings.customWindPauseDuration.toInt()));
+			ha_customWindPauseDuration.setOptimistic(true);
+			ha_customWindPauseDuration.onCommand(onCustomWindPauseDurationChangeCommand);
+
+			ha_rtcSelectedHour.setName("RTC Hour");
+			ha_rtcSelectedHour.setIcon("mdi:timer-sand-full");
+			ha_rtcSelectedHour.setOptions("00;01;02;03;04;05;06;07;08;09;10;11;12;13;14;15;16;17;18;19;20;21;22;23");
+			ha_rtcSelectedHour.onCommand(onSelectRtcCustomHoursCommand);
+
+			ha_rtcSelectedMinutes.setName("RTC Minutes");
+			ha_rtcSelectedMinutes.setIcon("mdi:timer-sand-empty");
+			ha_rtcSelectedMinutes.setOptions("00;01;02;03;04;05;06;07;08;09;10;11;12;13;14;15;16;17;18;19;20;21;22;23;24;25;26;27;28;29;30;31;32;33;34;35;36;37;38;39;40;41;42;43;44;45;46;47;48;49;50;51;52;53;54;55;56;57;58;59");
+			ha_rtcSelectedMinutes.onCommand(onSelectRtcCustomMinutesCommand);
+
+			ha_currentEpoch.setName("RTC Epoch Time");
+			ha_currentEpoch.setIcon("mdi:clock-time-nine-outline");
+			ha_currentEpoch.setValue(std::to_string(rtc.getEpoch()).c_str());
+
+			ha_customDurationInSecondsToCompleteOneRevolution.setName("Duration to complete a single rotation");
+			ha_customDurationInSecondsToCompleteOneRevolution.setIcon("mdi:arrow-u-down-right");
+			ha_customDurationInSecondsToCompleteOneRevolution.setMin(1);
+			ha_customDurationInSecondsToCompleteOneRevolution.setMax(16);
+			ha_customDurationInSecondsToCompleteOneRevolution.setStep(1);
+			ha_customDurationInSecondsToCompleteOneRevolution.setCurrentState(userDefinedSettings.customDurationInSecondsToCompleteOneRevolution);
+			ha_customDurationInSecondsToCompleteOneRevolution.setOptimistic(true);
+			ha_customDurationInSecondsToCompleteOneRevolution.onCommand(onCustomDurationInSecondsToCompleteOneRevolution);
+
 			mqtt.onConnected(mqttOnConnected);
 			mqtt.onDisconnected(mqttOnDisconnected);
 			mqtt.begin(HOME_ASSISTANT_BROKER_IP, HOME_ASSISTANT_USERNAME, HOME_ASSISTANT_PASSWORD);
@@ -1383,26 +1524,36 @@ void loop()
 
 			if (r <= 25)
 			{
-				if ((strcmp(userDefinedSettings.direction.c_str(), "BOTH") == 0) && (currentTime - previousEpoch) > 180)
+				if ((strcmp(userDefinedSettings.direction.c_str(), "BOTH") == 0) && (rtc.getEpoch() - previousEpoch) > userDefinedSettings.customWindDuration.toInt())
 				{
 					motor.stop();
-					delay(3000);
+					Serial.print("[STATUS] - Pause for duration: ");
+					Serial.println(userDefinedSettings.customWindPauseDuration);
 
-					previousEpoch = currentTime;
+					drawNotification("Cycle Pause");
+					pauseWindingAndNotify();
+
+					previousEpoch = rtc.getEpoch();
 
 					int currentDirection = motor.getMotorDirection();
 					motor.setMotorDirection(!currentDirection);
 					Serial.println("[STATUS] - Motor changing direction, mode: " + userDefinedSettings.direction);
-
+					
+					drawNotification("Winding");
 					motor.determineMotorDirectionAndBegin();
 				}
 
-				if ((currentTime - previousEpoch) > 180)
+				if ((rtc.getEpoch() - previousEpoch) > userDefinedSettings.customWindDuration.toInt())
 				{
-					Serial.println("[STATUS] - Pause");
-					previousEpoch = currentTime;
 					motor.stop();
-					delay(3000);
+					Serial.print("[STATUS] - Pause for duration: ");
+					Serial.println(userDefinedSettings.customWindPauseDuration);
+					
+					drawNotification("Cycle Pause");
+					pauseWindingAndNotify();
+					drawNotification("Winding");
+					
+					previousEpoch = rtc.getEpoch();
 				}
 			}
 		}
@@ -1446,7 +1597,9 @@ void loop()
 		// This mitigates de-sync between HA and the web gui.
 		ha_powerSwitch.setState(userDefinedSettings.winderEnabled.toInt());
 		ha_activityState.setValue(userDefinedSettings.status.c_str());
+		ha_currentEpoch.setValue(std::to_string(rtc.getEpoch()).c_str());
 	}
 
 	wm.process();
+
 }
