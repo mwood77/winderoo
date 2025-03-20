@@ -171,13 +171,11 @@ entities:
   - entity: number.winderoo_time_to_rotate
     name: Time to Rotate
   - entity: number.winderoo_time_to_pause
-    name: Time to pause
+    name: " Time to pause"
   - entity: number.winderoo_duration_to_complete_a_single_rotation
-  - entity: select.winderoo_rtc_hour
-    name: RTC Hour
-  - entity: select.winderoo_rtc_minutes
-    name: RTC Minutes
   - entity: sensor.winderoo_rtc_epoch_time
+  - entity: switch.winderoo_dst
+  - entity: select.winderoo_utc_offset
 title: Winderoo - Settings & Customization
 </pre></code>
     </td>
