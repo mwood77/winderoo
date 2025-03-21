@@ -340,6 +340,36 @@ void pauseWindingAndNotify() {
 
 // Home Assistant Helper Functions
 /**
+ * @brief Checks if Home Assistant configuration values are set.
+ */
+void checkHomeAssistantConfigValues() {
+    if (strcmp(HOME_ASSISTANT_BROKER_IP, "YOUR_HOME_ASSISTANT_IP") == 0) {
+        Serial.println("ERROR: HOME_ASSISTANT_BROKER_IP is not set! Please configure it in main.cpp");
+
+		String brokerIpErrorMessage[3] = {"Boot Fail!", "HOME_ASSISTANT_BROKER_IP", "is not set!"};
+		drawMultiLineText(brokerIpErrorMessage);
+
+        while (1);  // Halt program execution
+    }
+    if (strcmp(HOME_ASSISTANT_USERNAME, "YOUR_HOME_ASSISTANT_LOGIN_USERNAME") == 0) {
+        Serial.println("ERROR: HOME_ASSISTANT_USERNAME is not set! Please configure it in main.cpp");
+
+		String usernameErrorMessage[3] = {"Boot Fail!", "HOME_ASSISTANT_USERNAME", "is not set!"};
+		drawMultiLineText(usernameErrorMessage);
+
+        while (1);  // Halt program execution
+    }
+    if (strcmp(HOME_ASSISTANT_PASSWORD, "YOUR_HOME_ASSISTANT_LOGIN_PASSWORD") == 0) {
+        Serial.println("ERROR: HOME_ASSISTANT_PASSWORD is  not set! Please configure it in main.cpp");
+
+		String passwordeErrorMessage[3] = {"Boot Fail!", "HOME_ASSISTANT_PASSWORD", "is not set!"};
+		drawMultiLineText(passwordeErrorMessage);
+
+        while (1);  // Halt program execution
+    }
+}
+
+/**
  * @brief Returns the index corresponding to a given direction for Home Assistant.
  *
  * This function takes a direction string and returns an integer index that 
@@ -1372,6 +1402,8 @@ void setup()
 		// Configure Home Assistant
 		if (HOME_ASSISTANT_ENABLED) 
 		{
+			checkHomeAssistantConfigValues();
+
 			byte mac[6];
 			WiFi.macAddress(mac);
 			device.setUniqueId(mac, sizeof(mac));
