@@ -5,6 +5,8 @@
 #include <HTTPClient.h>
 #include <ESPmDNS.h>
 #include <ESP32Time.h>
+#include <NTPClient.h>
+#include <WiFiUdp.h>
 
 #ifdef OLED_ENABLED
 	#include <SPI.h>
@@ -84,6 +86,14 @@ struct RUNTIME_VARS
 	String customWindDuration = "";
 	String customWindPauseDuration = "";
 	int customDurationInSecondsToCompleteOneRevolution = 8;
+	float gmtOffset = 0.0;
+	bool dst = false;
+};
+
+const float utcOffsetValues[] = {
+	-12, -11, -10, -9.5, -9, -8, -7, -6, -5, -4.5, -4, -3.5, -3, -2, -1, 0,
+	1, 2, 3, 3.5, 4, 4.5, 5, 5.5, 5.75, 6, 6.5, 7, 8, 8.75, 9, 9.5, 10, 10.5,
+	11, 11.5, 12, 12.75, 13, 14
 };
 
 /*
@@ -96,7 +106,9 @@ AsyncWebServer server(80);
 HTTPClient http;
 WiFiClient client;
 ESP32Time rtc;
-String winderooVersion = "3.0.0";
+String winderooVersion = "4.0.0";
+WiFiUDP ntpUDP;
+NTPClient timeClient(ntpUDP);
 
 #if PWM_MOTOR_CONTROL
 	MotorControl motor(directionalPinA, directionalPinB, true);
@@ -130,10 +142,10 @@ String winderooVersion = "3.0.0";
 	// Define HA Sensors (Setting & Customization)
 	HANumber ha_customWindDuration("customWindDuration");
 	HANumber ha_customWindPauseDuration("customWindPauseDuration");
-	HASelect ha_rtcSelectedHour("rtcSelectedHour");
-	HASelect ha_rtcSelectedMinutes("rtcSelectedMinutes");
 	HASensor ha_currentEpoch("currentEpoch");
 	HANumber ha_customDurationInSecondsToCompleteOneRevolution("customDurationInSecondsToCompleteOneRevolution");
+	HASelect ha_rtcGmtOffset("rtcGmtOffset");
+	HASwitch ha_rtcDST("rtcDST");
 #endif
 
 void drawCentreStringToMemory(const char *buf, int x, int y)
@@ -328,6 +340,36 @@ void pauseWindingAndNotify() {
 
 // Home Assistant Helper Functions
 /**
+ * @brief Checks if Home Assistant configuration values are set.
+ */
+void checkHomeAssistantConfigValues() {
+    if (strcmp(HOME_ASSISTANT_BROKER_IP, "YOUR_HOME_ASSISTANT_IP") == 0) {
+        Serial.println("ERROR: HOME_ASSISTANT_BROKER_IP is not set! Please configure it in main.cpp");
+
+		String brokerIpErrorMessage[3] = {"Boot Fail!", "HOME_ASSISTANT_BROKER_IP", "is not set!"};
+		drawMultiLineText(brokerIpErrorMessage);
+
+        while (1);  // Halt program execution
+    }
+    if (strcmp(HOME_ASSISTANT_USERNAME, "YOUR_HOME_ASSISTANT_LOGIN_USERNAME") == 0) {
+        Serial.println("ERROR: HOME_ASSISTANT_USERNAME is not set! Please configure it in main.cpp");
+
+		String usernameErrorMessage[3] = {"Boot Fail!", "HOME_ASSISTANT_USERNAME", "is not set!"};
+		drawMultiLineText(usernameErrorMessage);
+
+        while (1);  // Halt program execution
+    }
+    if (strcmp(HOME_ASSISTANT_PASSWORD, "YOUR_HOME_ASSISTANT_LOGIN_PASSWORD") == 0) {
+        Serial.println("ERROR: HOME_ASSISTANT_PASSWORD is  not set! Please configure it in main.cpp");
+
+		String passwordeErrorMessage[3] = {"Boot Fail!", "HOME_ASSISTANT_PASSWORD", "is not set!"};
+		drawMultiLineText(passwordeErrorMessage);
+
+        while (1);  // Halt program execution
+    }
+}
+
+/**
  * @brief Returns the index corresponding to a given direction for Home Assistant.
  *
  * This function takes a direction string and returns an integer index that 
@@ -353,6 +395,29 @@ int getDirectionIndexForHomeAssistant(String direction)
 	{
 		return 2;
 	}
+}
+
+float mapRtcUtcOffsetForAPItoHomeAssistant(float currentOffset)
+{
+	for (int i = 0; i < 40; i++)
+	{
+		if (currentOffset == utcOffsetValues[i])
+		{
+			return i;
+		}
+	}
+
+	return 0;
+}
+
+float mapRtcUtcOffsetSelectorForHomeAssistant(int index)
+{
+	Serial.print("[STATUS] - Mapping index ");
+	Serial.print(index);
+	Serial.print(" to GMT Offset: ");
+	Serial.println(utcOffsetValues[index]);
+
+	return utcOffsetValues[index];
 }
 
 /**
@@ -448,30 +513,39 @@ void beginWindingRoutine()
  */
 void getTime()
 {
-	http.begin(client, timeURL);
-	http.setTimeout(3500);
-	int httpCode = http.GET();
+	Serial.print("[STATUS] - Updating RTC with configured GMT Offset: ");
+	Serial.println(userDefinedSettings.gmtOffset);
 
-	if (httpCode > 0)
+	timeClient.begin();
+
+	if (userDefinedSettings.dst)
 	{
-		JsonDocument json;
-		deserializeJson(json, http.getStream());
-		int unixtime = json["unixtime"].as<int>();
-
-		rtc.setTime(unixtime);
+		timeClient.setTimeOffset((userDefinedSettings.gmtOffset + 1) * 3600);  // add 1 hour & convert to seconds
 	}
-	else
+	else 
 	{
-		if (httpCode != -5) {
-			Serial.print("[ERROR] - Failed to get time from Worldtime API, error code: ");
-			Serial.println(httpCode);
-		} else {
-			Serial.print("[WARN] - Failed to get time from Worldtime API, likely due to rate limiting. ");
-			Serial.println("Wait a while to see if it resolves.");
-		}
+		timeClient.setTimeOffset(userDefinedSettings.gmtOffset * 3600);  // Convert to float to seconds
 	}
 
-	http.end();
+
+	timeClient.update();
+	time_t epochTime = timeClient.getEpochTime();
+	struct tm *ptm = gmtime ((time_t *)&epochTime);
+
+	int currentYear = ptm->tm_year + 1900;
+	int currentMonth = ptm->tm_mon + 1;
+	int currentDay = ptm->tm_mday;
+	int currentHour = timeClient.getHours();
+	int currentMinute = timeClient.getMinutes();
+	int currentSecond = timeClient.getSeconds();
+
+	Serial.printf("[STATUS] - Date: %d-%02d-%02d Time: %02d:%02d:%02d\n", 
+		currentYear, currentMonth, currentDay,
+		currentHour, currentMinute, currentSecond);
+
+	rtc.setTime(currentSecond, currentMinute, currentHour, currentDay, currentMonth, currentYear);
+
+	timeClient.end();
 }
 
 /**
@@ -536,6 +610,8 @@ void loadConfigVarsFromFile(String file_name)
 	userDefinedSettings.customWindDuration = json["customWindDuration"].as<String>();															// 180 (in seconds)
 	userDefinedSettings.customWindPauseDuration = json["customWindPauseDuration"].as<String>();													// 15 (in seconds)
 	userDefinedSettings.customDurationInSecondsToCompleteOneRevolution = json["customDurationInSecondsToCompleteOneRevolution"].as<int>();		// min 1 <-> max 16; default 8
+	userDefinedSettings.gmtOffset = json["gmtOffset"].as<float>();																				// -12 to +14 with decimal steps
+	userDefinedSettings.dst = json["dst"].as<float>();																							// true || false
 
 	this_file.close();
 }
@@ -568,6 +644,8 @@ bool writeConfigVarsToFile(String file_name, const RUNTIME_VARS& userDefinedSett
 	json["customWindDuration"] = userDefinedSettings.customWindDuration;
 	json["customWindPauseDuration"] = userDefinedSettings.customWindPauseDuration;
 	json["customDurationInSecondsToCompleteOneRevolution"] = userDefinedSettings.customDurationInSecondsToCompleteOneRevolution;
+	json["gmtOffset"] = userDefinedSettings.gmtOffset;
+	json["dst"] = userDefinedSettings.dst;
 
 	if (serializeJson(json, this_file) == 0)
 	{
@@ -622,6 +700,9 @@ void startWebserver()
 		json["customWindDuration"] = userDefinedSettings.customWindDuration;
 		json["customWindPauseDuration"] = userDefinedSettings.customWindPauseDuration;
 		json["customDurationInSecondsToCompleteOneRevolution"] = userDefinedSettings.customDurationInSecondsToCompleteOneRevolution;
+		json["gmtOffset"] = userDefinedSettings.gmtOffset;
+		json["apiVersion"] = winderooVersion;
+		json["dst"] = userDefinedSettings.dst;
 		serializeJson(json, *response);
 
 		request->send(response);
@@ -667,7 +748,7 @@ void startWebserver()
 				return;
 			}
 
-			if (!json.containsKey("winderEnabled"))
+			if (!json["winderEnabled"].is<String>())
 			{
 				request->send(400, "text/plain", "Missing required field: 'winderEnabled'");
 			}
@@ -716,7 +797,7 @@ void startWebserver()
 			// validate request body
 				for (int i = 0; i < arraySize; i++)
 				{
-					if(!json.containsKey(requiredKeys[i]))
+					if(!json[requiredKeys[i]].is<JsonVariant>())
 					{
 						request->send(400, "text/plain", "Missing required field: '" + requiredKeys[i] +"'");
 					}
@@ -730,9 +811,10 @@ void startWebserver()
 			userDefinedSettings.customWindPauseDuration = json["customWindPauseDuration"].as<String>();
 			userDefinedSettings.customDurationInSecondsToCompleteOneRevolution = json["customDurationInSecondsToCompleteOneRevolution"];
 
-			// RTC values
-			int rtcUpdateHours = json["rtcSelectedHour"].as<int>();
-			int rtcUpdateMinutes = json["rtcSelectedMinutes"].as<int>();
+			// // RTC values
+			userDefinedSettings.dst = json["rtcDST"].as<bool>();
+			userDefinedSettings.gmtOffset = json["rtcGmtOffset"].as<float>();
+			float rtcUpdateGmtOffset = userDefinedSettings.gmtOffset;
 
 			// These values need to be compared to the current settings / running state
 			String requestRotationDirection = json["rotationDirection"].as<String>();
@@ -824,21 +906,21 @@ void startWebserver()
 				}
 			}
 
-			if (rtcUpdateHours || rtcUpdateMinutes) 
-			{
-				Serial.print("[INFO] - Updating RTC hours: ");
-				Serial.print(rtcUpdateHours);
-				Serial.print(" and minutes: ");
-				Serial.println(rtcUpdateMinutes);
-
-				if (HOME_ASSISTANT_ENABLED) 
-				{
-					ha_rtcSelectedHour.setState(rtcUpdateHours);
-					ha_rtcSelectedMinutes.setState(rtcUpdateMinutes);
-				}
-
-				updateRtcEpoch(rtc, rtcUpdateHours, rtcUpdateMinutes);
+			if (userDefinedSettings.dst) {
+				rtcUpdateGmtOffset += 1.0;  // add 1 hour for DST & convert to seconds
 			}
+
+			timeClient.setTimeOffset(rtcUpdateGmtOffset * 3600);  // Convert to seconds
+
+			if (HOME_ASSISTANT_ENABLED) 
+			{
+				int haUtcSelectIndex = mapRtcUtcOffsetForAPItoHomeAssistant(userDefinedSettings.gmtOffset);
+
+				ha_rtcGmtOffset.setState(haUtcSelectIndex);
+				ha_rtcDST.setState(userDefinedSettings.dst);
+			}
+
+			getTime();
 
 			// Write new parameters to file
 			bool writeSuccess = writeConfigVarsToFile(settingsFile, userDefinedSettings);
@@ -1118,6 +1200,20 @@ void onTimerSwitchCommand(bool state, HASwitch* sender)
 	sender->setState(state);
 }
 
+void onRtcDSTCommand(bool state, HASwitch* sender)
+{
+	userDefinedSettings.dst = state ? true : false;
+	bool writeSuccess = writeConfigVarsToFile(settingsFile, userDefinedSettings);
+	if ( !writeSuccess )
+	{
+		Serial.println("[ERROR] - Failed to write DST switch state [MQTT]");
+	}
+
+	getTime();
+
+	sender->setState(state);
+}
+
 void handleHAStartButton(HAButton* sender)
 {
 	if (!routineRunning)
@@ -1135,32 +1231,19 @@ void handleHAStopButton(HAButton* sender)
 	ha_activityState.setValue("Stopped");
 }
 
-void onSelectRtcCustomMinutesCommand(int8_t index, HASelect* sender)
+void onSelectRtcUtcOffsetCommand(int8_t index, HASelect* sender)
 {
-    int selectedMinute = 0;
+	Serial.println("[ERROR] - Recieved Selector index position: " + String(index));
 
-    if (index >= 0 && index <= 59) {
-        selectedMinute = index;
-    } else {
-        return; // Exit if index is out of range
-    }
+    userDefinedSettings.gmtOffset = mapRtcUtcOffsetSelectorForHomeAssistant(index);
 
-    updateRtcEpoch(rtc, rtc.getHour(), selectedMinute);
+	bool writeSuccess = writeConfigVarsToFile(settingsFile, userDefinedSettings);
+	if ( !writeSuccess )
+	{
+		Serial.println("[ERROR] - Failed to write UTC Offset state [MQTT]");
+	}
 
-    sender->setState(index);
-}
-
-void onSelectRtcCustomHoursCommand(int8_t index, HASelect* sender)
-{
-	int selectedHour = 0;
-
-    if (index >= 0 && index <= 23) {
-        selectedHour = index;
-    } else {
-        return; // Exit if index is out of range
-    }
-
-	updateRtcEpoch(rtc, selectedHour, rtc.getMinute());
+    getTime();
 
 	sender->setState(index);
 }
@@ -1297,6 +1380,17 @@ void setup()
 		// retrieve & read saved settings
 		loadConfigVarsFromFile(settingsFile);
 
+		Serial.println("[STATUS] - initialized with GMT Offset: " + String(userDefinedSettings.gmtOffset) + " and DST: " + String(userDefinedSettings.dst));
+		
+		if (userDefinedSettings.dst)
+		{
+			timeClient.setTimeOffset((userDefinedSettings.gmtOffset + 1) * 3600);  // add 1 hour & convert to seconds
+		}
+		else 
+		{
+			timeClient.setTimeOffset(userDefinedSettings.gmtOffset * 3600);  // Convert to float to seconds
+		}
+
 		if (!MDNS.begin("winderoo"))
 		{
 			Serial.println("[STATUS] - Failed to start mDNS");
@@ -1308,6 +1402,8 @@ void setup()
 		// Configure Home Assistant
 		if (HOME_ASSISTANT_ENABLED) 
 		{
+			checkHomeAssistantConfigValues();
+
 			byte mac[6];
 			WiFi.macAddress(mac);
 			device.setUniqueId(mac, sizeof(mac));
@@ -1395,16 +1491,6 @@ void setup()
 			ha_customWindPauseDuration.setOptimistic(true);
 			ha_customWindPauseDuration.onCommand(onCustomWindPauseDurationChangeCommand);
 
-			ha_rtcSelectedHour.setName("RTC Hour");
-			ha_rtcSelectedHour.setIcon("mdi:timer-sand-full");
-			ha_rtcSelectedHour.setOptions("00;01;02;03;04;05;06;07;08;09;10;11;12;13;14;15;16;17;18;19;20;21;22;23");
-			ha_rtcSelectedHour.onCommand(onSelectRtcCustomHoursCommand);
-
-			ha_rtcSelectedMinutes.setName("RTC Minutes");
-			ha_rtcSelectedMinutes.setIcon("mdi:timer-sand-empty");
-			ha_rtcSelectedMinutes.setOptions("00;01;02;03;04;05;06;07;08;09;10;11;12;13;14;15;16;17;18;19;20;21;22;23;24;25;26;27;28;29;30;31;32;33;34;35;36;37;38;39;40;41;42;43;44;45;46;47;48;49;50;51;52;53;54;55;56;57;58;59");
-			ha_rtcSelectedMinutes.onCommand(onSelectRtcCustomMinutesCommand);
-
 			ha_currentEpoch.setName("RTC Epoch Time");
 			ha_currentEpoch.setIcon("mdi:clock-time-nine-outline");
 			ha_currentEpoch.setValue(std::to_string(rtc.getEpoch()).c_str());
@@ -1417,6 +1503,22 @@ void setup()
 			ha_customDurationInSecondsToCompleteOneRevolution.setCurrentState(userDefinedSettings.customDurationInSecondsToCompleteOneRevolution);
 			ha_customDurationInSecondsToCompleteOneRevolution.setOptimistic(true);
 			ha_customDurationInSecondsToCompleteOneRevolution.onCommand(onCustomDurationInSecondsToCompleteOneRevolution);
+
+			ha_rtcDST.setName("DST");
+			ha_rtcDST.setIcon("mdi:clock-time-four-outline");
+			ha_rtcDST.setCurrentState(userDefinedSettings.dst);
+			ha_rtcDST.onCommand(onRtcDSTCommand);
+
+			ha_rtcGmtOffset.setName("UTC Offset");
+			ha_rtcGmtOffset.setIcon("mdi:clock-time-eight-outline");
+			ha_rtcGmtOffset.setOptions(
+				"-12;-11;-10;-9.5;-9;-8;-7;-6;-5;-4.5;-4;-3.5;-3;-2;-1;0;"
+				"1;2;3;3.5;4;4.5;5;5.5;5.75;6;6.5;7;8;8.75;9;9.5;10;10.5;"
+				"11;11.5;12;12.75;13;14"
+			);
+			int haUtcSelectIndex = mapRtcUtcOffsetForAPItoHomeAssistant(userDefinedSettings.gmtOffset);
+			ha_rtcGmtOffset.setState(haUtcSelectIndex);
+			ha_rtcGmtOffset.onCommand(onSelectRtcUtcOffsetCommand);
 
 			mqtt.onConnected(mqttOnConnected);
 			mqtt.onDisconnected(mqttOnDisconnected);
@@ -1598,6 +1700,10 @@ void loop()
 		ha_powerSwitch.setState(userDefinedSettings.winderEnabled.toInt());
 		ha_activityState.setValue(userDefinedSettings.status.c_str());
 		ha_currentEpoch.setValue(std::to_string(rtc.getEpoch()).c_str());
+		ha_rtcDST.setState(userDefinedSettings.dst);
+
+		int haUtcSelectIndex = mapRtcUtcOffsetForAPItoHomeAssistant(userDefinedSettings.gmtOffset);
+		ha_rtcGmtOffset.setState(haUtcSelectIndex);
 	}
 
 	wm.process();

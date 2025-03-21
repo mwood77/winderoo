@@ -1,7 +1,7 @@
 openapi: 3.1.0
 info:
   title: Winderoo API
-  version: 2.1.0
+  version: 4.0.0
 servers:
   - url: http://winderoo.local/api/
     description: local development and deployed devices
@@ -138,8 +138,8 @@ components:
             customWindDuration: 180
             customWindPauseDuration: 15
             customDurationInSecondsToCompleteOneRevolution: 8
-            rtcSelectedHour: 8
-            rtcSelectedminutes: 30
+            gmtOffset: -3.5
+            dst: false
     PowerBody:
       description: a JSON object containing winderoo power information
       required: true
@@ -198,6 +198,14 @@ components:
             - CW
             - CCW
             - BOTH
+        gmtOffset:
+          type: number
+          examples:
+            - -3.5
+        dst:
+          type: boolean
+          examples:
+            - false
     Status:
       type: object
       properties:
@@ -265,6 +273,18 @@ components:
           type: number
           examples:
             - 8
+        gmtOffset:
+          type: number
+          examples:
+            - -3.5
+        apiVersion:
+          type: string
+          examples:
+            - 2.1.0
+        dst:
+          type: boolean
+          examples:
+            - false
     Resetting:
       type: object
       properties:

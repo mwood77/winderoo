@@ -226,30 +226,41 @@
                     {{ "SETTINGS.INTERNAL_CLOCK_BLURB_2" | translate }}
                 </div>
 
+                <div class="individual-explainer-text">
+                    {{ "SETTINGS.INTERNAL_CLOCK_BLURB_3" | translate }}
+                </div>
+
                 <div class="time-input">
                     <mat-form-field color="accent" appearance="outline">
                         <mat-label>
-                            {{ "SETTINGS.HOURS" | translate }}
+                            {{ "SETTINGS.INTERNAL_CLOCK_BLURB_3" | translate }}
                         </mat-label>
-                        <select matNativeControl [(ngModel)]="rtcSelectedHour" name="rtc-hour">
+                        <select matNativeControl [(ngModel)]="rtcGmtOffsets" name="rtc-gmt-offset">
                             <option value="" selected></option>
-                            <option *ngFor="let hr of hours" [value]="hr.value">
-                                {{ hr.value }}
-                            </option>
-                            </select>
-                    </mat-form-field>
-                    <mat-form-field color="accent" appearance="outline">
-                        <mat-label>
-                            {{ "SETTINGS.MINUTES" | translate }}
-                        </mat-label>
-                        <select matNativeControl [(ngModel)]="rtcSelectedMinutes" name="rtc-minutes">
-                            <option value="" selected></option>
-                            <option *ngFor="let mn of rtc_minutes" [value]="mn.value">
-                                {{ mn.value }}
+                            <option *ngFor="let offset of gmtOffsets" [value]="offset.value">
+                                {{ offset.viewValue }}
                             </option>
                             </select>
                     </mat-form-field>
                 </div>
+
+                <div class="individual-explainer-text">
+                    {{ "SETTINGS.INTERNAL_CLOCK_BLURB_4" | translate }}
+                </div>
+
+                <div style="display: flex; justify-content: center;">
+                    <mat-slide-toggle [(ngModel)]="this.upload.dst" (ngModelChange)="updateDstState($event)">
+                        <span *ngIf="this.upload.dst; else elseBlock">
+                            {{ "SETTINGS.ENABLED" | translate | uppercase }}
+                        </span>
+                        <ng-template #elseBlock>
+                            <span>
+                            {{ "SETTINGS.DISABLED" | translate | uppercase }}
+                        </span>
+                    </ng-template>
+                    </mat-slide-toggle>
+                </div>
+
             </div>
 
         </div>
