@@ -171,7 +171,7 @@ entities:
   - entity: number.winderoo_time_to_rotate
     name: Time to Rotate
   - entity: number.winderoo_time_to_pause
-    name: " Time to pause"
+    name: Time to pause
   - entity: number.winderoo_duration_to_complete_a_single_rotation
   - entity: sensor.winderoo_rtc_epoch_time
   - entity: switch.winderoo_dst
