@@ -12,6 +12,9 @@ export interface Update {
   minutes: string;
   timerEnabled: number;
   screenSleep: boolean;
+  screenScheduleEnabled: boolean;
+  screenScheduleStartTime: string;
+  screenScheduleEndTime: string;
   customWindDuration: number;
   customWindPauseDuration: number;
   customDurationInSecondsToCompleteOneRevolution: number;
@@ -33,6 +36,9 @@ export interface Status {
   winderEnabled: number;
   timerEnabled: number;
   screenSleep: boolean;
+  screenScheduleEnabled: boolean;
+  screenScheduleStartTime: string;
+  screenScheduleEndTime: string;
   screenEquipped: boolean;
   customWindDuration: number;
   customWindPauseDuration: number;

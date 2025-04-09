@@ -137,6 +137,10 @@ export class SettingsComponent implements OnInit, AfterViewChecked {
 
   watchWindingParametersURL = 'https://watch-winder.store/watch-winding-table/';
 
+  screenScheduleEnabled: boolean = false;
+  screenScheduleStartTime: { hour: string, minute: string } = { hour: '00', minute: '00' };
+  screenScheduleEndTime: { hour: string, minute: string } = { hour: '00', minute: '00' };
+
   constructor(private apiService: ApiService, private translateService: TranslateService, private clockService: ClockService) {
     this.isWinderEnabled = this.apiService.isWinderEnabled$.getValue();
     this.isTimerEnabled = false;
@@ -335,6 +339,9 @@ export class SettingsComponent implements OnInit, AfterViewChecked {
       minutes: this.selectedMinutes == null ? this.upload.minutes : this.selectedMinutes,
       timerEnabled: this.upload.isTimerEnabledNum,
       screenSleep: this.upload.screenSleep,
+      screenScheduleEnabled: this.screenScheduleEnabled,
+      screenScheduleStartTime: `${this.screenScheduleStartTime.hour}:${this.screenScheduleStartTime.minute}`,
+      screenScheduleEndTime: `${this.screenScheduleEndTime.hour}:${this.screenScheduleEndTime.minute}`,
       customWindDuration: this.upload.customWindDuration,
       customWindPauseDuration: this.upload.customWindPauseDuration,
       customDurationInSecondsToCompleteOneRevolution: this.upload.customDurationInSecondsToCompleteOneRevolution,
@@ -428,6 +435,20 @@ export class SettingsComponent implements OnInit, AfterViewChecked {
 
   updateDstState($state: boolean) {
     this.upload.dst = $state;
+    this.uploadSettings();
+  }
+
+  updateScreenScheduleEnabled(state: boolean) {
+    this.screenScheduleEnabled = state;
+    this.uploadSettings();
+  }
+
+  updateScreenScheduleTime(type: 'start' | 'end', time: { hour: string, minute: string }) {
+    if (type === 'start') {
+      this.screenScheduleStartTime = time;
+    } else {
+      this.screenScheduleEndTime = time;
+    }
     this.uploadSettings();
   }
 
