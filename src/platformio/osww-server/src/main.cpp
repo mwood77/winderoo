@@ -88,6 +88,9 @@ struct RUNTIME_VARS
 	int customDurationInSecondsToCompleteOneRevolution = 8;
 	float gmtOffset = 0.0;
 	bool dst = false;
+	bool screenScheduleEnabled = false;
+	String screenScheduleStartTime = "00:00";
+	String screenScheduleEndTime = "00:00";
 };
 
 const float utcOffsetValues[] = {
@@ -735,6 +738,31 @@ void startWebserver()
 
 	server.onRequestBody([](AsyncWebServerRequest *request, uint8_t *data, size_t len, size_t index, size_t total)
 	{
+		// Handle screen scheduling update
+		if (root.containsKey("screenScheduleEnabled") || 
+			root.containsKey("screenScheduleStartTime") || 
+			root.containsKey("screenScheduleEndTime") || 
+			root.containsKey("screenSleep")) {
+			
+			if (root.containsKey("screenScheduleEnabled")) {
+				userDefinedSettings.screenScheduleEnabled = root["screenScheduleEnabled"];
+			}
+			if (root.containsKey("screenScheduleStartTime")) {
+				userDefinedSettings.screenScheduleStartTime = root["screenScheduleStartTime"].as<String>();
+			}
+			if (root.containsKey("screenScheduleEndTime")) {
+				userDefinedSettings.screenScheduleEndTime = root["screenScheduleEndTime"].as<String>();
+			}
+			if (root.containsKey("screenSleep")) {
+				userDefinedSettings.screenSleep = root["screenSleep"];
+			}
+
+			// Save the updated settings
+			writeConfigVarsToFile(settingsFile, userDefinedSettings);
+			
+			request->send(200, "application/json", "{\"success\":true}");
+			return;
+		}
 
 		if (request->url() == "/api/power")
 		{
@@ -1704,6 +1732,19 @@ void loop()
 
 		int haUtcSelectIndex = mapRtcUtcOffsetForAPItoHomeAssistant(userDefinedSettings.gmtOffset);
 		ha_rtcGmtOffset.setState(haUtcSelectIndex);
+	}
+
+	// Check screen scheduling
+	if (userDefinedSettings.screenScheduleEnabled) {
+		String currentTime = userDefinedSettings.hour + ":" + userDefinedSettings.minutes;
+		if (currentTime >= userDefinedSettings.screenScheduleStartTime && 
+			currentTime <= userDefinedSettings.screenScheduleEndTime) {
+			// Screen should be on during scheduled time
+			userDefinedSettings.screenSleep = false;
+		} else {
+			// Screen should be off outside scheduled time
+			userDefinedSettings.screenSleep = true;
+		}
 	}
 
 	wm.process();
