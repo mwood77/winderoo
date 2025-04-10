@@ -438,8 +438,8 @@ export class SettingsComponent implements OnInit, AfterViewChecked {
     this.uploadSettings();
   }
 
-  updateScreenScheduleEnabled(state: boolean) {
-    this.screenScheduleEnabled = state;
+  updateScreenScheduleEnabled($state: boolean) {
+    this.screenScheduleEnabled = $state;
     this.uploadSettings();
   }
 
