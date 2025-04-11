@@ -88,6 +88,7 @@ struct RUNTIME_VARS
 	int customDurationInSecondsToCompleteOneRevolution = 8;
 	float gmtOffset = 0.0;
 	bool dst = false;
+	float cycleProgress = 0.0; // 0.0 to 1.0
 };
 
 const float utcOffsetValues[] = {
@@ -260,10 +261,23 @@ static void drawWifiStatus() {
 	}
 }
 
+static void drawProgressBar(float progress) {
+	if (OLED_ENABLED && !screenSleep)
+	{
+		// Clear the progress bar area
+		display.fillRect(0, 50, display.width(), 2, BLACK);
+		
+		// Calculate progress bar width
+		int progressWidth = (int)(progress * display.width());
+		
+		// Draw the progress bar
+		display.fillRect(0, 50, progressWidth, 2, WHITE);
+	}
+}
+
 static void drawDynamicGUI() {
 	if (OLED_ENABLED && !screenSleep)
 	{
-
 		display.fillRect(8, 25, 54, 25, BLACK);
 		display.setCursor(8, 30);
 		display.setTextSize(2);
@@ -273,6 +287,9 @@ static void drawDynamicGUI() {
 		display.setCursor(74, 30);
 		display.print(userDefinedSettings.direction);
 		display.setTextSize(1);
+
+		// Draw progress bar
+		drawProgressBar(userDefinedSettings.cycleProgress);
 
 		drawWifiStatus();
 		drawTimerStatus();
@@ -1704,6 +1721,25 @@ void loop()
 
 		int haUtcSelectIndex = mapRtcUtcOffsetForAPItoHomeAssistant(userDefinedSettings.gmtOffset);
 		ha_rtcGmtOffset.setState(haUtcSelectIndex);
+	}
+
+	// Update cycle progress
+	if (routineRunning) {
+		unsigned long currentTime = rtc.getEpoch();
+		unsigned long totalDuration = estimatedRoutineFinishEpoch - startTimeEpoch;
+		unsigned long elapsedTime = currentTime - startTimeEpoch;
+		
+		if (totalDuration > 0) {
+			userDefinedSettings.cycleProgress = (float)elapsedTime / (float)totalDuration;
+			// Clamp progress between 0 and 1
+			if (userDefinedSettings.cycleProgress > 1.0) {
+				userDefinedSettings.cycleProgress = 1.0;
+			} else if (userDefinedSettings.cycleProgress < 0.0) {
+				userDefinedSettings.cycleProgress = 0.0;
+			}
+		}
+	} else {
+		userDefinedSettings.cycleProgress = 0.0;
 	}
 
 	wm.process();
