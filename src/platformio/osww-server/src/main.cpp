@@ -1369,6 +1369,7 @@ void setup()
 
 	if(OLED_ENABLED)
 	{
+		Wire.begin();
 		display.begin(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
 		if (!display.begin(SSD1306_SWITCHCAPVCC, 0x3C))
 		{
