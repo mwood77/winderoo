@@ -196,6 +196,19 @@ export class SettingsComponent implements OnInit, AfterViewChecked {
       this.upload.gmtOffset = data.gmtOffset;
       this.upload.dst = data.dst;
 
+      // Load screen scheduling settings
+      if (data.screenScheduleEnabled !== undefined) {
+        this.screenScheduleEnabled = data.screenScheduleEnabled;
+      }
+      if (data.screenScheduleStartTime) {
+        const [hour, minute] = data.screenScheduleStartTime.split(':');
+        this.screenScheduleStartTime = { hour, minute };
+      }
+      if (data.screenScheduleEndTime) {
+        const [hour, minute] = data.screenScheduleEndTime.split(':');
+        this.screenScheduleEndTime = { hour, minute };
+      }
+
       if (data.customWindDuration) {
         this.upload.customWindDuration = data.customWindDuration;
       } else {
