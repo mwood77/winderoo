@@ -166,11 +166,11 @@
     <!-- Screen Schedule Section -->
     <mat-card class="settings-card">
         <mat-card-header>
-            <mat-card-title>Screen Schedule</mat-card-title>
+            <mat-card-title>{{ "SETTINGS.SCREEN_SCHEDULE" | translate }}</mat-card-title>
         </mat-card-header>
         <mat-card-content>
             <div class="setting-row">
-                <div class="setting-label">Enable Schedule</div>
+                <div class="setting-label">{{ "SETTINGS.ENABLE_SCHEDULE" | translate }}</div>
                 <mat-slide-toggle [(ngModel)]="screenScheduleEnabled"
                     (change)="updateScreenScheduleEnabled($event.checked)">
                 </mat-slide-toggle>
@@ -178,7 +178,7 @@
     
             <div class="schedule-time-picker" *ngIf="screenScheduleEnabled">
                 <div class="time-picker-group">
-                    <div class="setting-label">Turn On Screen At</div>
+                    <div class="setting-label">{{ "SETTINGS.TURN_ON_SCREEN_AT" | translate }}</div>
                     <mat-form-field>
                         <mat-select [(ngModel)]="screenScheduleStartTime.hour"
                             (selectionChange)="updateScreenScheduleTime('start', screenScheduleStartTime)">
@@ -199,7 +199,7 @@
                 </div>
     
                 <div class="time-picker-group">
-                    <div class="setting-label">Turn Off Screen At</div>
+                    <div class="setting-label">{{ "SETTINGS.TURN_OFF_SCREEN_AT" | translate }}</div>
                     <mat-form-field>
                         <mat-select [(ngModel)]="screenScheduleEndTime.hour"
                             (selectionChange)="updateScreenScheduleTime('end', screenScheduleEndTime)">
