@@ -107,7 +107,7 @@ AsyncWebServer server(80);
 HTTPClient http;
 WiFiClient client;
 ESP32Time rtc;
-String winderooVersion = "4.0.0";
+String winderooVersion = "4.0.1";
 WiFiUDP ntpUDP;
 NTPClient timeClient(ntpUDP);
 
@@ -207,13 +207,13 @@ static void drawTimerStatus() {
 		if (userDefinedSettings.timerEnabled == "1")
 		{
 			// right aligned timer
-			display.fillRect(60, 51, 64, 13, BLACK);
+			display.fillRect(60, 54, 64, 13, BLACK);
 			display.setCursor(60, 56);
 			display.print("TIMER " + userDefinedSettings.hour + ":" + userDefinedSettings.minutes);
 		}
 		else
 		{
-			display.fillRect(60, 51, 68, 13, BLACK);
+			display.fillRect(60, 54, 68, 13, BLACK);
 		}
 	}
 }
