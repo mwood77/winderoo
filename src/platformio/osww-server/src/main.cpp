@@ -275,24 +275,15 @@ static void drawProgressBar(float progress) {
 	}
 }
 
-static void clearDisplayArea(int x, int y, int width, int height) {
-	if (OLED_ENABLED && !screenSleep) {
-		display.fillRect(x, y, width, height, BLACK);
-	}
-}
-
 static void drawDynamicGUI() {
 	if (OLED_ENABLED && !screenSleep)
 	{
-		// Clear the entire dynamic area in one call
-		clearDisplayArea(0, 15, display.width(), 49);
-		
-		// Draw TPD (rotations per day)
+		display.fillRect(8, 25, 54, 25, BLACK);
 		display.setCursor(8, 30);
 		display.setTextSize(2);
 		display.print(userDefinedSettings.rotationsPerDay);
 
-		// Draw direction
+		display.fillRect(66, 25, 62, 25, BLACK);
 		display.setCursor(74, 30);
 		display.print(userDefinedSettings.direction);
 		display.setTextSize(1);
@@ -300,11 +291,9 @@ static void drawDynamicGUI() {
 		// Draw progress bar
 		drawProgressBar(userDefinedSettings.cycleProgress);
 
-		// Draw status elements
 		drawWifiStatus();
 		drawTimerStatus();
 
-		// Single display() call at the end
 		display.display();
 	}
 }
