@@ -1801,6 +1801,25 @@ void loop()
 		drawDynamicGUI();
 	}
 
+	// Update cycle progress
+	if (routineRunning) {
+		unsigned long currentTime = rtc.getEpoch();
+		unsigned long totalDuration = estimatedRoutineFinishEpoch - startTimeEpoch;
+		unsigned long elapsedTime = currentTime - startTimeEpoch;
+		
+		if (totalDuration > 0) {
+			userDefinedSettings.cycleProgress = (float)elapsedTime / (float)totalDuration;
+			// Clamp progress between 0 and 1
+			if (userDefinedSettings.cycleProgress > 1.0) {
+				userDefinedSettings.cycleProgress = 1.0;
+			} else if (userDefinedSettings.cycleProgress < 0.0) {
+				userDefinedSettings.cycleProgress = 0.0;
+			}
+		}
+	} else {
+		userDefinedSettings.cycleProgress = 0.0;
+	}
+
 	wm.process();
 
 	awaitWhileListening(1);
