@@ -5,9 +5,9 @@
     "ng": "ng",
     "start": "ng serve",
     "build-arduino": "ng build --aot --build-optimizer --optimization --progress --output-hashing none && npm run move-localization && npm run gzip && npm run move-artifacts",
-    "move-localization": "shx cp -r ./src/assets ../../../data/ && rm -rf ./dist/assets",
-    "gzip": "gzip dist/**/* --extension=gz",
-    "move-artifacts": "shx cp -r ./dist/**.gz ../../../data/",
+    "move-localization": "npx shx cp -r ./src/assets ../../../data/ && rm -rf ./dist/assets",
+    "gzip": "./node_modules/.bin/gzip dist/**/* --extension=gz",
+    "move-artifacts": "npx shx cp -r ./dist/**.gz ../../../data/",
     "bundle-analyze": "ng build --stats-json --output-hashing none && webpack-bundle-analyzer dist/stats.json",
     "serve-artifacts": "lite-server --baseDir=\"dist/\""
   },

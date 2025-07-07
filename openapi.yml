@@ -135,6 +135,9 @@ components:
             action: "START"
             rotationDirection: "BOTH"
             screenSleep: false
+            screenScheduleEnabled: false
+            screenScheduleStartTime: "09:00"
+            screenScheduleEndTime: "22:00"
             customWindDuration: 180
             customWindPauseDuration: 15
             customDurationInSecondsToCompleteOneRevolution: 8
@@ -198,6 +201,24 @@ components:
             - CW
             - CCW
             - BOTH
+        screenScheduleEnabled:
+          type: boolean
+          description: Whether OLED screen scheduling is enabled
+          examples:
+            - false
+            - true
+        screenScheduleStartTime:
+          type: string
+          description: Start time for OLED screen schedule (HH:MM format)
+          examples:
+            - "09:00"
+            - "22:00"
+        screenScheduleEndTime:
+          type: string
+          description: End time for OLED screen schedule (HH:MM format)
+          examples:
+            - "17:00"
+            - "06:00"
         gmtOffset:
           type: number
           examples:
@@ -257,6 +278,18 @@ components:
           type: boolean
           examples:
             - false
+        screenScheduleEnabled:
+          type: boolean
+          examples:
+            - false
+        screenScheduleStartTime:
+          type: string
+          examples:
+            - "09:00"
+        screenScheduleEndTime:
+          type: string
+          examples:
+            - "22:00"
         screenEquipped:
           type: boolean
           examples:

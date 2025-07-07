@@ -116,3 +116,29 @@ mat-card {
         margin-bottom: 0.6rem;
     }
 }
+
+.schedule-time-picker {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-top: 16px;
+}
+
+.time-picker-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+
+  .setting-label {
+    min-width: 120px;
+  }
+
+  mat-form-field {
+    width: 80px;
+  }
+
+  .time-separator {
+    font-size: 20px;
+    font-weight: bold;
+  }
+}
