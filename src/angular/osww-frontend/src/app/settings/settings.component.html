@@ -161,25 +161,26 @@
                 </mat-slide-toggle>
             </div>
         </div>
-    </mat-card>
 
-    <!-- Screen Schedule Section -->
-    <mat-card class="settings-card">
-        <mat-card-header>
-            <mat-card-title>{{ "SETTINGS.SCREEN_SCHEDULE" | translate }}</mat-card-title>
-        </mat-card-header>
-        <mat-card-content>
-            <div class="setting-row">
-                <div class="setting-label">{{ "SETTINGS.ENABLE_SCHEDULE" | translate }}</div>
+        <!-- Screen Schedule Controls (moved here) -->
+        <div class="individual-setting">
+            <div class="individual-setting">
+                {{ "SETTINGS.SCREEN_SCHEDULE" | translate }}
+            </div>
+            <div style="display: flex; justify-content: center;">
                 <mat-slide-toggle [(ngModel)]="screenScheduleEnabled"
                     (change)="updateScreenScheduleEnabled($event.checked)">
+                    <span>
+                        {{ "SETTINGS.ENABLE_SCHEDULE" | translate }}
+                    </span>
                 </mat-slide-toggle>
             </div>
-    
-            <div class="schedule-time-picker" *ngIf="screenScheduleEnabled">
-                <div class="time-picker-group">
-                    <div class="setting-label">{{ "SETTINGS.TURN_ON_SCREEN_AT" | translate }}</div>
-                    <mat-form-field>
+
+            <div *ngIf="screenScheduleEnabled" style="margin-top: 1em;">
+                <div class="time-input" style="justify-content: center; align-items: center; gap: 1em;">
+                    <span class="setting-label">{{ "SETTINGS.TURN_ON_SCREEN_AT" | translate }}</span>
+                    <mat-form-field color="accent" appearance="outline">
+                        <mat-label>{{ "SETTINGS.HOURS" | translate }}</mat-label>
                         <mat-select [(ngModel)]="screenScheduleStartTime.hour"
                             (selectionChange)="updateScreenScheduleTime('start', screenScheduleStartTime)">
                             <mat-option *ngFor="let hour of hours" [value]="hour.value">
@@ -188,7 +189,8 @@
                         </mat-select>
                     </mat-form-field>
                     <span class="time-separator">:</span>
-                    <mat-form-field>
+                    <mat-form-field color="accent" appearance="outline">
+                        <mat-label>{{ "SETTINGS.MINUTES" | translate }}</mat-label>
                         <mat-select [(ngModel)]="screenScheduleStartTime.minute"
                             (selectionChange)="updateScreenScheduleTime('start', screenScheduleStartTime)">
                             <mat-option *ngFor="let minute of minutes" [value]="minute.value">
@@ -197,10 +199,10 @@
                         </mat-select>
                     </mat-form-field>
                 </div>
-    
-                <div class="time-picker-group">
-                    <div class="setting-label">{{ "SETTINGS.TURN_OFF_SCREEN_AT" | translate }}</div>
-                    <mat-form-field>
+                <div class="time-input" style="justify-content: center; align-items: center; gap: 1em; margin-top: 0.5em;">
+                    <span class="setting-label">{{ "SETTINGS.TURN_OFF_SCREEN_AT" | translate }}</span>
+                    <mat-form-field color="accent" appearance="outline">
+                        <mat-label>{{ "SETTINGS.HOURS" | translate }}</mat-label>
                         <mat-select [(ngModel)]="screenScheduleEndTime.hour"
                             (selectionChange)="updateScreenScheduleTime('end', screenScheduleEndTime)">
                             <mat-option *ngFor="let hour of hours" [value]="hour.value">
@@ -209,7 +211,8 @@
                         </mat-select>
                     </mat-form-field>
                     <span class="time-separator">:</span>
-                    <mat-form-field>
+                    <mat-form-field color="accent" appearance="outline">
+                        <mat-label>{{ "SETTINGS.MINUTES" | translate }}</mat-label>
                         <mat-select [(ngModel)]="screenScheduleEndTime.minute"
                             (selectionChange)="updateScreenScheduleTime('end', screenScheduleEndTime)">
                             <mat-option *ngFor="let minute of minutes" [value]="minute.value">
@@ -219,7 +222,7 @@
                     </mat-form-field>
                 </div>
             </div>
-        </mat-card-content>
+        </div>
     </mat-card>
 
     <mat-card class="mat-elevation-z1">
