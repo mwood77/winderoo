@@ -525,7 +525,9 @@ void beginWindingRoutine()
 	Serial.print("[STATUS] - Estimated finish time: ");
 	Serial.println(finishTime);
 
-	drawNotification("Winding");
+	if (OLED_ENABLED && !userDefinedSettings.screenSleep) {
+		drawNotification("Winding");
+	}
 	if (HOME_ASSISTANT_ENABLED) ha_activityState.setValue("Winding");
 }
 
@@ -920,7 +922,6 @@ void startWebserver()
 			{
 				if (!routineRunning)
 				{
-					userDefinedSettings.status = "Winding";
 					beginWindingRoutine();
 				}
 			}
@@ -929,7 +930,9 @@ void startWebserver()
 				motor.stop();
 				routineRunning = false;
 				userDefinedSettings.status = "Stopped";
-				drawNotification("Stopped");
+				if (OLED_ENABLED && !userDefinedSettings.screenSleep) {
+					drawNotification("Stopped");
+				}
 				if (HOME_ASSISTANT_ENABLED) ha_activityState.setValue("Stopped");
 			}
 
@@ -941,7 +944,7 @@ void startWebserver()
 			}
 			else
 			{
-				if (OLED_ENABLED)
+				if (OLED_ENABLED && !userDefinedSettings.screenSleep)
 				{
 					// Draw gui with updated values from _this_ update request
 					drawStaticGUI(true, userDefinedSettings.status);
@@ -1262,7 +1265,6 @@ void handleHAStartButton(HAButton* sender)
 {
 	if (!routineRunning)
 	{
-		userDefinedSettings.status = "Winding";
 		beginWindingRoutine();
 	}
 }
@@ -1272,7 +1274,9 @@ void handleHAStopButton(HAButton* sender)
 	motor.stop();
 	routineRunning = false;
 	userDefinedSettings.status = "Stopped";
-	drawNotification("Stopped");
+	if (OLED_ENABLED && !userDefinedSettings.screenSleep) {
+		drawNotification("Stopped");
+	}
 	ha_activityState.setValue("Stopped");
 }
 
@@ -1775,6 +1779,7 @@ void loop()
 			display.display();
 		}
 	}
+	// When scheduling is disabled, do not override screenSleep; let API/UI/HA control it
 
 	// Update cycle progress
 	if (routineRunning) {
