@@ -161,6 +161,68 @@
                 </mat-slide-toggle>
             </div>
         </div>
+
+        <!-- Screen Schedule Controls (moved here) -->
+        <div class="individual-setting">
+            <div class="individual-setting">
+                {{ "SETTINGS.SCREEN_SCHEDULE" | translate }}
+            </div>
+            <div style="display: flex; justify-content: center;">
+                <mat-slide-toggle [(ngModel)]="screenScheduleEnabled"
+                    (change)="updateScreenScheduleEnabled($event.checked)">
+                    <span>
+                        {{ "SETTINGS.ENABLE_SCHEDULE" | translate }}
+                    </span>
+                </mat-slide-toggle>
+            </div>
+
+            <div *ngIf="screenScheduleEnabled" style="margin-top: 1em;">
+                <div class="time-input" style="justify-content: center; align-items: center; gap: 1em;">
+                    <span class="setting-label">{{ "SETTINGS.TURN_ON_SCREEN_AT" | translate }}</span>
+                    <mat-form-field color="accent" appearance="outline">
+                        <mat-label>{{ "SETTINGS.HOURS" | translate }}</mat-label>
+                        <mat-select [(ngModel)]="screenScheduleStartTime.hour"
+                            (selectionChange)="updateScreenScheduleTime('start', screenScheduleStartTime)">
+                            <mat-option *ngFor="let hour of hours" [value]="hour.value">
+                                {{hour.viewValue}}
+                            </mat-option>
+                        </mat-select>
+                    </mat-form-field>
+                    <span class="time-separator">:</span>
+                    <mat-form-field color="accent" appearance="outline">
+                        <mat-label>{{ "SETTINGS.MINUTES" | translate }}</mat-label>
+                        <mat-select [(ngModel)]="screenScheduleStartTime.minute"
+                            (selectionChange)="updateScreenScheduleTime('start', screenScheduleStartTime)">
+                            <mat-option *ngFor="let minute of minutes" [value]="minute.value">
+                                {{minute.viewValue}}
+                            </mat-option>
+                        </mat-select>
+                    </mat-form-field>
+                </div>
+                <div class="time-input" style="justify-content: center; align-items: center; gap: 1em; margin-top: 0.5em;">
+                    <span class="setting-label">{{ "SETTINGS.TURN_OFF_SCREEN_AT" | translate }}</span>
+                    <mat-form-field color="accent" appearance="outline">
+                        <mat-label>{{ "SETTINGS.HOURS" | translate }}</mat-label>
+                        <mat-select [(ngModel)]="screenScheduleEndTime.hour"
+                            (selectionChange)="updateScreenScheduleTime('end', screenScheduleEndTime)">
+                            <mat-option *ngFor="let hour of hours" [value]="hour.value">
+                                {{hour.viewValue}}
+                            </mat-option>
+                        </mat-select>
+                    </mat-form-field>
+                    <span class="time-separator">:</span>
+                    <mat-form-field color="accent" appearance="outline">
+                        <mat-label>{{ "SETTINGS.MINUTES" | translate }}</mat-label>
+                        <mat-select [(ngModel)]="screenScheduleEndTime.minute"
+                            (selectionChange)="updateScreenScheduleTime('end', screenScheduleEndTime)">
+                            <mat-option *ngFor="let minute of minutes" [value]="minute.value">
+                                {{minute.viewValue}}
+                            </mat-option>
+                        </mat-select>
+                    </mat-form-field>
+                </div>
+            </div>
+        </div>
     </mat-card>
 
     <mat-card class="mat-elevation-z1">
@@ -265,7 +327,6 @@
 
         </div>
     </mat-card>
-
 
     <mat-card class="mat-elevation-z1">
             <button mat-raised-button color="primary" class="upload-button" (click)="uploadSettings()" [disabled]="upload.disabled">
