@@ -151,6 +151,13 @@ NTPClient timeClient(ntpUDP);
 	HANumber ha_customDurationInSecondsToCompleteOneRevolution("customDurationInSecondsToCompleteOneRevolution");
 	HASelect ha_rtcGmtOffset("rtcGmtOffset");
 	HASwitch ha_rtcDST("rtcDST");
+	
+	// Define HA Sensors for Screen Scheduling
+	HASwitch ha_screenScheduleEnabled("screenScheduleEnabled");
+	HASelect ha_screenScheduleStartHour("screenScheduleStartHour");
+	HASelect ha_screenScheduleStartMinute("screenScheduleStartMinute");
+	HASelect ha_screenScheduleEndHour("screenScheduleEndHour");
+	HASelect ha_screenScheduleEndMinute("screenScheduleEndMinute");
 #endif
 
 void drawCentreStringToMemory(const char *buf, int x, int y)
@@ -882,6 +889,13 @@ void startWebserver()
 				ha_customWindDuration.setState(static_cast<int>(userDefinedSettings.customWindDuration.toInt()));
 				ha_customWindPauseDuration.setState(static_cast<int>(userDefinedSettings.customWindPauseDuration.toInt()));
 				ha_customDurationInSecondsToCompleteOneRevolution.setState(userDefinedSettings.customDurationInSecondsToCompleteOneRevolution);
+				
+				// Screen Scheduling
+				ha_screenScheduleEnabled.setState(userDefinedSettings.screenScheduleEnabled);
+				ha_screenScheduleStartHour.setState(userDefinedSettings.screenScheduleStartTime.substring(0, 2).toInt());
+				ha_screenScheduleStartMinute.setState(getTimerMinutesIndexForHomeAssistant(userDefinedSettings.screenScheduleStartTime.substring(3, 5).toInt()));
+				ha_screenScheduleEndHour.setState(userDefinedSettings.screenScheduleEndTime.substring(0, 2).toInt());
+				ha_screenScheduleEndMinute.setState(getTimerMinutesIndexForHomeAssistant(userDefinedSettings.screenScheduleEndTime.substring(3, 5).toInt()));
 			}
 
 			// Update motor direction
@@ -1376,6 +1390,138 @@ void onPowerSwitchCommand(bool state, HASwitch* sender)
 	sender->setState(state);
 }
 
+// Screen Scheduling Command Handlers
+void onScreenScheduleEnabledCommand(bool state, HASwitch* sender)
+{
+	userDefinedSettings.screenScheduleEnabled = state;
+	
+	bool writeSuccess = writeConfigVarsToFile(settingsFile, userDefinedSettings);
+	if ( !writeSuccess )
+	{
+		Serial.println("[ERROR] - Failed to write screen schedule enabled state [MQTT]");
+	}
+
+	sender->setState(state);
+}
+
+void onScreenScheduleStartHourCommand(int8_t index, HASelect* sender)
+{
+	if (index >= 0 && index <= 23) {
+		String currentTime = userDefinedSettings.screenScheduleStartTime;
+		String newHour = (index < 10) ? "0" + String(index) : String(index);
+		userDefinedSettings.screenScheduleStartTime = newHour + ":" + currentTime.substring(3, 5);
+	} else {
+		return; // Exit if index is out of range
+	}
+
+	bool writeSuccess = writeConfigVarsToFile(settingsFile, userDefinedSettings);
+	if ( !writeSuccess )
+	{
+		Serial.println("[ERROR] - Failed to write screen schedule start hour [MQTT]");
+	}
+
+	sender->setState(index);
+}
+
+void onScreenScheduleStartMinuteCommand(int8_t index, HASelect* sender)
+{
+	String currentTime = userDefinedSettings.screenScheduleStartTime;
+	String newMinute;
+	
+	switch(index)
+	{
+		case 0:
+			newMinute = "00";
+			break;
+		case 1:
+			newMinute = "10";
+			break;
+		case 2:
+			newMinute = "20";
+			break;
+		case 3:
+			newMinute = "30";
+			break;
+		case 4:
+			newMinute = "40";
+			break;
+		case 5:
+			newMinute = "50";
+			break;
+		default:
+			return;
+	}
+	
+	userDefinedSettings.screenScheduleStartTime = currentTime.substring(0, 3) + newMinute;
+
+	bool writeSuccess = writeConfigVarsToFile(settingsFile, userDefinedSettings);
+	if ( !writeSuccess )
+	{
+		Serial.println("[ERROR] - Failed to write screen schedule start minute [MQTT]");
+	}
+
+	sender->setState(index);
+}
+
+void onScreenScheduleEndHourCommand(int8_t index, HASelect* sender)
+{
+	if (index >= 0 && index <= 23) {
+		String currentTime = userDefinedSettings.screenScheduleEndTime;
+		String newHour = (index < 10) ? "0" + String(index) : String(index);
+		userDefinedSettings.screenScheduleEndTime = newHour + ":" + currentTime.substring(3, 5);
+	} else {
+		return; // Exit if index is out of range
+	}
+
+	bool writeSuccess = writeConfigVarsToFile(settingsFile, userDefinedSettings);
+	if ( !writeSuccess )
+	{
+		Serial.println("[ERROR] - Failed to write screen schedule end hour [MQTT]");
+	}
+
+	sender->setState(index);
+}
+
+void onScreenScheduleEndMinuteCommand(int8_t index, HASelect* sender)
+{
+	String currentTime = userDefinedSettings.screenScheduleEndTime;
+	String newMinute;
+	
+	switch(index)
+	{
+		case 0:
+			newMinute = "00";
+			break;
+		case 1:
+			newMinute = "10";
+			break;
+		case 2:
+			newMinute = "20";
+			break;
+		case 3:
+			newMinute = "30";
+			break;
+		case 4:
+			newMinute = "40";
+			break;
+		case 5:
+			newMinute = "50";
+			break;
+		default:
+			return;
+	}
+	
+	userDefinedSettings.screenScheduleEndTime = currentTime.substring(0, 3) + newMinute;
+
+	bool writeSuccess = writeConfigVarsToFile(settingsFile, userDefinedSettings);
+	if ( !writeSuccess )
+	{
+		Serial.println("[ERROR] - Failed to write screen schedule end minute [MQTT]");
+	}
+
+	sender->setState(index);
+}
+
 void setup()
 {
 	WiFi.mode(WIFI_STA);
@@ -1569,6 +1715,36 @@ void setup()
 			int haUtcSelectIndex = mapRtcUtcOffsetForAPItoHomeAssistant(userDefinedSettings.gmtOffset);
 			ha_rtcGmtOffset.setState(haUtcSelectIndex);
 			ha_rtcGmtOffset.onCommand(onSelectRtcUtcOffsetCommand);
+
+			// Screen Scheduling
+			ha_screenScheduleEnabled.setName("Screen Schedule Enabled");
+			ha_screenScheduleEnabled.setIcon("mdi:calendar-clock");
+			ha_screenScheduleEnabled.setCurrentState(userDefinedSettings.screenScheduleEnabled);
+			ha_screenScheduleEnabled.onCommand(onScreenScheduleEnabledCommand);
+
+			ha_screenScheduleStartHour.setName("Screen Schedule Start Hour");
+			ha_screenScheduleStartHour.setIcon("mdi:clock-outline");
+			ha_screenScheduleStartHour.setOptions("00;01;02;03;04;05;06;07;08;09;10;11;12;13;14;15;16;17;18;19;20;21;22;23");
+			ha_screenScheduleStartHour.setCurrentState(userDefinedSettings.screenScheduleStartTime.substring(0, 2).toInt());
+			ha_screenScheduleStartHour.onCommand(onScreenScheduleStartHourCommand);
+
+			ha_screenScheduleStartMinute.setName("Screen Schedule Start Minute");
+			ha_screenScheduleStartMinute.setIcon("mdi:clock-outline");
+			ha_screenScheduleStartMinute.setOptions("00;10;20;30;40;50");
+			ha_screenScheduleStartMinute.setCurrentState(userDefinedSettings.screenScheduleStartTime.substring(3, 5).toInt());
+			ha_screenScheduleStartMinute.onCommand(onScreenScheduleStartMinuteCommand);
+
+			ha_screenScheduleEndHour.setName("Screen Schedule End Hour");
+			ha_screenScheduleEndHour.setIcon("mdi:clock-outline");
+			ha_screenScheduleEndHour.setOptions("00;01;02;03;04;05;06;07;08;09;10;11;12;13;14;15;16;17;18;19;20;21;22;23");
+			ha_screenScheduleEndHour.setCurrentState(userDefinedSettings.screenScheduleEndTime.substring(0, 2).toInt());
+			ha_screenScheduleEndHour.onCommand(onScreenScheduleEndHourCommand);
+
+			ha_screenScheduleEndMinute.setName("Screen Schedule End Minute");
+			ha_screenScheduleEndMinute.setIcon("mdi:clock-outline");
+			ha_screenScheduleEndMinute.setOptions("00;10;20;30;40;50");
+			ha_screenScheduleEndMinute.setCurrentState(userDefinedSettings.screenScheduleEndTime.substring(3, 5).toInt());
+			ha_screenScheduleEndMinute.onCommand(onScreenScheduleEndMinuteCommand);
 
 			mqtt.onConnected(mqttOnConnected);
 			mqtt.onDisconnected(mqttOnDisconnected);
