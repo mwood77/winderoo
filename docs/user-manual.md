@@ -79,9 +79,9 @@
 
 | UI Element | Function |
 | :---: |:---: |
-|<img src="gui/enable-disable.png" >  | Enable or disable automatic screen scheduling. When enabled, the screen will automatically turn on and off based on the configured time schedule. |
-|<img src="gui/custom_time-to-rotate.png" >  | Set the time when the screen should turn on (24-hour format). |
-|<img src="gui/custom_time-to-pause.png" >  | Set the time when the screen should turn off (24-hour format). |
+|<img src="gui/screen-sleep-toggle.png" >  | Enable or disable automatic screen scheduling. When enabled, the screen will automatically turn on and off based on the configured time schedule. |
+|<img src="gui/screen-sleep-on.png" >  | Set the time when the screen should turn on (24-hour format). |
+|<img src="gui/screen-sleep-off.png" >  | Set the time when the screen should turn off (24-hour format). |
 
 **Note:** Screen scheduling works independently of manual screen control. When scheduling is enabled, the screen will automatically turn on/off based on the schedule, but you can still manually control the screen through the OLED toggle or Home Assistant integration.
 
