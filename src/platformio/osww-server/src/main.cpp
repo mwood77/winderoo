@@ -88,6 +88,10 @@ struct RUNTIME_VARS
 	int customDurationInSecondsToCompleteOneRevolution = 8;
 	float gmtOffset = 0.0;
 	bool dst = false;
+	bool screenScheduleEnabled = false;
+	String screenScheduleStartTime = "00:00";
+	String screenScheduleEndTime = "00:00";
+	bool screenSleep = false;
 	float cycleProgress = 0.0; // 0.0 to 1.0
 };
 
@@ -147,6 +151,13 @@ NTPClient timeClient(ntpUDP);
 	HANumber ha_customDurationInSecondsToCompleteOneRevolution("customDurationInSecondsToCompleteOneRevolution");
 	HASelect ha_rtcGmtOffset("rtcGmtOffset");
 	HASwitch ha_rtcDST("rtcDST");
+	
+	// Define HA Sensors for Screen Scheduling
+	HASwitch ha_screenScheduleEnabled("screenScheduleEnabled");
+	HASelect ha_screenScheduleStartHour("screenScheduleStartHour");
+	HASelect ha_screenScheduleStartMinute("screenScheduleStartMinute");
+	HASelect ha_screenScheduleEndHour("screenScheduleEndHour");
+	HASelect ha_screenScheduleEndMinute("screenScheduleEndMinute");
 #endif
 
 void drawCentreStringToMemory(const char *buf, int x, int y)
@@ -521,7 +532,9 @@ void beginWindingRoutine()
 	Serial.print("[STATUS] - Estimated finish time: ");
 	Serial.println(finishTime);
 
-	drawNotification("Winding");
+	if (OLED_ENABLED && !userDefinedSettings.screenSleep) {
+		drawNotification("Winding");
+	}
 	if (HOME_ASSISTANT_ENABLED) ha_activityState.setValue("Winding");
 }
 
@@ -629,6 +642,12 @@ void loadConfigVarsFromFile(String file_name)
 	userDefinedSettings.customDurationInSecondsToCompleteOneRevolution = json["customDurationInSecondsToCompleteOneRevolution"].as<int>();		// min 1 <-> max 16; default 8
 	userDefinedSettings.gmtOffset = json["gmtOffset"].as<float>();																				// -12 to +14 with decimal steps
 	userDefinedSettings.dst = json["dst"].as<float>();																							// true || false
+	
+	// Load OLED screen scheduling settings (with defaults if not present)
+	userDefinedSettings.screenScheduleEnabled = json["screenScheduleEnabled"] | false;
+	userDefinedSettings.screenScheduleStartTime = json["screenScheduleStartTime"] | "00:00";
+	userDefinedSettings.screenScheduleEndTime = json["screenScheduleEndTime"] | "00:00";
+	userDefinedSettings.screenSleep = json["screenSleep"] | false;
 
 	this_file.close();
 }
@@ -663,6 +682,10 @@ bool writeConfigVarsToFile(String file_name, const RUNTIME_VARS& userDefinedSett
 	json["customDurationInSecondsToCompleteOneRevolution"] = userDefinedSettings.customDurationInSecondsToCompleteOneRevolution;
 	json["gmtOffset"] = userDefinedSettings.gmtOffset;
 	json["dst"] = userDefinedSettings.dst;
+	json["screenScheduleEnabled"] = userDefinedSettings.screenScheduleEnabled;
+	json["screenScheduleStartTime"] = userDefinedSettings.screenScheduleStartTime;
+	json["screenScheduleEndTime"] = userDefinedSettings.screenScheduleEndTime;
+	json["screenSleep"] = userDefinedSettings.screenSleep;
 
 	if (serializeJson(json, this_file) == 0)
 	{
@@ -696,7 +719,6 @@ void notFound(AsyncWebServerRequest *request)
  */
 void startWebserver()
 {
-
 	server.on("/api/status", HTTP_GET, [](AsyncWebServerRequest *request)
 	{
 		AsyncResponseStream *response = request->beginResponseStream("application/json");
@@ -720,6 +742,9 @@ void startWebserver()
 		json["gmtOffset"] = userDefinedSettings.gmtOffset;
 		json["apiVersion"] = winderooVersion;
 		json["dst"] = userDefinedSettings.dst;
+		json["screenScheduleEnabled"] = userDefinedSettings.screenScheduleEnabled;
+		json["screenScheduleStartTime"] = userDefinedSettings.screenScheduleStartTime;
+		json["screenScheduleEndTime"] = userDefinedSettings.screenScheduleEndTime;
 		serializeJson(json, *response);
 
 		request->send(response);
@@ -752,25 +777,24 @@ void startWebserver()
 
 	server.onRequestBody([](AsyncWebServerRequest *request, uint8_t *data, size_t len, size_t index, size_t total)
 	{
-
 		if (request->url() == "/api/power")
 		{
-			JsonDocument json;
-			DeserializationError error = deserializeJson(json, data);
+			JsonDocument powerJson;
+			DeserializationError powerError = deserializeJson(powerJson, data);
 
-			if (error)
+			if (powerError)
 			{
 				Serial.println("[ERROR] - Failed to deserialize [power] request body");
 				request->send(500, "text/plain", "Failed to deserialize request body");
 				return;
 			}
 
-			if (!json["winderEnabled"].is<String>())
+			if (!powerJson["winderEnabled"].is<String>())
 			{
 				request->send(400, "text/plain", "Missing required field: 'winderEnabled'");
 			}
 
-			userDefinedSettings.winderEnabled = json["winderEnabled"].as<String>();
+			userDefinedSettings.winderEnabled = powerJson["winderEnabled"].as<String>();
 
 			if (userDefinedSettings.winderEnabled == "0")
 			{
@@ -799,12 +823,12 @@ void startWebserver()
 		{
 			if (OLED_ENABLED) toggleDrawSavingIcon(true);
 			
-			JsonDocument json;
-			DeserializationError error = deserializeJson(json, data);
+			JsonDocument updateJson;
+			DeserializationError updateError = deserializeJson(updateJson, data);
 			int arraySize = 7;
 			String requiredKeys[arraySize] = {"rotationDirection", "tpd", "action", "hour", "minutes", "timerEnabled", "screenSleep"};
 
-			if (error)
+			if (updateError)
 			{
 				Serial.println("[ERROR] - Failed to deserialize [update] request body");
 				request->send(500, "text/plain", "Failed to deserialize request body");
@@ -812,32 +836,44 @@ void startWebserver()
 			}
 
 			// validate request body
-				for (int i = 0; i < arraySize; i++)
+			for (int i = 0; i < arraySize; i++)
+			{
+				if(!updateJson[requiredKeys[i]].is<JsonVariant>())
 				{
-					if(!json[requiredKeys[i]].is<JsonVariant>())
-					{
-						request->send(400, "text/plain", "Missing required field: '" + requiredKeys[i] +"'");
-					}
+					request->send(400, "text/plain", "Missing required field: '" + requiredKeys[i] +"'");
+					return;
 				}
+			}
 
 			// These values can be mutated / saved directly
-			userDefinedSettings.hour = json["hour"].as<String>();
-			userDefinedSettings.minutes = json["minutes"].as<String>();
-			userDefinedSettings.timerEnabled = json["timerEnabled"].as<String>();
-			userDefinedSettings.customWindDuration = json["customWindDuration"].as<String>();
-			userDefinedSettings.customWindPauseDuration = json["customWindPauseDuration"].as<String>();
-			userDefinedSettings.customDurationInSecondsToCompleteOneRevolution = json["customDurationInSecondsToCompleteOneRevolution"];
+			userDefinedSettings.hour = updateJson["hour"].as<String>();
+			userDefinedSettings.minutes = updateJson["minutes"].as<String>();
+			userDefinedSettings.timerEnabled = updateJson["timerEnabled"].as<String>();
+			userDefinedSettings.customWindDuration = updateJson["customWindDuration"].as<String>();
+			userDefinedSettings.customWindPauseDuration = updateJson["customWindPauseDuration"].as<String>();
+			userDefinedSettings.customDurationInSecondsToCompleteOneRevolution = updateJson["customDurationInSecondsToCompleteOneRevolution"];
 
-			// // RTC values
-			userDefinedSettings.dst = json["rtcDST"].as<bool>();
-			userDefinedSettings.gmtOffset = json["rtcGmtOffset"].as<float>();
+			// Handle screen scheduling fields if present
+			if (updateJson["screenScheduleEnabled"].is<bool>()) {
+				userDefinedSettings.screenScheduleEnabled = updateJson["screenScheduleEnabled"];
+			}
+			if (updateJson["screenScheduleStartTime"].is<String>()) {
+				userDefinedSettings.screenScheduleStartTime = updateJson["screenScheduleStartTime"].as<String>();
+			}
+			if (updateJson["screenScheduleEndTime"].is<String>()) {
+				userDefinedSettings.screenScheduleEndTime = updateJson["screenScheduleEndTime"].as<String>();
+			}
+
+			// RTC values
+			userDefinedSettings.dst = updateJson["rtcDST"].as<bool>();
+			userDefinedSettings.gmtOffset = updateJson["rtcGmtOffset"].as<float>();
 			float rtcUpdateGmtOffset = userDefinedSettings.gmtOffset;
 
 			// These values need to be compared to the current settings / running state
-			String requestRotationDirection = json["rotationDirection"].as<String>();
-			String requestTPD = json["tpd"].as<String>();
-			String requestAction = json["action"].as<String>();
-			screenSleep = json["screenSleep"].as<bool>();
+			String requestRotationDirection = updateJson["rotationDirection"].as<String>();
+			String requestTPD = updateJson["tpd"].as<String>();
+			String requestAction = updateJson["action"].as<String>();
+			userDefinedSettings.screenSleep = updateJson["screenSleep"].as<bool>();
 
 			// Update Home Assistant state
 			if (HOME_ASSISTANT_ENABLED)
@@ -845,7 +881,7 @@ void startWebserver()
 				ha_timerSwitch.setState(userDefinedSettings.timerEnabled.toInt());
 				ha_selectHours.setState(userDefinedSettings.hour.toInt());
 				ha_selectMinutes.setState(getTimerMinutesIndexForHomeAssistant(userDefinedSettings.minutes.toInt()));
-				ha_oledSwitch.setState(!screenSleep); // Invert state because naming is hard...
+				ha_oledSwitch.setState(!userDefinedSettings.screenSleep); // Invert state because naming is hard...
 				ha_rpd.setState(static_cast<int>(requestTPD.toInt()));
 				ha_selectDirection.setState(getDirectionIndexForHomeAssistant(requestRotationDirection));
 
@@ -853,8 +889,14 @@ void startWebserver()
 				ha_customWindDuration.setState(static_cast<int>(userDefinedSettings.customWindDuration.toInt()));
 				ha_customWindPauseDuration.setState(static_cast<int>(userDefinedSettings.customWindPauseDuration.toInt()));
 				ha_customDurationInSecondsToCompleteOneRevolution.setState(userDefinedSettings.customDurationInSecondsToCompleteOneRevolution);
+				
+				// Screen Scheduling
+				ha_screenScheduleEnabled.setState(userDefinedSettings.screenScheduleEnabled);
+				ha_screenScheduleStartHour.setState(userDefinedSettings.screenScheduleStartTime.substring(0, 2).toInt());
+				ha_screenScheduleStartMinute.setState(getTimerMinutesIndexForHomeAssistant(userDefinedSettings.screenScheduleStartTime.substring(3, 5).toInt()));
+				ha_screenScheduleEndHour.setState(userDefinedSettings.screenScheduleEndTime.substring(0, 2).toInt());
+				ha_screenScheduleEndMinute.setState(getTimerMinutesIndexForHomeAssistant(userDefinedSettings.screenScheduleEndTime.substring(3, 5).toInt()));
 			}
-
 
 			// Update motor direction
 			if (strcmp(requestRotationDirection.c_str(), userDefinedSettings.direction.c_str()) != 0)
@@ -881,7 +923,7 @@ void startWebserver()
 			}
 
 			// Update (turns) rotations per day
-			if (strcmp(requestTPD.c_str(), userDefinedSettings.rotationsPerDay .c_str()) != 0)
+			if (strcmp(requestTPD.c_str(), userDefinedSettings.rotationsPerDay.c_str()) != 0)
 			{
 				userDefinedSettings.rotationsPerDay = requestTPD;
 
@@ -894,7 +936,6 @@ void startWebserver()
 			{
 				if (!routineRunning)
 				{
-					userDefinedSettings.status = "Winding";
 					beginWindingRoutine();
 				}
 			}
@@ -903,19 +944,21 @@ void startWebserver()
 				motor.stop();
 				routineRunning = false;
 				userDefinedSettings.status = "Stopped";
-				drawNotification("Stopped");
+				if (OLED_ENABLED && !userDefinedSettings.screenSleep) {
+					drawNotification("Stopped");
+				}
 				if (HOME_ASSISTANT_ENABLED) ha_activityState.setValue("Stopped");
 			}
 
 			// Update screen sleep state
-			if (screenSleep && OLED_ENABLED)
+			if (userDefinedSettings.screenSleep && OLED_ENABLED)
 			{
 				display.clearDisplay();
 				display.display();
 			}
 			else
 			{
-				if (OLED_ENABLED)
+				if (OLED_ENABLED && !userDefinedSettings.screenSleep)
 				{
 					// Draw gui with updated values from _this_ update request
 					drawStaticGUI(true, userDefinedSettings.status);
@@ -945,6 +988,7 @@ void startWebserver()
 			{
 				Serial.println("[ERROR] - Failed to write [update] endpoint data to file");
 				request->send(500, "text/plain", "Failed to write new configuration to file");
+				return;
 			}
 
 			request->send(204);
@@ -1244,7 +1288,9 @@ void handleHAStopButton(HAButton* sender)
 	motor.stop();
 	routineRunning = false;
 	userDefinedSettings.status = "Stopped";
-	drawNotification("Stopped");
+	if (OLED_ENABLED && !userDefinedSettings.screenSleep) {
+		drawNotification("Stopped");
+	}
 	ha_activityState.setValue("Stopped");
 }
 
@@ -1342,6 +1388,138 @@ void onPowerSwitchCommand(bool state, HASwitch* sender)
 	}
 
 	sender->setState(state);
+}
+
+// Screen Scheduling Command Handlers
+void onScreenScheduleEnabledCommand(bool state, HASwitch* sender)
+{
+	userDefinedSettings.screenScheduleEnabled = state;
+	
+	bool writeSuccess = writeConfigVarsToFile(settingsFile, userDefinedSettings);
+	if ( !writeSuccess )
+	{
+		Serial.println("[ERROR] - Failed to write screen schedule enabled state [MQTT]");
+	}
+
+	sender->setState(state);
+}
+
+void onScreenScheduleStartHourCommand(int8_t index, HASelect* sender)
+{
+	if (index >= 0 && index <= 23) {
+		String currentTime = userDefinedSettings.screenScheduleStartTime;
+		String newHour = (index < 10) ? "0" + String(index) : String(index);
+		userDefinedSettings.screenScheduleStartTime = newHour + ":" + currentTime.substring(3, 5);
+	} else {
+		return; // Exit if index is out of range
+	}
+
+	bool writeSuccess = writeConfigVarsToFile(settingsFile, userDefinedSettings);
+	if ( !writeSuccess )
+	{
+		Serial.println("[ERROR] - Failed to write screen schedule start hour [MQTT]");
+	}
+
+	sender->setState(index);
+}
+
+void onScreenScheduleStartMinuteCommand(int8_t index, HASelect* sender)
+{
+	String currentTime = userDefinedSettings.screenScheduleStartTime;
+	String newMinute;
+	
+	switch(index)
+	{
+		case 0:
+			newMinute = "00";
+			break;
+		case 1:
+			newMinute = "10";
+			break;
+		case 2:
+			newMinute = "20";
+			break;
+		case 3:
+			newMinute = "30";
+			break;
+		case 4:
+			newMinute = "40";
+			break;
+		case 5:
+			newMinute = "50";
+			break;
+		default:
+			return;
+	}
+	
+	userDefinedSettings.screenScheduleStartTime = currentTime.substring(0, 3) + newMinute;
+
+	bool writeSuccess = writeConfigVarsToFile(settingsFile, userDefinedSettings);
+	if ( !writeSuccess )
+	{
+		Serial.println("[ERROR] - Failed to write screen schedule start minute [MQTT]");
+	}
+
+	sender->setState(index);
+}
+
+void onScreenScheduleEndHourCommand(int8_t index, HASelect* sender)
+{
+	if (index >= 0 && index <= 23) {
+		String currentTime = userDefinedSettings.screenScheduleEndTime;
+		String newHour = (index < 10) ? "0" + String(index) : String(index);
+		userDefinedSettings.screenScheduleEndTime = newHour + ":" + currentTime.substring(3, 5);
+	} else {
+		return; // Exit if index is out of range
+	}
+
+	bool writeSuccess = writeConfigVarsToFile(settingsFile, userDefinedSettings);
+	if ( !writeSuccess )
+	{
+		Serial.println("[ERROR] - Failed to write screen schedule end hour [MQTT]");
+	}
+
+	sender->setState(index);
+}
+
+void onScreenScheduleEndMinuteCommand(int8_t index, HASelect* sender)
+{
+	String currentTime = userDefinedSettings.screenScheduleEndTime;
+	String newMinute;
+	
+	switch(index)
+	{
+		case 0:
+			newMinute = "00";
+			break;
+		case 1:
+			newMinute = "10";
+			break;
+		case 2:
+			newMinute = "20";
+			break;
+		case 3:
+			newMinute = "30";
+			break;
+		case 4:
+			newMinute = "40";
+			break;
+		case 5:
+			newMinute = "50";
+			break;
+		default:
+			return;
+	}
+	
+	userDefinedSettings.screenScheduleEndTime = currentTime.substring(0, 3) + newMinute;
+
+	bool writeSuccess = writeConfigVarsToFile(settingsFile, userDefinedSettings);
+	if ( !writeSuccess )
+	{
+		Serial.println("[ERROR] - Failed to write screen schedule end minute [MQTT]");
+	}
+
+	sender->setState(index);
 }
 
 void setup()
@@ -1538,6 +1716,36 @@ void setup()
 			ha_rtcGmtOffset.setState(haUtcSelectIndex);
 			ha_rtcGmtOffset.onCommand(onSelectRtcUtcOffsetCommand);
 
+			// Screen Scheduling
+			ha_screenScheduleEnabled.setName("Screen Schedule Enabled");
+			ha_screenScheduleEnabled.setIcon("mdi:calendar-clock");
+			ha_screenScheduleEnabled.setCurrentState(userDefinedSettings.screenScheduleEnabled);
+			ha_screenScheduleEnabled.onCommand(onScreenScheduleEnabledCommand);
+
+			ha_screenScheduleStartHour.setName("Screen Schedule Start Hour");
+			ha_screenScheduleStartHour.setIcon("mdi:clock-outline");
+			ha_screenScheduleStartHour.setOptions("00;01;02;03;04;05;06;07;08;09;10;11;12;13;14;15;16;17;18;19;20;21;22;23");
+			ha_screenScheduleStartHour.setCurrentState(userDefinedSettings.screenScheduleStartTime.substring(0, 2).toInt());
+			ha_screenScheduleStartHour.onCommand(onScreenScheduleStartHourCommand);
+
+			ha_screenScheduleStartMinute.setName("Screen Schedule Start Minute");
+			ha_screenScheduleStartMinute.setIcon("mdi:clock-outline");
+			ha_screenScheduleStartMinute.setOptions("00;10;20;30;40;50");
+			ha_screenScheduleStartMinute.setCurrentState(userDefinedSettings.screenScheduleStartTime.substring(3, 5).toInt());
+			ha_screenScheduleStartMinute.onCommand(onScreenScheduleStartMinuteCommand);
+
+			ha_screenScheduleEndHour.setName("Screen Schedule End Hour");
+			ha_screenScheduleEndHour.setIcon("mdi:clock-outline");
+			ha_screenScheduleEndHour.setOptions("00;01;02;03;04;05;06;07;08;09;10;11;12;13;14;15;16;17;18;19;20;21;22;23");
+			ha_screenScheduleEndHour.setCurrentState(userDefinedSettings.screenScheduleEndTime.substring(0, 2).toInt());
+			ha_screenScheduleEndHour.onCommand(onScreenScheduleEndHourCommand);
+
+			ha_screenScheduleEndMinute.setName("Screen Schedule End Minute");
+			ha_screenScheduleEndMinute.setIcon("mdi:clock-outline");
+			ha_screenScheduleEndMinute.setOptions("00;10;20;30;40;50");
+			ha_screenScheduleEndMinute.setCurrentState(userDefinedSettings.screenScheduleEndTime.substring(3, 5).toInt());
+			ha_screenScheduleEndMinute.onCommand(onScreenScheduleEndMinuteCommand);
+
 			mqtt.onConnected(mqttOnConnected);
 			mqtt.onDisconnected(mqttOnDisconnected);
 			mqtt.begin(HOME_ASSISTANT_BROKER_IP, HOME_ASSISTANT_USERNAME, HOME_ASSISTANT_PASSWORD);
@@ -1683,7 +1891,7 @@ void loop()
 			userDefinedSettings.status = "Stopped";
 			routineRunning = false;
 			motor.stop();
-			if (OLED_ENABLED && !screenSleep)
+			if (OLED_ENABLED && !userDefinedSettings.screenSleep)
 			{
 				drawNotification("Winding Complete");
 				if (HOME_ASSISTANT_ENABLED) ha_activityState.setValue("Winding Complete");
@@ -1697,31 +1905,81 @@ void loop()
 		}
 	}
 
-	// non-blocking button listener
-	awaitWhileListening(1);	// 1 second
-
-	if (userDefinedSettings.winderEnabled == "0")
-	{
-		triggerLEDCondition(3);
-	}
-	else
-	{
-		drawDynamicGUI();
-	}
-
+	// Update Home Assistant state
 	if (HOME_ASSISTANT_ENABLED)
 	{
 		mqtt.loop();
-		// We report these every cycle as if the device's MQTT connection is dropped,
-		// it will not be able to report its up-to-date state to Home Assistant.
-		// This mitigates de-sync between HA and the web gui.
-		ha_powerSwitch.setState(userDefinedSettings.winderEnabled.toInt());
-		ha_activityState.setValue(userDefinedSettings.status.c_str());
+		ha_rssiReception.setValue(String(WiFi.RSSI()).c_str());
 		ha_currentEpoch.setValue(std::to_string(rtc.getEpoch()).c_str());
-		ha_rtcDST.setState(userDefinedSettings.dst);
+	}
 
-		int haUtcSelectIndex = mapRtcUtcOffsetForAPItoHomeAssistant(userDefinedSettings.gmtOffset);
-		ha_rtcGmtOffset.setState(haUtcSelectIndex);
+	// OLED Screen Scheduling Logic
+	if (userDefinedSettings.screenScheduleEnabled && OLED_ENABLED)
+	{
+		int currentHour = rtc.getHour(true);
+		int currentMinute = rtc.getMinute();
+		String currentTimeStr = String(currentHour < 10 ? "0" : "") + String(currentHour) + ":" + String(currentMinute < 10 ? "0" : "") + String(currentMinute);
+		
+		// Parse start and end times
+		int startHour = userDefinedSettings.screenScheduleStartTime.substring(0, 2).toInt();
+		int startMinute = userDefinedSettings.screenScheduleStartTime.substring(3, 5).toInt();
+		int endHour = userDefinedSettings.screenScheduleEndTime.substring(0, 2).toInt();
+		int endMinute = userDefinedSettings.screenScheduleEndTime.substring(3, 5).toInt();
+		
+		// Convert to minutes for easier comparison
+		int currentTimeMinutes = currentHour * 60 + currentMinute;
+		int startTimeMinutes = startHour * 60 + startMinute;
+		int endTimeMinutes = endHour * 60 + endMinute;
+		
+		// Check if current time is within the scheduled range
+		bool shouldShowScreen = false;
+		
+		if (startTimeMinutes <= endTimeMinutes) {
+			// Same day schedule (e.g., 09:00 to 17:00)
+			shouldShowScreen = (currentTimeMinutes >= startTimeMinutes && currentTimeMinutes <= endTimeMinutes);
+		} else {
+			// Overnight schedule (e.g., 22:00 to 06:00)
+			shouldShowScreen = (currentTimeMinutes >= startTimeMinutes || currentTimeMinutes <= endTimeMinutes);
+		}
+		
+		if (shouldShowScreen && userDefinedSettings.screenSleep) {
+			// Turn screen on
+			userDefinedSettings.screenSleep = false;
+			display.clearDisplay();
+			drawStaticGUI(true, userDefinedSettings.status);
+			drawDynamicGUI();
+		} else if (!shouldShowScreen && !userDefinedSettings.screenSleep) {
+			// Turn screen off
+			userDefinedSettings.screenSleep = true;
+			display.clearDisplay();
+			display.display();
+		}
+	}
+	// When scheduling is disabled, do not override screenSleep; let API/UI/HA control it
+
+	// Update cycle progress
+	if (routineRunning) {
+		unsigned long currentTime = rtc.getEpoch();
+		unsigned long totalDuration = estimatedRoutineFinishEpoch - startTimeEpoch;
+		unsigned long elapsedTime = currentTime - startTimeEpoch;
+		
+		if (totalDuration > 0) {
+			userDefinedSettings.cycleProgress = (float)elapsedTime / (float)totalDuration;
+			// Clamp progress between 0 and 1
+			if (userDefinedSettings.cycleProgress > 1.0) {
+				userDefinedSettings.cycleProgress = 1.0;
+			} else if (userDefinedSettings.cycleProgress < 0.0) {
+				userDefinedSettings.cycleProgress = 0.0;
+			}
+		}
+	} else {
+		userDefinedSettings.cycleProgress = 0.0;
+	}
+
+	// Update OLED display
+	if (OLED_ENABLED && !userDefinedSettings.screenSleep)
+	{
+		drawDynamicGUI();
 	}
 
 	// Update cycle progress
@@ -1745,4 +2003,5 @@ void loop()
 
 	wm.process();
 
+	awaitWhileListening(1);
 }

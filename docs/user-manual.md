@@ -73,6 +73,17 @@
 | :---: |:---: |
 |<img src="gui/oled_screen.png" >  | This will toggle the attached OLED screen on and off. |
 
+### Screen Scheduling
+
+> This functionality is only available when OLED screen is enabled.
+
+| UI Element | Function |
+| :---: |:---: |
+|<img src="gui/enable-disable.png" >  | Enable or disable automatic screen scheduling. When enabled, the screen will automatically turn on and off based on the configured time schedule. |
+|<img src="gui/custom_time-to-rotate.png" >  | Set the time when the screen should turn on (24-hour format). |
+|<img src="gui/custom_time-to-pause.png" >  | Set the time when the screen should turn off (24-hour format). |
+
+**Note:** Screen scheduling works independently of manual screen control. When scheduling is enabled, the screen will automatically turn on/off based on the schedule, but you can still manually control the screen through the OLED toggle or Home Assistant integration.
 
 ### Settings & Customization
 
@@ -120,6 +131,11 @@ Winderoo should be automatically discovered by Home Assistant within 60 seconds.
  -  switch.winderoo_timer_enabled                             : "true | false"
  -  switch.winderoo_oled                                      : "true | false"
  -  switch.winderoo_power                                     : "true | false"
+ -  switch.winderoo_screen_schedule_enabled                   : "true | false"
+ -  select.winderoo_screen_schedule_start_hour                : 00 <-> 23
+ -  select.winderoo_screen_schedule_start_minute              : 00 <-> 50
+ -  select.winderoo_screen_schedule_end_hour                  : 00 <-> 23
+ -  select.winderoo_screen_schedule_end_minute                : 00 <-> 50
 ```
 
 You can replicate Winderoo's GUI with a basic Home Assistant card:
