@@ -802,8 +802,12 @@ void startWebserver()
 				userDefinedSettings.status = "Stopped";
 				routineRunning = false;
 				motor.stop();
-				display.clearDisplay();
-				display.display();
+				
+				if (OLED_ENABLED) // Suggested modification
+				{
+					display.clearDisplay();
+					display.display();
+				}
 				
 				if (HOME_ASSISTANT_ENABLED) 
 				{
@@ -1071,29 +1075,48 @@ void triggerLEDCondition(int blinkState)
 */
 void awaitWhileListening(int pauseInSeconds)
 {
-  // While waiting for the 1 second to pass, actively monitor/listen for button press.
-  int delayEnd = millis() + (1000 * pauseInSeconds);
-  while (millis() < delayEnd) {
-    // get physical button state
-    int buttonState = digitalRead(externalButton);
+    static int lastState = HIGH;   // HIGH = OFF (pull-up)
+    int reading = digitalRead(externalButton);
 
-	if (buttonState == HIGH)
-	{
-		if (userDefinedSettings.winderEnabled == "0")
-		{
-			motor.stop();
-			routineRunning = false;
-			userDefinedSettings.status = "Stopped";
-			Serial.println("[STATUS] - Switched off!");
-			if (HOME_ASSISTANT_ENABLED) ha_activityState.setValue("Stopped");
-		}
-	}
-	else
-	{
-		userDefinedSettings.winderEnabled == "1";
-	}
+    // New state ?
+    if (reading != lastState) {
 
-  }
+        // ==== POSITION ON (LOW) ====
+        if (reading == LOW) {
+            Serial.println("[BUTTON] Switch = ON");
+
+            userDefinedSettings.winderEnabled = "1";
+
+            // Restart routine if stopped
+            if (!routineRunning) {
+                beginWindingRoutine();
+            }
+
+            if (HOME_ASSISTANT_ENABLED) {
+                ha_powerSwitch.setState(true);
+                ha_activityState.setValue("Winding");
+            }
+        }
+
+        // ==== POSITION OFF (HIGH) ====
+        if (reading == HIGH) {
+            Serial.println("[BUTTON] Switch = OFF");
+
+            userDefinedSettings.winderEnabled = "0";
+
+            // Stop the routine
+            motor.stop();
+            routineRunning = false;
+            userDefinedSettings.status = "Stopped";
+
+            if (HOME_ASSISTANT_ENABLED) {
+                ha_powerSwitch.setState(false);
+                ha_activityState.setValue("Stopped");
+            }
+        }
+    }
+
+    lastState = reading;
 }
 
 /**
@@ -1373,8 +1396,13 @@ void onPowerSwitchCommand(bool state, HASwitch* sender)
 		userDefinedSettings.status = "Stopped";
 		routineRunning = false;
 		motor.stop();
-		display.clearDisplay();
-		display.display();
+
+		if (OLED_ENABLED) // Suggested modification
+		{
+			display.clearDisplay();
+			display.display();
+		}
+		
 		ha_activityState.setValue("Stopped");
 	} else {
 		drawStaticGUI(true);
@@ -1531,7 +1559,7 @@ void setup()
 	// Prepare pins
 	pinMode(directionalPinA, OUTPUT);
 	pinMode(directionalPinB, OUTPUT);
-	pinMode(externalButton, INPUT);
+	pinMode(externalButton, INPUT_PULLUP);
 	ledcSetup(LED.getChannel(), LED.getFrequency(), LED.getResolution());
 	ledcAttachPin(LED_BUILTIN, LED.getChannel());
 
