@@ -1894,8 +1894,9 @@ void loop()
 			if (OLED_ENABLED && !userDefinedSettings.screenSleep)
 			{
 				drawNotification("Winding Complete");
-				if (HOME_ASSISTANT_ENABLED) ha_activityState.setValue("Winding Complete");
 			}
+
+			if (HOME_ASSISTANT_ENABLED) ha_activityState.setValue("Winding Complete");
 
 			bool writeSuccess = writeConfigVarsToFile(settingsFile, userDefinedSettings);
 			if ( !writeSuccess )
